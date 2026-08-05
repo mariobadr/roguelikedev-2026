@@ -2,6 +2,8 @@
 # Source files
 ###############################################################################
 set(GAME_SOURCES
+    game.c
+    game.h
     input.c
     input.h
     main.c

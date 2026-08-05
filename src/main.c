@@ -10,6 +10,7 @@
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 
+#include "game.h"
 #include "input.h"
 
 struct application
@@ -20,6 +21,8 @@ struct application
 
   Uint64 freq;
   Uint64 last;
+
+  struct rl_game game;
 };
 
 /**
@@ -131,6 +134,11 @@ create_application(void)
 
   inpt_init_state(&app->istate);
 
+  if (!rl_init_game(&app->game)) {
+    destroy_application(app);
+    return NULL;
+  }
+
   app->freq = SDL_GetPerformanceFrequency();
   app->last = SDL_GetPerformanceCounter();
 
@@ -225,10 +233,22 @@ SDL_AppIterate(void* appstate)
   SDL_assert(app != NULL);
 
   Uint64 now = SDL_GetPerformanceCounter();
-  // Uint64 delta = now - app->last;
+  Uint64 delta = now - app->last;
   app->last = now;
 
+  if (!rl_handle_input(&app->game, &app->istate)) {
+    return SDL_APP_SUCCESS;
+  }
+
+  // avoid very large delta times
+  delta = SDL_min(delta, app->freq / 4);
+  float const frame_dt = (float)delta / (float)app->freq;
+
+  // update game state
+  rl_update_game(&app->game, frame_dt);
+
   // render game state
+  rl_render_game(&app->game, app->renderer);
   SDL_RenderPresent(app->renderer);
 
   // reset transient input for next frame
