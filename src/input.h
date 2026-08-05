@@ -4,8 +4,11 @@
 #ifndef GINC_ROGUELIKE_INPUT_H
 #define GINC_ROGUELIKE_INPUT_H
 
+#include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_stdinc.h>
+
+#define INPUT_MOUSE_BUTTON_COUNT (SDL_BUTTON_X2 + 1)
 
 /**
  * Encoded state of a button, capturing both the current and previous-frame
@@ -14,12 +17,25 @@
 typedef Uint8 inpt_button;
 
 /**
+ * Mouse device state tracked between frames.
+ */
+struct inpt_mouse
+{
+  /** Current cursor position. */
+  SDL_FPoint position;
+  /** Per-button state, indexed by SDL_BUTTON_*. */
+  inpt_button buttons[INPUT_MOUSE_BUTTON_COUNT];
+};
+
+/**
  * The state of all inputs captured during a single frame.
  */
 struct inpt_state
 {
   /** Keyboard key state indexed by SDL_Scancode. */
   inpt_button keys[SDL_SCANCODE_COUNT];
+  /** Mouse button and cursor state.*/
+  struct inpt_mouse mouse;
 };
 
 /**
