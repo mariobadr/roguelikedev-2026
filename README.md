@@ -56,3 +56,42 @@ Where it ends up depends on the generator:
 - Multi-config: `build/src/<Config>/a_roguelike.exe`
 
 On Windows, the SDL3 DLL is copied next to the executable automatically as part of the build.
+
+### Emscripten
+
+This project can be built for web browsers using emscripten.
+Emscripten will transpile the C code into an HTML file (and some other accompanying files).
+Typically, emscripten builds are single-config with the Release build type.
+
+You can install the emscripten toolchain using available scripts:
+
+```powershell
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+.\emsdk install latest
+.\emsdk activate latest
+```
+
+New terminal sessions need the emsdk environment activated to ensure that `emcmake`/`emcc` can be used (i.e., are on `PATH`).
+For example, in Windows using Powershell:
+
+```powershell
+cd emsdk
+.\emsdk_env.bat
+```
+
+Note that the configure step must use `emcmake`:
+
+```
+emcmake cmake -S . -B build-emscripten -DCMAKE_BUILD_TYPE=Release
+cmake --build build-emscripten --target a_roguelike
+```
+
+The output is `build-emscripten/src/index.html` (plus its accompanying `.js`/`.wasm`).
+However, if you'd like to run the game locally, you should not open the HTML file itself (browsers block `.wasm` loading from `file://` URLs).
+Instead, serve the built directory over HTTP.
+For example, using Python:
+
+```
+python -m http.server --directory build-emscripten/src
+```

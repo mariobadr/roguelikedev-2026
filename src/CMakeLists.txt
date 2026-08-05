@@ -46,4 +46,14 @@ if(WIN32)
         $<TARGET_FILE:SDL3::SDL3>
         $<TARGET_FILE_DIR:${GAME_TARGET}>
         VERBATIM)
+elseif(EMSCRIPTEN)
+    set_target_properties(${GAME_TARGET} PROPERTIES
+        OUTPUT_NAME "index"
+        SUFFIX ".html"
+    )
+
+    target_link_options(${GAME_TARGET} PRIVATE
+        "--shell-file" "${CMAKE_SOURCE_DIR}/emscripten/shell.html"
+        "-sALLOW_MEMORY_GROWTH=1"
+    )
 endif()
