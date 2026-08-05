@@ -4,6 +4,7 @@
 #ifndef GINC_ROGUELIKE_GAME_H
 #define GINC_ROGUELIKE_GAME_H
 
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
 // external forward declarations
@@ -14,7 +15,7 @@ struct inpt_state;
 
 struct rl_game
 {
-  int placeholder;
+  SDL_Point player;
 };
 
 /**

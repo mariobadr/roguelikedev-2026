@@ -5,7 +5,8 @@
 bool
 rl_init_game(struct rl_game* game)
 {
-  (void)game;
+  game->player.x = 0;
+  game->player.y = 0;
 
   return true;
 }
@@ -29,8 +30,14 @@ rl_update_game(struct rl_game* game, float dt)
 void
 rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
 {
-  (void)game;
-
   SDL_SetRenderDrawColor(renderer, 16, 16, 16, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(renderer);
+
+  // convert from tile to screen coordinates
+  float const player_x = game->player.x * 8.0f;
+  float const player_y = game->player.y * 8.0f;
+
+  // draw the rogue
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+  SDL_RenderDebugText(renderer, player_x, player_y, "@");
 }
