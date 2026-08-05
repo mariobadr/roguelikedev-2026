@@ -10,10 +10,13 @@
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 
+#include "input.h"
+
 struct application
 {
   SDL_Window* window;
   SDL_Renderer* renderer;
+  struct inpt_state istate;
 
   Uint64 freq;
   Uint64 last;
@@ -126,10 +129,49 @@ create_application(void)
     return NULL;
   }
 
+  inpt_init_state(&app->istate);
+
   app->freq = SDL_GetPerformanceFrequency();
   app->last = SDL_GetPerformanceCounter();
 
   return app;
+}
+
+/**
+ * Update the keyboard key in istate based on event.
+ *
+ * @param istate the input state to update
+ * @param event  the keyboard event to process
+ */
+static void
+handle_key_event(struct inpt_state* istate, SDL_KeyboardEvent* event)
+{
+  inpt_set_button(&istate->keys[event->scancode], event->down);
+}
+
+/**
+ * Update istate when event corresponds to user input.
+ *
+ * @param istate the input state to update
+ * @param event the event to process
+ *
+ * @return whether istate was updated
+ */
+static bool
+handle_input_event(struct inpt_state* istate, SDL_Event* event)
+{
+  SDL_assert(istate != NULL && event != NULL);
+
+  switch (event->type) {
+    case SDL_EVENT_KEY_DOWN:
+    case SDL_EVENT_KEY_UP:
+      handle_key_event(istate, &event->key);
+      return true;
+    default:
+      break;
+  }
+
+  return false;
 }
 
 SDL_AppResult
@@ -171,6 +213,8 @@ SDL_AppEvent(void* appstate, SDL_Event* event)
     return SDL_APP_SUCCESS;
   }
 
+  handle_input_event(&app->istate, event);
+
   return SDL_APP_CONTINUE;
 }
 
@@ -186,6 +230,9 @@ SDL_AppIterate(void* appstate)
 
   // render game state
   SDL_RenderPresent(app->renderer);
+
+  // reset transient input for next frame
+  inpt_reset_state(&app->istate);
 
   return SDL_APP_CONTINUE;
 }
