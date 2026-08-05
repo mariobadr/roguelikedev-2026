@@ -2,6 +2,7 @@
 # Source files
 ###############################################################################
 set(GAME_SOURCES
+    action.h
     game.c
     game.h
     input.c

@@ -2,11 +2,22 @@
 
 #include <SDL3/SDL_render.h>
 
+#include "input.h"
+
+static void
+set_movement_action(struct rl_action* action, int x, int y)
+{
+  action->type = RL_ACTION_MOVE;
+  action->move_vector.x = x;
+  action->move_vector.y = y;
+}
+
 bool
 rl_init_game(struct rl_game* game)
 {
   game->player.x = 0;
   game->player.y = 0;
+  game->action.type = RL_ACTION_NONE;
 
   return true;
 }
@@ -14,8 +25,17 @@ rl_init_game(struct rl_game* game)
 bool
 rl_handle_input(struct rl_game* game, struct inpt_state const* istate)
 {
-  (void)game;
-  (void)istate;
+  game->action.type = RL_ACTION_NONE;
+
+  if (inpt_is_down(istate->keys[SDL_SCANCODE_W])) {
+    set_movement_action(&game->action, 0, -1);
+  } else if (inpt_is_down(istate->keys[SDL_SCANCODE_S])) {
+    set_movement_action(&game->action, 0, 1);
+  } else if (inpt_is_down(istate->keys[SDL_SCANCODE_A])) {
+    set_movement_action(&game->action, -1, 0);
+  } else if (inpt_is_down(istate->keys[SDL_SCANCODE_D])) {
+    set_movement_action(&game->action, 1, 0);
+  }
 
   return true;
 }
@@ -23,8 +43,12 @@ rl_handle_input(struct rl_game* game, struct inpt_state const* istate)
 void
 rl_update_game(struct rl_game* game, float dt)
 {
-  (void)game;
   (void)dt;
+
+  if (game->action.type == RL_ACTION_MOVE) {
+    game->player.x += game->action.move_vector.x;
+    game->player.y += game->action.move_vector.y;
+  }
 }
 
 void

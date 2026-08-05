@@ -7,15 +7,21 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "action.h"
+
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
 
 // forward declarations
 struct inpt_state;
 
+/**
+ * The state of the roguelike game.
+ */
 struct rl_game
 {
   SDL_Point player;
+  struct rl_action action;
 };
 
 /**
