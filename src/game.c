@@ -18,6 +18,7 @@ rl_init_game(struct rl_game* game)
   game->player.x = 0;
   game->player.y = 0;
   game->action.type = RL_ACTION_NONE;
+  game->action_cooldown = 0.0f;
 
   return true;
 }
@@ -25,7 +26,13 @@ rl_init_game(struct rl_game* game)
 bool
 rl_handle_input(struct rl_game* game, struct inpt_state const* istate)
 {
+  // reset the action for this frame
   game->action.type = RL_ACTION_NONE;
+
+  if (game->action_cooldown > 0.0f) {
+    // still recovering from the last action
+    return true;
+  }
 
   if (inpt_is_down(istate->keys[SDL_SCANCODE_W])) {
     set_movement_action(&game->action, 0, -1);
@@ -43,11 +50,14 @@ rl_handle_input(struct rl_game* game, struct inpt_state const* istate)
 void
 rl_update_game(struct rl_game* game, float dt)
 {
-  (void)dt;
+  if (game->action_cooldown > 0.0f) {
+    game->action_cooldown -= dt;
+  }
 
   if (game->action.type == RL_ACTION_MOVE) {
     game->player.x += game->action.move_vector.x;
     game->player.y += game->action.move_vector.y;
+    game->action_cooldown = 0.115f;
   }
 }
 

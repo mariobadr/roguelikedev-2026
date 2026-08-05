@@ -20,8 +20,9 @@ struct inpt_state;
  */
 struct rl_game
 {
-  SDL_Point player;
-  struct rl_action action;
+  SDL_Point player;        //< The player position
+  struct rl_action action; //< The player's next action
+  float action_cooldown;   //< Time before the next action fires
 };
 
 /**
