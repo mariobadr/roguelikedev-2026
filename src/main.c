@@ -12,11 +12,14 @@
 
 #include "game.h"
 #include "input.h"
+#include "resources.h"
 
 struct application
 {
   SDL_Window* window;
   SDL_Renderer* renderer;
+
+  struct rl_resources resources;
   struct inpt_state istate;
 
   Uint64 freq;
@@ -55,6 +58,8 @@ destroy_application(struct application* app)
   if (app == NULL) {
     return;
   }
+
+  rl_destroy_resources(&app->resources);
 
   SDL_DestroyRenderer(app->renderer);
   SDL_DestroyWindow(app->window);
@@ -128,6 +133,11 @@ create_application(void)
 
   app->renderer = create_renderer(app->window);
   if (app->renderer == NULL) {
+    destroy_application(app);
+    return NULL;
+  }
+
+  if (!rl_load_resources(&app->resources, app->renderer)) {
     destroy_application(app);
     return NULL;
   }

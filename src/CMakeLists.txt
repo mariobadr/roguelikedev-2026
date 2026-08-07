@@ -8,6 +8,8 @@ set(GAME_SOURCES
     input.c
     input.h
     main.c
+    resources.c
+    resources.h
 )
 
 
