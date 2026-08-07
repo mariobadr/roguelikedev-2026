@@ -23,6 +23,26 @@ The expected directory setup is:
 `CMakeLists.txt` resolves the location of thirdparty via a `GINC_THIRDPARTY_DIR` cache variable, defaulting to `../thirdparty` relative to the repo.
 You can override it with `-DGINC_THIRDPARTY_DIR=<path>` if it lives somewhere else on your machine.
 
+### Assets
+
+The assets used in this game are not bundled in this repository.
+If you are attempting to compile and run this repository, then you need to download the files from the creator yourself.
+The files you download then need to be placed in an `assets/` folder.
+
+This game uses the [DINOBYTE bitmap font](https://mby.itch.io/dinobyte) by [mby](https://mby.itch.io/).
+It is licensed under [Creative Commons Attribution 4.0](http://creativecommons.org/licenses/by/4.0/).
+Download the file `dbyte_1x.png` from the creator and save it in this directory.
+
+The expected directory setup is:
+
+```
+roguelikedev-2026/            (this repo)
+├── assets/
+│   ├── dbyte_1x.png          (bitmap font not included in the repo)
+├── src/
+└── CMakeLists.txt
+```
+
 ## Building the game
 
 CMake is used to manage the build, which relies on other tools called "generators".

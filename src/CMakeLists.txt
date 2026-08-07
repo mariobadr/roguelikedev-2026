@@ -46,6 +46,16 @@ if(WIN32)
         $<TARGET_FILE:SDL3::SDL3>
         $<TARGET_FILE_DIR:${GAME_TARGET}>
         VERBATIM)
+
+    # Copy assets next to the executable as "res"
+    if(EXISTS "${CMAKE_SOURCE_DIR}/assets")
+        add_custom_command(
+            TARGET ${GAME_TARGET} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            "${CMAKE_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:${GAME_TARGET}>/res"
+            VERBATIM)
+    endif()
 elseif(EMSCRIPTEN)
     set_target_properties(${GAME_TARGET} PROPERTIES
         OUTPUT_NAME "index"
@@ -56,4 +66,11 @@ elseif(EMSCRIPTEN)
         "--shell-file" "${CMAKE_SOURCE_DIR}/emscripten/shell.html"
         "-sALLOW_MEMORY_GROWTH=1"
     )
+
+    # Preload assets into the virtual filesystem as "res"
+    if(EXISTS "${CMAKE_SOURCE_DIR}/assets")
+        target_link_options(${GAME_TARGET} PRIVATE
+            "--preload-file" "${CMAKE_SOURCE_DIR}/assets@res"
+        ) 
+    endif()
 endif()
