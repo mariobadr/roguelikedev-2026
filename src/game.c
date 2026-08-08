@@ -3,12 +3,8 @@
 #include <SDL3/SDL_render.h>
 
 #include "input.h"
+#include "render.h"
 #include "resources.h"
-
-#define GLYPH_WIDTH (6.0f)
-#define GLYPH_HEIGHT (8.0f)
-#define FONT_ROWS (16)
-#define FONT_COLS (16)
 
 /**
  * Return the sign of number.
@@ -110,31 +106,6 @@ handle_mouse_input(struct rl_game* game, struct inpt_state const* istate)
   return false;
 }
 
-static void
-render_glyph(SDL_Renderer* renderer,
-             SDL_Texture* font,
-             char glyph,
-             float x,
-             float y)
-{
-  // get a 0 to 255 index into the font
-  unsigned char const index = glyph;
-
-  SDL_FRect src = { 0 };
-  src.x = (index % FONT_COLS) * GLYPH_WIDTH;
-  src.y = (index / FONT_COLS) * GLYPH_HEIGHT;
-  src.w = GLYPH_WIDTH;
-  src.h = GLYPH_HEIGHT;
-
-  SDL_FRect dst = { 0 };
-  dst.x = x;
-  dst.y = y;
-  dst.w = GLYPH_WIDTH;
-  dst.h = GLYPH_HEIGHT;
-
-  SDL_RenderTexture(renderer, font, &src, &dst);
-}
-
 bool
 rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 {
@@ -196,5 +167,5 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
 
   // draw the rogue
   SDL_SetTextureColorMod(game->resources->font, 255, 255, 255);
-  render_glyph(renderer, game->resources->font, '@', player_x, player_y);
+  rl_render_glyph(renderer, game->resources->font, '@', player_x, player_y);
 }
