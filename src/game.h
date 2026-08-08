@@ -14,15 +14,21 @@ typedef struct SDL_Renderer SDL_Renderer;
 
 // forward declarations
 struct inpt_state;
+struct rl_resources;
 
 /**
  * The state of the roguelike game.
  */
 struct rl_game
 {
-  SDL_Point player;        //< The player position
-  struct rl_action action; //< The player's next action
-  float action_cooldown;   //< Time before the next action fires
+  /** A non-owning pointer to the game's resources */
+  struct rl_resources const* resources;
+  /** The player position */
+  SDL_Point player;
+  /** The player's next action */
+  struct rl_action action;
+  /** Time before the next action fires */
+  float action_cooldown;
 };
 
 /**
@@ -33,7 +39,7 @@ struct rl_game
  * @return whether game was successfully initialized.
  */
 bool
-rl_init_game(struct rl_game* game);
+rl_init_game(struct rl_game* game, struct rl_resources const* resources);
 
 /**
  * Respond to accumulated input for the current frame.
@@ -58,7 +64,8 @@ rl_update_game(struct rl_game* game, float dt);
 /**
  * Render the game's current frame.
  *
- * @param game The game to render.
+ * @param game     The game to render.
+ * @param renderer The renderer used to draw everything.
  */
 void
 rl_render_game(struct rl_game* game, SDL_Renderer* renderer);

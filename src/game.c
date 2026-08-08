@@ -3,8 +3,12 @@
 #include <SDL3/SDL_render.h>
 
 #include "input.h"
+#include "resources.h"
 
-#define TILE_SIZE (8.0f)
+#define GLYPH_WIDTH (6.0f)
+#define GLYPH_HEIGHT (8.0f)
+#define FONT_ROWS (16)
+#define FONT_COLS (16)
 
 /**
  * Return the sign of number.
@@ -68,12 +72,22 @@ handle_keyboard_input(struct rl_action* action, struct inpt_state const* istate)
   return false;
 }
 
+/**
+ * Update action based on mouse state.
+ *
+ * @param action the action to mutate
+ * @param istate the current frame's input state
+ *
+ * @return whether action was mutated
+ */
 static bool
 handle_mouse_input(struct rl_game* game, struct inpt_state const* istate)
 {
   if (inpt_is_down(istate->mouse.buttons[SDL_BUTTON_LEFT])) {
-    int const target_x = (int)SDL_floorf(istate->mouse.position.x / TILE_SIZE);
-    int const target_y = (int)SDL_floorf(istate->mouse.position.y / TILE_SIZE);
+    int const target_x =
+      (int)SDL_floorf(istate->mouse.position.x / GLYPH_WIDTH);
+    int const target_y =
+      (int)SDL_floorf(istate->mouse.position.y / GLYPH_HEIGHT);
 
     int const delta_x = target_x - game->player.x;
     int const delta_y = target_y - game->player.y;
@@ -96,11 +110,39 @@ handle_mouse_input(struct rl_game* game, struct inpt_state const* istate)
   return false;
 }
 
-bool
-rl_init_game(struct rl_game* game)
+static void
+render_glyph(SDL_Renderer* renderer,
+             SDL_Texture* font,
+             char glyph,
+             float x,
+             float y)
 {
+  // get a 0 to 255 index into the font
+  unsigned char const index = glyph;
+
+  SDL_FRect src = { 0 };
+  src.x = (index % FONT_COLS) * GLYPH_WIDTH;
+  src.y = (index / FONT_COLS) * GLYPH_HEIGHT;
+  src.w = GLYPH_WIDTH;
+  src.h = GLYPH_HEIGHT;
+
+  SDL_FRect dst = { 0 };
+  dst.x = x;
+  dst.y = y;
+  dst.w = GLYPH_WIDTH;
+  dst.h = GLYPH_HEIGHT;
+
+  SDL_RenderTexture(renderer, font, &src, &dst);
+}
+
+bool
+rl_init_game(struct rl_game* game, struct rl_resources const* resources)
+{
+  game->resources = resources;
+
   game->player.x = 0;
   game->player.y = 0;
+
   game->action.type = RL_ACTION_NONE;
   game->action_cooldown = 0.0f;
 
@@ -149,10 +191,10 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
   SDL_RenderClear(renderer);
 
   // convert from tile to screen coordinates
-  float const player_x = game->player.x * TILE_SIZE;
-  float const player_y = game->player.y * TILE_SIZE;
+  float const player_x = game->player.x * GLYPH_WIDTH;
+  float const player_y = game->player.y * GLYPH_HEIGHT;
 
   // draw the rogue
-  SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-  SDL_RenderDebugText(renderer, player_x, player_y, "@");
+  SDL_SetTextureColorMod(game->resources->font, 255, 255, 255);
+  render_glyph(renderer, game->resources->font, '@', player_x, player_y);
 }

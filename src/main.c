@@ -144,7 +144,7 @@ create_application(void)
 
   inpt_init_state(&app->istate);
 
-  if (!rl_init_game(&app->game)) {
+  if (!rl_init_game(&app->game, &app->resources)) {
     destroy_application(app);
     return NULL;
   }
