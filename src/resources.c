@@ -1,5 +1,6 @@
 #include "resources.h"
 
+#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
@@ -7,21 +8,45 @@
 #include <SDL3/SDL_surface.h>
 
 /**
- * Loads a single PNG resource as a texture.
+ * Convert all pixels in the DINOBYTE font to pure white.
+ *
+ * This function exists for some silly reasons: (1) I don't want to bundle the
+ * font with the repo, and (2) the font is in a beige colour. Since everything
+ * is beige, SDL_SetTextureColorMod tints won't work how I want them to. So...
+ * we convert all pixels to white.
+ */
+static void
+whiten_dbyte_font(SDL_Surface* surface)
+{
+  SDL_assert(SDL_BYTESPERPIXEL(surface->format) == 4);
+
+  SDL_PixelFormatDetails const* format =
+    SDL_GetPixelFormatDetails(surface->format);
+
+  SDL_LockSurface(surface);
+  Uint32* pixels = (Uint32*)surface->pixels;
+  int const pixel_count = surface->w * surface->h;
+
+  for (int i = 0; i < pixel_count; ++i) {
+    // leave alpha's bits untouched
+    pixels[i] |= (format->Rmask | format->Gmask | format->Bmask);
+  }
+  SDL_UnlockSurface(surface);
+}
+
+/**
+ * Loads the DINOBYTE font.
  *
  * @param base_path Directory containing the res/ folder.
- * @param filename  File name within res/.
  * @param renderer  Renderer used to create the texture.
  *
  * @return The loaded texture, or NULL on failure.
  */
 static SDL_Texture*
-load_texture(char const* base_path,
-             char const* filename,
-             SDL_Renderer* renderer)
+load_dbyte_font(char const* base_path, SDL_Renderer* renderer)
 {
   char* path = NULL;
-  if (SDL_asprintf(&path, "%sres/%s", base_path, filename) < 0) {
+  if (SDL_asprintf(&path, "%sres/dbyte_1x.png", base_path) < 0) {
     SDL_Log("SDL_asprintf failed: %s", SDL_GetError());
     return NULL;
   }
@@ -32,6 +57,9 @@ load_texture(char const* base_path,
     SDL_Log("SDL_LoadPNG failed: %s", SDL_GetError());
     return NULL;
   }
+
+  // changes the actual pixel values
+  whiten_dbyte_font(surface);
 
   SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_DestroySurface(surface);
@@ -52,7 +80,7 @@ rl_load_resources(struct rl_resources* resources, SDL_Renderer* renderer)
     return false;
   }
 
-  resources->font = load_texture(base_path, "dbyte_1x.png", renderer);
+  resources->font = load_dbyte_font(base_path, renderer);
   if (resources->font == NULL) {
     return false;
   }
