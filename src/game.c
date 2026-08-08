@@ -166,6 +166,10 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
   float const player_y = game->player.y * GLYPH_HEIGHT;
 
   // draw the rogue
-  SDL_SetTextureColorMod(game->resources->font, 255, 255, 255);
-  rl_render_glyph(renderer, game->resources->font, '@', player_x, player_y);
+  struct rl_gfx_tile rogue_gfx = { 0 };
+  rogue_gfx.glyph = '@';
+  rogue_gfx.fg = RL_COLOUR_WHITE;
+  rogue_gfx.bg = RL_COLOUR_NONE;
+
+  rl_draw_tile(renderer, game->resources->font, &rogue_gfx, player_x, player_y);
 }
