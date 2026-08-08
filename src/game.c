@@ -34,6 +34,36 @@ set_movement_action(struct rl_action* action, int x, int y)
   action->move_vector.y = y;
 }
 
+static void
+draw_map(SDL_Renderer* renderer,
+         SDL_Texture* font,
+         struct rl_world_map const* map)
+{
+  struct rl_gfx_tile wall = { 0 };
+  wall.glyph = '#';
+  wall.fg = RL_COLOUR_WHITE;
+  wall.bg = RL_COLOUR_NONE;
+
+  for (int y = 0; y < map->height; y++) {
+    for (int x = 0; x < map->width; x++) {
+      if (!map->tiles[y * map->width + x].walkable) {
+        rl_draw_tile(renderer, font, &wall, x * GLYPH_WIDTH, y * GLYPH_HEIGHT);
+      }
+    }
+  }
+}
+
+static void
+draw_rogue(SDL_Renderer* renderer, SDL_Texture* font, float x, float y)
+{
+  struct rl_gfx_tile rogue = { 0 };
+  rogue.glyph = '@';
+  rogue.fg = RL_COLOUR_WHITE;
+  rogue.bg = RL_COLOUR_NONE;
+
+  rl_draw_tile(renderer, font, &rogue, x, y);
+}
+
 /**
  * Update action based on any pressed keys in istate.
  *
@@ -109,6 +139,10 @@ handle_mouse_input(struct rl_game* game, struct inpt_state const* istate)
 bool
 rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 {
+  if (!rl_init_map(&game->map, 40, 20)) {
+    return false;
+  }
+
   game->resources = resources;
 
   game->player.x = 0;
@@ -116,6 +150,8 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 
   game->action.type = RL_ACTION_NONE;
   game->action_cooldown = 0.0f;
+
+  rl_generate_map(&game->map);
 
   return true;
 }
@@ -165,11 +201,6 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
   float const player_x = game->player.x * GLYPH_WIDTH;
   float const player_y = game->player.y * GLYPH_HEIGHT;
 
-  // draw the rogue
-  struct rl_gfx_tile rogue_gfx = { 0 };
-  rogue_gfx.glyph = '@';
-  rogue_gfx.fg = RL_COLOUR_WHITE;
-  rogue_gfx.bg = RL_COLOUR_NONE;
-
-  rl_draw_tile(renderer, game->resources->font, &rogue_gfx, player_x, player_y);
+  draw_map(renderer, game->resources->font, &game->map);
+  draw_rogue(renderer, game->resources->font, player_x, player_y);
 }

@@ -8,6 +8,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "action.h"
+#include "world.h"
 
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
@@ -29,6 +30,8 @@ struct rl_game
   struct rl_action action;
   /** Time before the next action fires */
   float action_cooldown;
+  /** One map (for now) */
+  struct rl_world_map map;
 };
 
 /**
