@@ -96,7 +96,7 @@ create_renderer(SDL_Window* window)
   }
 
   if (!SDL_SetRenderLogicalPresentation(
-        renderer, 144, 176, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)) {
+        renderer, 240, 200, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)) {
     SDL_Log("SDL_SetRenderLogicalPresentation failed: %s", SDL_GetError());
     SDL_DestroyRenderer(renderer);
     return NULL;
@@ -124,7 +124,7 @@ create_application(void)
   }
 
   app->window =
-    SDL_CreateWindow("A Roguelike", 256 * 3, 176 * 3, SDL_WINDOW_RESIZABLE);
+    SDL_CreateWindow("A Roguelike", 480, 400, SDL_WINDOW_RESIZABLE);
   if (app->window == NULL) {
     SDL_Log("SDL_CreateWindow failed: %s", SDL_GetError());
     destroy_application(app);
