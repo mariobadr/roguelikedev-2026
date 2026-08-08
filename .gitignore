@@ -55,7 +55,7 @@ dkms.conf
 *.dwo
 
 # Build directories
-build*
+build*/
 
 # Don't include other people's assets in the repo
 assets/dbyte_1x.png
