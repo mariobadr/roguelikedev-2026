@@ -34,6 +34,10 @@ generate_room(struct rl_world_map* map)
     map->tiles[y * map->width + left].walkable = false;
     map->tiles[y * map->width + right].walkable = false;
   }
+
+  // add a "door" at some random spot on the left-hand side
+  int door_y = top + 1 + SDL_rand(room.h - 2);
+  map->tiles[door_y * map->width + left].walkable = true;
 }
 
 bool
