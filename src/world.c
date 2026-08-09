@@ -72,3 +72,9 @@ rl_generate_map(struct rl_world_map* map)
 
   generate_room(map);
 }
+
+struct rl_world_tile
+rl_get_tile(struct rl_world_map const* map, int x, int y)
+{
+  return map->tiles[y * map->width + x];
+}

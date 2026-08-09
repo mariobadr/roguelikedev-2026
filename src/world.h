@@ -39,4 +39,10 @@ rl_init_map(struct rl_world_map* map, int width, int height);
 void
 rl_generate_map(struct rl_world_map* map);
 
+/**
+ * Get the tile found at (x, y) in map.
+ */
+struct rl_world_tile
+rl_get_tile(struct rl_world_map const* map, int x, int y);
+
 #endif // GINC_ROGUELIKE_WORLD_H

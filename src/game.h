@@ -18,18 +18,29 @@ struct inpt_state;
 struct rl_resources;
 
 /**
+ * An entity in the game.
+ */
+struct rl_entity
+{
+  /** Location on map in tile coordinates. */
+  SDL_Point position;
+  /** Glyph representing the entity. */
+  Uint8 glyph;
+};
+
+/**
  * The state of the roguelike game.
  */
 struct rl_game
 {
   /** A non-owning pointer to the game's resources */
   struct rl_resources const* resources;
-  /** The player position */
-  SDL_Point player;
   /** The player's next action */
   struct rl_action action;
   /** Time before the next action fires */
   float action_cooldown;
+  /** The player entity */
+  struct rl_entity rogue;
   /** One map (for now) */
   struct rl_world_map map;
 };
