@@ -5,23 +5,16 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_rect.h>
 
+#include "bsp.h"
+#include "rand.h"
+
 static void
-generate_room(struct rl_world_map* map)
+set_walls(struct rl_world_map* map, SDL_Rect rect)
 {
-  SDL_Rect room = { 0 };
-
-  // randomly decide a room size
-  room.w = SDL_rand(map->width - 3) + 3;
-  room.h = SDL_rand(map->height - 3) + 3;
-
-  // randomly decide where the room goes
-  room.x = SDL_rand(map->width - room.w);
-  room.y = SDL_rand(map->height - room.h);
-
-  int left = room.x;
-  int right = room.x + room.w - 1;
-  int top = room.y;
-  int bottom = room.y + room.h - 1;
+  int left = rect.x;
+  int right = rect.x + rect.w - 1;
+  int top = rect.y;
+  int bottom = rect.y + rect.h - 1;
 
   // top and bottom walls
   for (int x = left; x <= right; x++) {
@@ -34,10 +27,6 @@ generate_room(struct rl_world_map* map)
     map->tiles[y * map->width + left].walkable = false;
     map->tiles[y * map->width + right].walkable = false;
   }
-
-  // add a "door" at some random spot on the left-hand side
-  int door_y = top + 1 + SDL_rand(room.h - 2);
-  map->tiles[door_y * map->width + left].walkable = true;
 }
 
 bool
@@ -70,7 +59,27 @@ rl_generate_map(struct rl_world_map* map)
     }
   }
 
-  generate_room(map);
+  struct rand_state rng;
+  rand_seed(&rng, 1234);
+
+  SDL_Rect rect = { 0 };
+  rect.w = map->width;
+  rect.h = map->height;
+
+  // generate the rooms
+  struct rl_bsp_tree tree;
+  rl_bsp_tree_init(&tree, rect);
+  rl_bsp_split(&tree, 0, &rng, 0);
+
+  // assign the rooms to the map
+  for (int i = 0; i < RL_BSP_CAPACITY; i++) {
+    struct rl_bsp_node const* node = &tree.nodes[i];
+    if (node->axis == RL_BSP_SPLIT_NONE && node->rect.w > 0 &&
+        node->rect.h > 0) {
+      // this is a leaf node
+      set_walls(map, node->rect);
+    }
+  }
 }
 
 struct rl_world_tile
