@@ -8,6 +8,8 @@ set(GAME_SOURCES
     input.c
     input.h
     main.c
+    rand.c
+    rand.h
     render.c
     render.h
     resources.c
