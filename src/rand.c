@@ -75,7 +75,7 @@ rand_next_up_to(struct rand_state* state, Uint64 n)
 Sint64
 rand_next_between(struct rand_state* state, Sint64 lo, Sint64 hi)
 {
-  SDL_assert(hi > lo);
+  SDL_assert(hi >= lo);
 
   Uint64 span = (hi - lo) + 1;
   return lo + (Sint64)rand_next_up_to(state, span);
