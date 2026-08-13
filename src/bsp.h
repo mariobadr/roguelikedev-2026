@@ -10,10 +10,12 @@
 // forward declarations
 struct rand_state;
 
+/** The probability to avoid a split (for larger rooms). */
+#define RL_BSP_STOP_CHANCE 35
 /** The minimum size of a rect in the BSP tree. */
 #define RL_BSP_MIN_SIZE 5
 /** The maximum depth of the BSP tree. */
-#define RL_BSP_MAX_DEPTH 8
+#define RL_BSP_MAX_DEPTH 7
 /** The number of nodes needed for a BSP of maximum depth. */
 #define RL_BSP_CAPACITY ((1 << (RL_BSP_MAX_DEPTH + 1)) - 1)
 
