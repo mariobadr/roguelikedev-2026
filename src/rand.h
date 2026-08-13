@@ -37,10 +37,33 @@ rand_seed(struct rand_state* state, Uint64 seed);
  *
  * @param state State of the random number generator.
  *
- * @return the random number
+ * @return a random number.
  */
 Uint64
 rand_next(struct rand_state* state);
+
+/**
+ * Generate a random number between [0, n).
+ *
+ * @param state State of the random number generator.
+ * @param n     The bound.
+ *
+ * @return a random number.
+ */
+Uint64
+rand_next_up_to(struct rand_state* state, Uint64 n);
+
+/**
+ * Generate a random number between [lo, hi].
+ *
+ * @param state State of the random number generator.
+ * @param lo    The lower bound, inclusive.
+ * @param hi    The upper bound, inclusive.
+ *
+ * @return a random number.
+ */
+Sint64
+rand_next_between(struct rand_state* state, Sint64 lo, Sint64 hi);
 
 /**
  * Advance state by 2^128 steps.

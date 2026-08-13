@@ -17,6 +17,8 @@ IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
 #include "rand.h"
 
+#include <SDL3/SDL_assert.h>
+
 static inline Uint64
 rotl(Uint64 const x, int k)
 {
@@ -52,6 +54,31 @@ rand_next(struct rand_state* state)
   state->s[3] = rotl(state->s[3], 45);
 
   return result;
+}
+
+Uint64
+rand_next_up_to(struct rand_state* state, Uint64 n)
+{
+  if (n == 0) {
+    return 0;
+  }
+
+  Uint64 x, r;
+  do {
+    x = rand_next(state);
+    r = x % n;
+  } while (x - r > (UINT64_MAX - n + 1));
+
+  return r;
+}
+
+Sint64
+rand_next_between(struct rand_state* state, Sint64 lo, Sint64 hi)
+{
+  SDL_assert(hi > lo);
+
+  Uint64 span = (hi - lo) + 1;
+  return lo + (Sint64)rand_next_up_to(state, span);
 }
 
 /* This is the jump function for the generator. It is equivalent
