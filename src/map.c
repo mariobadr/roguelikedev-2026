@@ -29,26 +29,6 @@ set_walls(struct rl_world_map* map, SDL_Rect rect)
   }
 }
 
-static void
-collect_leaves(struct rl_bsp_tree const* tree,
-               int index,
-               SDL_Rect* out,
-               int* count)
-{
-  struct rl_bsp_node const* node = &tree->nodes[index];
-
-  if (node->axis != RL_BSP_SPLIT_NONE) {
-    // not a leaf node, recurse
-    collect_leaves(tree, rl_bsp_left_of(index), out, count);
-    collect_leaves(tree, rl_bsp_right_of(index), out, count);
-    return;
-  }
-
-  // found a leaf node, save its rect
-  out[*count] = node->rect;
-  *count += 1;
-}
-
 static bool
 generate_map(struct rl_world_map* map)
 {
@@ -88,11 +68,8 @@ generate_map(struct rl_world_map* map)
     return false;
   }
 
-  int room_count = 0;
-  collect_leaves(&tree, 0, rooms, &room_count);
-  SDL_assert(room_count == tree.leaf_count);
-
-  for (int i = 0; i < room_count; i++) {
+  rl_bsp_collect_leaves(&tree, rooms);
+  for (int i = 0; i < tree.leaf_count; i++) {
     set_walls(map, rooms[i]);
   }
 

@@ -5,6 +5,26 @@
 
 #include "rand.h"
 
+static void
+collect_leaves(struct rl_bsp_tree const* tree,
+               int index,
+               SDL_Rect* out,
+               int* count)
+{
+  struct rl_bsp_node const* node = &tree->nodes[index];
+
+  if (node->axis != RL_BSP_SPLIT_NONE) {
+    // not a leaf node, recurse
+    collect_leaves(tree, rl_bsp_left_of(index), out, count);
+    collect_leaves(tree, rl_bsp_right_of(index), out, count);
+    return;
+  }
+
+  // found a leaf node, save its rect
+  out[*count] = node->rect;
+  *count += 1;
+}
+
 bool
 rl_bsp_tree_init(struct rl_bsp_tree* tree, int max_depth, SDL_Rect rect)
 {
@@ -28,6 +48,13 @@ void
 rl_bsp_tree_free(struct rl_bsp_tree* tree)
 {
   SDL_free(tree->nodes);
+}
+
+void
+rl_bsp_collect_leaves(struct rl_bsp_tree const* tree, SDL_Rect* out)
+{
+  int count = 0;
+  collect_leaves(tree, 0, out, &count);
 }
 
 void
