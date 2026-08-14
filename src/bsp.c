@@ -1,12 +1,33 @@
 #include "bsp.h"
 
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_log.h>
+
 #include "rand.h"
 
-void
-rl_bsp_tree_init(struct rl_bsp_tree* tree, SDL_Rect rect)
+bool
+rl_bsp_tree_init(struct rl_bsp_tree* tree, int max_depth, SDL_Rect rect)
 {
-  SDL_memset(tree, 0, sizeof(*tree));
+  tree->nodes = SDL_calloc(RL_BSP_MAX_NODES(max_depth), sizeof(*tree->nodes));
+  if (tree->nodes == NULL) {
+    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+    return false;
+  }
+
+  tree->max_depth = max_depth;
+
+  // set up the root node
   tree->nodes[0].rect = rect;
+  tree->node_count = 1;
+  tree->leaf_count = 1; // root is initially a leaf
+
+  return true;
+}
+
+void
+rl_bsp_tree_free(struct rl_bsp_tree* tree)
+{
+  SDL_free(tree->nodes);
 }
 
 void
@@ -14,9 +35,9 @@ rl_bsp_split(struct rl_bsp_tree* tree,
              int index,
              struct rand_state* rng,
              int depth,
-             struct rl_bsp_policy const *policy)
+             struct rl_bsp_policy const* policy)
 {
-  if (depth >= policy->max_depth) {
+  if (depth >= tree->max_depth) {
     // cannot exceed the maximum depth
     return;
   }
@@ -33,7 +54,7 @@ rl_bsp_split(struct rl_bsp_tree* tree,
   // Make the stop chance a function of depth. This way depth 0 (the root) can
   // never stop. The more deep you go, though, the higher the chance of not
   // splitting.
-  int stop_chance = (policy->stop_chance * depth) / policy->max_depth;
+  int stop_chance = (policy->stop_chance * depth) / tree->max_depth;
   if (rand_next_up_to(rng, 99) < stop_chance) {
     // don't split further
     return;
@@ -100,6 +121,8 @@ rl_bsp_split(struct rl_bsp_tree* tree,
   }
 
   // Continue splitting
+  tree->node_count += 2;
+  tree->leaf_count += 1; // this node will no longer be a leaf
   rl_bsp_split(tree, rl_bsp_left_of(index), rng, depth + 1, policy);
   rl_bsp_split(tree, rl_bsp_right_of(index), rng, depth + 1, policy);
 }

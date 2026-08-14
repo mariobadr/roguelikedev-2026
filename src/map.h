@@ -28,12 +28,6 @@ bool
 rl_init_map(struct rl_world_map* map, int width, int height);
 
 /**
- * Assign the tiles in map to something interesting.
- */
-void
-rl_generate_map(struct rl_world_map* map);
-
-/**
  * Get the tile found at (x, y) in map.
  */
 struct rl_tile

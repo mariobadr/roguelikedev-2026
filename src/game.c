@@ -172,8 +172,6 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
   game->action.type = RL_ACTION_NONE;
   game->action_cooldown = 0.0f;
 
-  rl_generate_map(&game->map);
-
   return true;
 }
 
