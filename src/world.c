@@ -66,10 +66,15 @@ rl_generate_map(struct rl_world_map* map)
   rect.w = map->width;
   rect.h = map->height;
 
+  struct rl_bsp_policy policy;
+  policy.max_depth = 2;
+  policy.min_size = 4;
+  policy.stop_chance = 25;
+
   // generate the rooms
   struct rl_bsp_tree tree;
   rl_bsp_tree_init(&tree, rect);
-  rl_bsp_split(&tree, 0, &rng, 0);
+  rl_bsp_split(&tree, 0, &rng, 0, &policy);
 
   // assign the rooms to the map
   for (int i = 0; i < RL_BSP_CAPACITY; i++) {

@@ -13,9 +13,10 @@ void
 rl_bsp_split(struct rl_bsp_tree* tree,
              int index,
              struct rand_state* rng,
-             int depth)
+             int depth,
+             struct rl_bsp_policy const *policy)
 {
-  if (depth >= RL_BSP_MAX_DEPTH) {
+  if (depth >= policy->max_depth) {
     // cannot exceed the maximum depth
     return;
   }
@@ -23,8 +24,8 @@ rl_bsp_split(struct rl_bsp_tree* tree,
   struct rl_bsp_node* node = &tree->nodes[index];
 
   // Check whether we can even split the node further
-  bool can_split_x = node->rect.w >= 2 * RL_BSP_MIN_SIZE;
-  bool can_split_y = node->rect.h >= 2 * RL_BSP_MIN_SIZE;
+  bool can_split_x = node->rect.w >= 2 * policy->min_size;
+  bool can_split_y = node->rect.h >= 2 * policy->min_size;
   if (!can_split_x && !can_split_y) {
     return;
   }
@@ -32,7 +33,7 @@ rl_bsp_split(struct rl_bsp_tree* tree,
   // Make the stop chance a function of depth. This way depth 0 (the root) can
   // never stop. The more deep you go, though, the higher the chance of not
   // splitting.
-  int stop_chance = (RL_BSP_STOP_CHANCE * depth) / RL_BSP_MAX_DEPTH;
+  int stop_chance = (policy->stop_chance * depth) / policy->max_depth;
   if (rand_next_up_to(rng, 99) < stop_chance) {
     // don't split further
     return;
@@ -64,8 +65,8 @@ rl_bsp_split(struct rl_bsp_tree* tree,
     // splitting here should not impact the height
     int const split =
       (int)rand_next_between(rng,
-                             node->rect.x + RL_BSP_MIN_SIZE,
-                             node->rect.x + node->rect.w - RL_BSP_MIN_SIZE);
+                             node->rect.x + policy->min_size,
+                             node->rect.x + node->rect.w - policy->min_size);
 
     // left child starts where parent started
     left->rect.x = node->rect.x;
@@ -82,8 +83,8 @@ rl_bsp_split(struct rl_bsp_tree* tree,
     // splitting here should not impact the width
     int const split =
       (int)rand_next_between(rng,
-                             node->rect.y + RL_BSP_MIN_SIZE,
-                             node->rect.y + node->rect.h - RL_BSP_MIN_SIZE);
+                             node->rect.y + policy->min_size,
+                             node->rect.y + node->rect.h - policy->min_size);
 
     // left child starts where parent started
     left->rect.x = node->rect.x;
@@ -99,6 +100,6 @@ rl_bsp_split(struct rl_bsp_tree* tree,
   }
 
   // Continue splitting
-  rl_bsp_split(tree, rl_bsp_left_of(index), rng, depth + 1);
-  rl_bsp_split(tree, rl_bsp_right_of(index), rng, depth + 1);
+  rl_bsp_split(tree, rl_bsp_left_of(index), rng, depth + 1, policy);
+  rl_bsp_split(tree, rl_bsp_right_of(index), rng, depth + 1, policy);
 }

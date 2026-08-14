@@ -10,15 +10,27 @@
 // forward declarations
 struct rand_state;
 
-/** The probability to avoid a split (for larger rooms). */
-#define RL_BSP_STOP_CHANCE 35
-/** The minimum size of a rect in the BSP tree. */
-#define RL_BSP_MIN_SIZE 5
-/** The maximum depth of the BSP tree. */
-#define RL_BSP_MAX_DEPTH 7
+/** The maximum possible depth of any BSP tree. */
+#define RL_BSP_MAX_DEPTH 10
 /** The number of nodes needed for a BSP of maximum depth. */
 #define RL_BSP_CAPACITY ((1 << (RL_BSP_MAX_DEPTH + 1)) - 1)
 
+/**
+ * Parameters that influence how a BSP tree is created.
+ */
+struct rl_bsp_policy
+{
+  /** The maximum depth of the tree. */
+  int max_depth;
+  /** The minimum size of a rect in the tree. */
+  int min_size;
+  /** The probability to avoid a split (for larger rooms). */
+  int stop_chance;
+};
+
+/**
+ * How a node is split.
+ */
 enum rl_bsp_split_axis
 {
   RL_BSP_SPLIT_NONE, //< Leaf node
@@ -87,15 +99,17 @@ rl_bsp_tree_init(struct rl_bsp_tree* tree, SDL_Rect rect);
 /**
  * Split the node at index up to depth levels.
  *
- * @param tree  The tree being updated.
- * @param index The index of the node of the tree.
- * @param rng   The random number generator.
- * @param depth The current depth.
+ * @param tree    The tree being updated.
+ * @param index   The index of the node of the tree.
+ * @param rng     The random number generator.
+ * @param depth   The current depth.
+ * @param policy  The policy impacting generation.
  */
 void
 rl_bsp_split(struct rl_bsp_tree* tree,
              int index,
              struct rand_state* rng,
-             int depth);
+             int depth,
+             struct rl_bsp_policy const* policy);
 
 #endif // GINC_ROGUELIKE_BSP_H
