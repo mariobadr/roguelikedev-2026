@@ -16,6 +16,8 @@ set(GAME_SOURCES
     render.h
     resources.c
     resources.h
+    tile.c
+    tile.h
     world.c
     world.h
 )

@@ -43,7 +43,7 @@ move_entity(struct rl_entity* entity,
   dst.x = entity->position.x + move_vector.x;
   dst.y = entity->position.y + move_vector.y;
 
-  if (rl_get_tile(map, dst.x, dst.y).walkable) {
+  if(rl_is_walkable(rl_get_tile(map, dst.x, dst.y))) {
     entity->position = dst;
   }
 }
@@ -60,7 +60,7 @@ draw_map(SDL_Renderer* renderer,
 
   for (int y = 0; y < map->height; y++) {
     for (int x = 0; x < map->width; x++) {
-      if (!rl_get_tile(map, x, y).walkable) {
+      if (!rl_is_walkable(rl_get_tile(map, x, y))) {
         rl_draw_tile(renderer, font, &wall, x * GLYPH_WIDTH, y * GLYPH_HEIGHT);
       }
     }
@@ -166,8 +166,8 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
   game->resources = resources;
 
   game->rogue.glyph = '@';
-  game->rogue.position.x = 0;
-  game->rogue.position.y = 0;
+  game->rogue.position.x = 1;
+  game->rogue.position.y = 1;
 
   game->action.type = RL_ACTION_NONE;
   game->action_cooldown = 0.0f;

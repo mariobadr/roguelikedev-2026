@@ -6,13 +6,7 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-/**
- * A world tile.
- */
-struct rl_world_tile
-{
-  bool walkable;
-};
+#include "tile.h"
 
 /**
  * A world map.
@@ -24,7 +18,7 @@ struct rl_world_map
   /** The height of the map in tiles. */
   int height;
   /** The world tiles in the map. */
-  struct rl_world_tile* tiles;
+  struct rl_tile* tiles;
 };
 
 /**
@@ -42,7 +36,7 @@ rl_generate_map(struct rl_world_map* map);
 /**
  * Get the tile found at (x, y) in map.
  */
-struct rl_world_tile
+struct rl_tile
 rl_get_tile(struct rl_world_map const* map, int x, int y);
 
 #endif // GINC_ROGUELIKE_WORLD_H

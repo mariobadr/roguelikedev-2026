@@ -18,14 +18,14 @@ set_walls(struct rl_world_map* map, SDL_Rect rect)
 
   // top and bottom walls
   for (int x = left; x <= right; x++) {
-    map->tiles[top * map->width + x].walkable = false;
-    map->tiles[bottom * map->width + x].walkable = false;
+    map->tiles[top * map->width + x].type = RL_TILE_WALL;
+    map->tiles[bottom * map->width + x].type = RL_TILE_WALL;
   }
 
   // left and right walls (corners already handled above)
   for (int y = top + 1; y < bottom; y++) {
-    map->tiles[y * map->width + left].walkable = false;
-    map->tiles[y * map->width + right].walkable = false;
+    map->tiles[y * map->width + left].type = RL_TILE_WALL;
+    map->tiles[y * map->width + right].type = RL_TILE_WALL;
   }
 }
 
@@ -55,7 +55,7 @@ rl_generate_map(struct rl_world_map* map)
   // start everything off as walkable for now
   for (int y = 0; y < map->height; y++) {
     for (int x = 0; x < map->width; x++) {
-      map->tiles[y * map->width + x].walkable = true;
+      map->tiles[y * map->width + x].type = RL_TILE_FLOOR;
     }
   }
 
@@ -87,7 +87,7 @@ rl_generate_map(struct rl_world_map* map)
   }
 }
 
-struct rl_world_tile
+struct rl_tile
 rl_get_tile(struct rl_world_map const* map, int x, int y)
 {
   return map->tiles[y * map->width + x];
