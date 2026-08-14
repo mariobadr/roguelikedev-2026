@@ -1,8 +1,8 @@
 /**
- * @file world.h
+ * @file map.h
  */
-#ifndef GINC_ROGUELIKE_WORLD_H
-#define GINC_ROGUELIKE_WORLD_H
+#ifndef GINC_ROGUELIKE_MAP_H
+#define GINC_ROGUELIKE_MAP_H
 
 #include <SDL3/SDL_stdinc.h>
 
@@ -39,4 +39,4 @@ rl_generate_map(struct rl_world_map* map);
 struct rl_tile
 rl_get_tile(struct rl_world_map const* map, int x, int y);
 
-#endif // GINC_ROGUELIKE_WORLD_H
+#endif // GINC_ROGUELIKE_MAP_H

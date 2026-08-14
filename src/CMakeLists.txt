@@ -10,6 +10,8 @@ set(GAME_SOURCES
     input.c
     input.h
     main.c
+    map.c
+    map.h
     rand.c
     rand.h
     render.c
@@ -18,8 +20,6 @@ set(GAME_SOURCES
     resources.h
     tile.c
     tile.h
-    world.c
-    world.h
 )
 
 

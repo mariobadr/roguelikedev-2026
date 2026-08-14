@@ -8,7 +8,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "action.h"
-#include "world.h"
+#include "map.h"
 
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
