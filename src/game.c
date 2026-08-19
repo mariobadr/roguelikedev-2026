@@ -64,47 +64,95 @@ update_fov(struct rl_game* game)
   }
 }
 
-void
-set_tile_gfx(struct rl_gfx_tile *gfx, struct rl_tile tile, bool visible)
+static SDL_FColor
+apply_brightness(SDL_FColor colour, float brightness)
 {
-  switch (tile.type)
-  {
-  case RL_TILE_WALL:
-    gfx->glyph = '#';
-    gfx->bg = RL_COLOUR_NONE;
-    gfx->fg = visible ? RL_COLOUR_LGRAY : RL_COLOUR_DGRAY;
-    break;
-  case RL_TILE_FLOOR:
-    gfx->glyph = ' ';
-    gfx->bg = visible ? RL_COLOUR_LGRAY : RL_COLOUR_NONE;
-    gfx->fg = RL_COLOUR_NONE;
-    break;
-  default:
-    gfx->glyph = ' ';
-    gfx->bg = RL_COLOUR_NONE;
-    gfx->fg = RL_COLOUR_NONE;
-    break;
+  brightness = SDL_clamp(brightness, 0.0f, 1.0f);
+  SDL_FColor const ambient = RL_COLOUR_AMBIENT;
+
+  return (SDL_FColor){
+    .r = ambient.r + (colour.r - ambient.r) * brightness,
+    .g = ambient.g + (colour.g - ambient.g) * brightness,
+    .b = ambient.b + (colour.b - ambient.b) * brightness,
+    .a = colour.a,
+  };
+}
+
+static void
+set_wall_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
+{
+  gfx->glyph = '#';
+  gfx->bg = RL_COLOUR_NONE;
+
+  if (visible) {
+    gfx->fg = apply_brightness(RL_COLOUR_LGRAY, brightness);
+  } else {
+    gfx->fg = RL_COLOUR_DGRAY;
   }
 }
 
 static void
-draw_map(SDL_Renderer* renderer,
-         SDL_Texture* font,
-         struct rl_map const* map,
-         bool* visible,
-         bool* explored)
+set_floor_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
+{
+  gfx->glyph = ' ';
+  gfx->fg = RL_COLOUR_NONE;
+
+  if (visible) {
+    gfx->bg = apply_brightness(RL_COLOUR_LGRAY, brightness);
+  } else {
+    gfx->bg = RL_COLOUR_NONE;
+  }
+}
+
+static void
+set_tile_gfx(struct rl_gfx_tile* gfx,
+             struct rl_tile tile,
+             bool visible,
+             float brightness)
+{
+  switch (tile.type) {
+    case RL_TILE_WALL:
+      set_wall_gfx(gfx, visible, brightness);
+      break;
+    case RL_TILE_FLOOR:
+      set_floor_gfx(gfx, visible, brightness);
+      break;
+    default:
+      gfx->glyph = ' ';
+      gfx->bg = RL_COLOUR_NONE;
+      gfx->fg = RL_COLOUR_NONE;
+      break;
+  }
+}
+
+static float
+calculate_brightness(SDL_Point source, SDL_Point tile, float radius)
+{
+  float const dx = (float)(tile.x - source.x);
+  float const dy = (float)(tile.y - source.y);
+  float const distance = SDL_sqrtf(dx * dx + dy * dy);
+
+  return SDL_clamp(1.0f - distance / radius, 0.0f, 1.0f);
+}
+
+static void
+draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game* game)
 {
   struct rl_gfx_tile gfx = { 0 };
 
-  for (int y = 0; y < map->height; y++) {
-    for (int x = 0; x < map->width; x++) {
-      size_t const index = rl_map_index_of(map, x, y);
+  for (int y = 0; y < game->map.height; y++) {
+    for (int x = 0; x < game->map.width; x++) {
+      size_t const index = rl_map_index_of(&game->map, x, y);
 
-      if (!explored[index]) {
+      if (!game->explored[index]) {
         continue;
       }
 
-      set_tile_gfx(&gfx, rl_get_tile(map, x, y), visible[index]);
+      float const brightness = calculate_brightness(
+        game->rogue.position, (SDL_Point){ x, y }, FOV_RADIUS);
+      struct rl_tile const tile = rl_get_tile(&game->map, x, y);
+
+      set_tile_gfx(&gfx, tile, game->visible[index], brightness);
       rl_draw_tile(renderer, font, &gfx, x * GLYPH_WIDTH, y * GLYPH_HEIGHT);
     }
   }
@@ -278,9 +326,13 @@ rl_update_game(struct rl_game* game, float dt)
 void
 rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
 {
-  SDL_SetRenderDrawColor(renderer, 16, 16, 16, SDL_ALPHA_OPAQUE);
+  SDL_SetRenderDrawColorFloat(renderer,
+                              RL_COLOUR_AMBIENT.r,
+                              RL_COLOUR_AMBIENT.g,
+                              RL_COLOUR_AMBIENT.b,
+                              RL_COLOUR_AMBIENT.a);
   SDL_RenderClear(renderer);
 
-  draw_map(renderer, game->resources->font, &game->map, game->visible, game->explored);
+  draw_map(renderer, game->resources->font, game);
   draw_entity(renderer, game->resources->font, &game->rogue);
 }
