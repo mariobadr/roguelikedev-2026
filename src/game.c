@@ -1,10 +1,16 @@
 #include "game.h"
 
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 
+#include "fov.h"
 #include "input.h"
 #include "render.h"
 #include "resources.h"
+
+#define MAP_WIDTH 40
+#define MAP_HEIGHT 20
 
 /**
  * Return the sign of number.
@@ -35,23 +41,19 @@ set_movement_action(struct rl_action* action, int x, int y)
 }
 
 static void
-move_entity(struct rl_entity* entity,
-            struct rl_map* map,
-            SDL_Point move_vector)
+move_entity(struct rl_entity* entity, struct rl_map* map, SDL_Point move_vector)
 {
   SDL_Point dst = { 0 };
   dst.x = entity->position.x + move_vector.x;
   dst.y = entity->position.y + move_vector.y;
 
-  if(rl_is_walkable(rl_get_tile(map, dst.x, dst.y))) {
+  if (rl_is_walkable(rl_get_tile(map, dst.x, dst.y))) {
     entity->position = dst;
   }
 }
 
 static void
-draw_map(SDL_Renderer* renderer,
-         SDL_Texture* font,
-         struct rl_map const* map)
+draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_map const* map)
 {
   struct rl_gfx_tile wall = { 0 };
   wall.glyph = '#';
@@ -159,7 +161,22 @@ handle_mouse_input(struct rl_game* game, struct inpt_state const* istate)
 bool
 rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 {
-  if (!rl_init_map(&game->map, 40, 20)) {
+  if (!rl_init_map(&game->map, MAP_WIDTH, MAP_HEIGHT)) {
+    return false;
+  }
+
+  game->visible = SDL_calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(*game->visible));
+  if (game->visible == NULL) {
+    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+    rl_free_map(&game->map);
+    return false;
+  }
+
+  game->explored = SDL_calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(*game->explored));
+  if (game->explored == NULL) {
+    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+    SDL_free(game->visible);
+    rl_free_map(&game->map);
     return false;
   }
 
@@ -209,6 +226,13 @@ rl_update_game(struct rl_game* game, float dt)
   if (game->action.type == RL_ACTION_MOVE) {
     move_entity(&game->rogue, &game->map, game->action.move_vector);
     game->action_cooldown = 0.115f;
+  }
+
+  rl_compute_fov(&game->map, game->rogue.position, 6, game->visible);
+  for (int i = 0; i < game->map.width * game->map.height; i++) {
+    if (game->visible[i]) {
+      game->explored[i] = true;
+    }
   }
 }
 

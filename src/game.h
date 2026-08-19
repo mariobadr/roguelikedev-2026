@@ -43,6 +43,10 @@ struct rl_game
   struct rl_entity rogue;
   /** One map (for now) */
   struct rl_map map;
+  /** Tiles the player can see */
+  bool* visible;
+  /** Tiles the player has seen before */
+  bool* explored;
 };
 
 /**
