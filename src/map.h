@@ -39,7 +39,22 @@ void
 rl_free_map(struct rl_map* map);
 
 /**
- * Get the tile found at (x, y) in map.
+ * @return the row-major array index of (x, y) in map.
+ */
+static inline size_t
+rl_map_index_of(struct rl_map const* map, int x, int y)
+{
+  return (size_t)y * (size_t)map->width + (size_t)x;
+}
+
+/**
+ * @return whether the coordinates (x, y) are valid in this map
+ */
+bool
+rl_map_contains(struct rl_map const* map, int x, int y);
+
+/**
+ * @return the tile found at (x, y) in map.
  */
 struct rl_tile
 rl_get_tile(struct rl_map const* map, int x, int y);

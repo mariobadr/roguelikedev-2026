@@ -11,6 +11,7 @@
 
 #define MAP_WIDTH 40
 #define MAP_HEIGHT 20
+#define FOV_RADIUS 6
 
 /**
  * Return the sign of number.
@@ -53,18 +54,58 @@ move_entity(struct rl_entity* entity, struct rl_map* map, SDL_Point move_vector)
 }
 
 static void
-draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_map const* map)
+update_fov(struct rl_game* game)
 {
-  struct rl_gfx_tile wall = { 0 };
-  wall.glyph = '#';
-  wall.fg = RL_COLOUR_WHITE;
-  wall.bg = RL_COLOUR_NONE;
+  rl_compute_fov(&game->map, game->rogue.position, FOV_RADIUS, game->visible);
+  for (int i = 0; i < game->map.width * game->map.height; i++) {
+    if (game->visible[i]) {
+      game->explored[i] = true;
+    }
+  }
+}
+
+void
+set_tile_gfx(struct rl_gfx_tile *gfx, struct rl_tile tile, bool visible)
+{
+  switch (tile.type)
+  {
+  case RL_TILE_WALL:
+    gfx->glyph = '#';
+    gfx->bg = RL_COLOUR_NONE;
+    gfx->fg = visible ? RL_COLOUR_LGRAY : RL_COLOUR_DGRAY;
+    break;
+  case RL_TILE_FLOOR:
+    gfx->glyph = ' ';
+    gfx->bg = visible ? RL_COLOUR_LGRAY : RL_COLOUR_NONE;
+    gfx->fg = RL_COLOUR_NONE;
+    break;
+  default:
+    gfx->glyph = ' ';
+    gfx->bg = RL_COLOUR_NONE;
+    gfx->fg = RL_COLOUR_NONE;
+    break;
+  }
+}
+
+static void
+draw_map(SDL_Renderer* renderer,
+         SDL_Texture* font,
+         struct rl_map const* map,
+         bool* visible,
+         bool* explored)
+{
+  struct rl_gfx_tile gfx = { 0 };
 
   for (int y = 0; y < map->height; y++) {
     for (int x = 0; x < map->width; x++) {
-      if (!rl_is_walkable(rl_get_tile(map, x, y))) {
-        rl_draw_tile(renderer, font, &wall, x * GLYPH_WIDTH, y * GLYPH_HEIGHT);
+      size_t const index = rl_map_index_of(map, x, y);
+
+      if (!explored[index]) {
+        continue;
       }
+
+      set_tile_gfx(&gfx, rl_get_tile(map, x, y), visible[index]);
+      rl_draw_tile(renderer, font, &gfx, x * GLYPH_WIDTH, y * GLYPH_HEIGHT);
     }
   }
 }
@@ -188,6 +229,8 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
   SDL_Rect const* room = &game->map.rooms[0];
   game->rogue.position.x = room->x + room->w / 2;
   game->rogue.position.y = room->y + room->h / 2;
+  // and make sure we have an initial field-of-view
+  update_fov(game);
 
   game->action.type = RL_ACTION_NONE;
   game->action_cooldown = 0.0f;
@@ -226,13 +269,9 @@ rl_update_game(struct rl_game* game, float dt)
   if (game->action.type == RL_ACTION_MOVE) {
     move_entity(&game->rogue, &game->map, game->action.move_vector);
     game->action_cooldown = 0.115f;
-  }
 
-  rl_compute_fov(&game->map, game->rogue.position, 6, game->visible);
-  for (int i = 0; i < game->map.width * game->map.height; i++) {
-    if (game->visible[i]) {
-      game->explored[i] = true;
-    }
+    // the rogue has moved, update the field-of-view
+    update_fov(game);
   }
 }
 
@@ -242,6 +281,6 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
   SDL_SetRenderDrawColor(renderer, 16, 16, 16, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(renderer);
 
-  draw_map(renderer, game->resources->font, &game->map);
+  draw_map(renderer, game->resources->font, &game->map, game->visible, game->explored);
   draw_entity(renderer, game->resources->font, &game->rogue);
 }

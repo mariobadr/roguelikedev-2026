@@ -296,8 +296,16 @@ rl_free_map(struct rl_map* map)
   SDL_free(map->tiles);
 }
 
+bool
+rl_map_contains(struct rl_map const* map, int x, int y)
+{
+  return x >= 0 && y >= 0 && x < map->width && y < map->height;
+}
+
 struct rl_tile
 rl_get_tile(struct rl_map const* map, int x, int y)
 {
+  SDL_assert(rl_map_contains(map, x, y));
+
   return map->tiles[y * map->width + x];
 }

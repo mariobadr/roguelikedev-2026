@@ -19,6 +19,8 @@ typedef struct SDL_Texture SDL_Texture;
 static const SDL_FColor RL_COLOUR_NONE = { 0.0f, 0.0f, 0.0f, 0.0f };
 static const SDL_FColor RL_COLOUR_BLACK = { 0.0f, 0.0f, 0.0f, 1.0f };
 static const SDL_FColor RL_COLOUR_WHITE = { 1.0f, 1.0f, 1.0f, 1.0f };
+static const SDL_FColor RL_COLOUR_LGRAY = { 0.8f, 0.8f, 0.9f, 1.0f };
+static const SDL_FColor RL_COLOUR_DGRAY = { 0.25f, 0.25f, 0.35f, 1.0f };
 
 /**
  * A graphical tile.

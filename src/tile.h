@@ -30,4 +30,10 @@ struct rl_tile
 bool
 rl_is_walkable(struct rl_tile tile);
 
+/**
+ * @return whether an entity can see through this tile
+ */
+bool
+rl_is_transparent(struct rl_tile tile);
+
 #endif // GINC_ROGUELIKE_TILE_H
