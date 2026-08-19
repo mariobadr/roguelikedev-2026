@@ -14,6 +14,7 @@ set(GAME_SOURCES
     main.c
     map.c
     map.h
+    palette.h
     rand.c
     rand.h
     render.c

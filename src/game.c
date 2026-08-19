@@ -6,6 +6,7 @@
 
 #include "fov.h"
 #include "input.h"
+#include "palette.h"
 #include "render.h"
 #include "resources.h"
 
@@ -65,15 +66,14 @@ update_fov(struct rl_game* game)
 }
 
 static SDL_FColor
-apply_brightness(SDL_FColor colour, float brightness)
+apply_brightness(SDL_FColor colour, SDL_FColor fade_toward, float brightness)
 {
   brightness = SDL_clamp(brightness, 0.0f, 1.0f);
-  SDL_FColor const ambient = RL_COLOUR_AMBIENT;
 
   return (SDL_FColor){
-    .r = ambient.r + (colour.r - ambient.r) * brightness,
-    .g = ambient.g + (colour.g - ambient.g) * brightness,
-    .b = ambient.b + (colour.b - ambient.b) * brightness,
+    .r = fade_toward.r + (colour.r - fade_toward.r) * brightness,
+    .g = fade_toward.g + (colour.g - fade_toward.g) * brightness,
+    .b = fade_toward.b + (colour.b - fade_toward.b) * brightness,
     .a = colour.a,
   };
 }
@@ -85,9 +85,10 @@ set_wall_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
   gfx->bg = RL_COLOUR_NONE;
 
   if (visible) {
-    gfx->fg = apply_brightness(RL_COLOUR_LGRAY, brightness);
+    gfx->fg =
+      apply_brightness(RL_COLOUR_SLATE_5, RL_COLOUR_SLATE_2, brightness);
   } else {
-    gfx->fg = RL_COLOUR_DGRAY;
+    gfx->fg = RL_COLOUR_SLATE_2;
   }
 }
 
@@ -98,7 +99,8 @@ set_floor_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
   gfx->fg = RL_COLOUR_NONE;
 
   if (visible) {
-    gfx->bg = apply_brightness(RL_COLOUR_LGRAY, brightness);
+    gfx->bg =
+      apply_brightness(RL_COLOUR_SLATE_3, RL_COLOUR_SLATE_0, brightness);
   } else {
     gfx->bg = RL_COLOUR_NONE;
   }
@@ -327,10 +329,10 @@ void
 rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
 {
   SDL_SetRenderDrawColorFloat(renderer,
-                              RL_COLOUR_AMBIENT.r,
-                              RL_COLOUR_AMBIENT.g,
-                              RL_COLOUR_AMBIENT.b,
-                              RL_COLOUR_AMBIENT.a);
+                              RL_COLOUR_SLATE_0.r,
+                              RL_COLOUR_SLATE_0.g,
+                              RL_COLOUR_SLATE_0.b,
+                              RL_COLOUR_SLATE_0.a);
   SDL_RenderClear(renderer);
 
   draw_map(renderer, game->resources->font, game);
