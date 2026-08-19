@@ -131,7 +131,7 @@ init_room_graph(struct room_graph* graph,
  * Update the region of map specified by room.
  */
 static void
-carve_room(struct rl_world_map* map, SDL_Rect const* room)
+carve_room(struct rl_map* map, SDL_Rect const* room)
 {
   for (int y = room->y; y < room->y + room->h; ++y) {
     for (int x = room->x; x < room->x + room->w; ++x) {
@@ -144,7 +144,7 @@ carve_room(struct rl_world_map* map, SDL_Rect const* room)
  * Update a map's tiles so that it has all its rooms.
  */
 static void
-carve_rooms(struct rl_world_map* map, SDL_Rect const* rooms, int room_count)
+carve_rooms(struct rl_map* map, SDL_Rect const* rooms, int room_count)
 {
   for (int i = 0; i < room_count; ++i) {
     carve_room(map, &rooms[i]);
@@ -152,7 +152,7 @@ carve_rooms(struct rl_world_map* map, SDL_Rect const* rooms, int room_count)
 }
 
 static void
-carve_hline(struct rl_world_map* map, int x1, int x2, int y)
+carve_hline(struct rl_map* map, int x1, int x2, int y)
 {
   // ensure x2 > x1 by swapping their values
   if (x1 > x2) {
@@ -168,7 +168,7 @@ carve_hline(struct rl_world_map* map, int x1, int x2, int y)
 }
 
 static void
-carve_vline(struct rl_world_map* map, int y1, int y2, int x)
+carve_vline(struct rl_map* map, int y1, int y2, int x)
 {
   // ensure y2 > y1 by swapping their values
   if (y1 > y2) {
@@ -188,7 +188,7 @@ carve_vline(struct rl_world_map* map, int y1, int y2, int x)
  * straight corridors.
  */
 static void
-carve_corridor(struct rl_world_map* map, SDL_Rect const* a, SDL_Rect const* b)
+carve_corridor(struct rl_map* map, SDL_Rect const* a, SDL_Rect const* b)
 {
   int ax = a->x + a->w / 2;
   int ay = a->y + a->h / 2;
@@ -204,7 +204,7 @@ carve_corridor(struct rl_world_map* map, SDL_Rect const* a, SDL_Rect const* b)
  * Update a map's tiles so that there are corridors between all rooms.
  */
 static void
-carve_corridors(struct rl_world_map* map, struct room_graph const* graph)
+carve_corridors(struct rl_map* map, struct room_graph const* graph)
 {
   for (int i = 0; i < graph->connection_count; ++i) {
     struct connection const* connection = &graph->connections[i];
@@ -222,7 +222,7 @@ carve_corridors(struct rl_world_map* map, struct room_graph const* graph)
  * @return whether the generation was successful.
  */
 static bool
-generate_map(struct rl_world_map* map)
+generate_map(struct rl_map* map)
 {
   SDL_Rect rect = { 0 };
   rect.w = map->width;
@@ -264,7 +264,7 @@ generate_map(struct rl_world_map* map)
 }
 
 bool
-rl_init_map(struct rl_world_map* map, int width, int height)
+rl_init_map(struct rl_map* map, int width, int height)
 {
   // check whether map has already been initialized
   SDL_assert(map->tiles == NULL);
@@ -286,7 +286,7 @@ rl_init_map(struct rl_world_map* map, int width, int height)
 }
 
 void
-rl_free_map(struct rl_world_map* map)
+rl_free_map(struct rl_map* map)
 {
   if (map == NULL) {
     return;
@@ -297,7 +297,7 @@ rl_free_map(struct rl_world_map* map)
 }
 
 struct rl_tile
-rl_get_tile(struct rl_world_map const* map, int x, int y)
+rl_get_tile(struct rl_map const* map, int x, int y)
 {
   return map->tiles[y * map->width + x];
 }

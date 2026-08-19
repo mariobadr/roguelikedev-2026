@@ -42,7 +42,7 @@ struct rl_game
   /** The player entity */
   struct rl_entity rogue;
   /** One map (for now) */
-  struct rl_world_map map;
+  struct rl_map map;
 };
 
 /**

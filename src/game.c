@@ -36,7 +36,7 @@ set_movement_action(struct rl_action* action, int x, int y)
 
 static void
 move_entity(struct rl_entity* entity,
-            struct rl_world_map* map,
+            struct rl_map* map,
             SDL_Point move_vector)
 {
   SDL_Point dst = { 0 };
@@ -51,7 +51,7 @@ move_entity(struct rl_entity* entity,
 static void
 draw_map(SDL_Renderer* renderer,
          SDL_Texture* font,
-         struct rl_world_map const* map)
+         struct rl_map const* map)
 {
   struct rl_gfx_tile wall = { 0 };
   wall.glyph = '#';
