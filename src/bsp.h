@@ -92,15 +92,6 @@ void
 rl_bsp_tree_free(struct rl_bsp_tree* tree);
 
 /**
- * Saves all leaf nodes' rectangles (from tree) to out.
- *
- * @param tree The tree to walk.
- * @param out  An array with space for at least tree->leaf_count rects.
- */
-void
-rl_bsp_collect_leaves(struct rl_bsp_tree const* tree, SDL_Rect* out);
-
-/**
  * Split the node at index up to depth levels.
  *
  * @param tree    The tree being updated.

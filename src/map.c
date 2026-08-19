@@ -279,6 +279,7 @@ rl_init_map(struct rl_map* map, int width, int height)
   map->height = height;
 
   if (!generate_map(map)) {
+    rl_free_map(map);
     return false;
   }
 
@@ -293,7 +294,13 @@ rl_free_map(struct rl_map* map)
   }
 
   SDL_free(map->rooms);
+  map->rooms = NULL;
+  map->room_count = 0;
+
   SDL_free(map->tiles);
+  map->tiles = NULL;
+  map->width = 0;
+  map->height = 0;
 }
 
 bool

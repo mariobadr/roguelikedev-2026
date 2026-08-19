@@ -8,6 +8,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "action.h"
+#include "entity.h"
 #include "map.h"
 
 // external forward declarations
@@ -16,17 +17,6 @@ typedef struct SDL_Renderer SDL_Renderer;
 // forward declarations
 struct inpt_state;
 struct rl_resources;
-
-/**
- * An entity in the game.
- */
-struct rl_entity
-{
-  /** Location on map in tile coordinates. */
-  SDL_Point position;
-  /** Glyph representing the entity. */
-  Uint8 glyph;
-};
 
 /**
  * The state of the roguelike game.
@@ -58,6 +48,12 @@ struct rl_game
  */
 bool
 rl_init_game(struct rl_game* game, struct rl_resources const* resources);
+
+/**
+ * Free the resources owned by game.
+ */
+void
+rl_free_game(struct rl_game* game);
 
 /**
  * Respond to accumulated input for the current frame.

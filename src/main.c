@@ -59,6 +59,7 @@ destroy_application(struct application* app)
     return;
   }
 
+  rl_free_game(&app->game);
   rl_destroy_resources(&app->resources);
 
   SDL_DestroyRenderer(app->renderer);

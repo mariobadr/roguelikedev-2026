@@ -5,12 +5,18 @@ set(GAME_SOURCES
     action.h
     bsp.c
     bsp.h
+    controls.c
+    controls.h
+    entity.c
+    entity.h
     fov.c
     fov.h
     game.c
     game.h
     input.c
     input.h
+    lighting.c
+    lighting.h
     main.c
     map.c
     map.h
