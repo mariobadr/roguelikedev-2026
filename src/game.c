@@ -166,8 +166,11 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
   game->resources = resources;
 
   game->rogue.glyph = '@';
-  game->rogue.position.x = 1;
-  game->rogue.position.y = 1;
+
+  // just put the rogue at the centre of the first room
+  SDL_Rect const* room = &game->map.rooms[0];
+  game->rogue.position.x = room->x + room->w / 2;
+  game->rogue.position.y = room->y + room->h / 2;
 
   game->action.type = RL_ACTION_NONE;
   game->action_cooldown = 0.0f;
@@ -205,8 +208,6 @@ rl_update_game(struct rl_game* game, float dt)
 
   if (game->action.type == RL_ACTION_MOVE) {
     move_entity(&game->rogue, &game->map, game->action.move_vector);
-    // game->player.x += game->action.move_vector.x;
-    // game->player.y += game->action.move_vector.y;
     game->action_cooldown = 0.115f;
   }
 }

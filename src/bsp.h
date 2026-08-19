@@ -35,6 +35,15 @@ struct rl_bsp_node
 };
 
 /**
+ * @return whether node is a leaf.
+ */
+static inline bool
+rl_bsp_node_is_leaf(struct rl_bsp_node const* node)
+{
+  return node->axis == RL_BSP_SPLIT_NONE;
+}
+
+/**
  * A BSP tree.
  */
 struct rl_bsp_tree

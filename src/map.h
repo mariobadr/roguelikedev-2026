@@ -5,6 +5,7 @@
 #define GINC_ROGUELIKE_MAP_H
 
 #include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_rect.h>
 
 #include "tile.h"
 
@@ -19,6 +20,10 @@ struct rl_world_map
   int height;
   /** The world tiles in the map. */
   struct rl_tile* tiles;
+  /** The rooms in the map. */
+  SDL_Rect* rooms;
+  /** The number of rooms in the map. */
+  int room_count;
 };
 
 /**
@@ -26,6 +31,12 @@ struct rl_world_map
  */
 bool
 rl_init_map(struct rl_world_map* map, int width, int height);
+
+/**
+ * Free up resources used by map.
+ */
+void
+rl_free_map(struct rl_world_map *map);
 
 /**
  * Get the tile found at (x, y) in map.
