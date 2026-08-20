@@ -8,6 +8,7 @@
 #include "fov.h"
 #include "lighting.h"
 #include "palette.h"
+#include "rand.h"
 #include "render.h"
 #include "resources.h"
 
@@ -116,10 +117,39 @@ draw_entity(SDL_Renderer* renderer,
   rl_draw_tile(renderer, font, &tile, x, y);
 }
 
+/**
+ * TODO: fix all the duplication between here and rl_init_game
+ */
+static bool
+regenerate_map(struct rl_game* game)
+{
+  struct rl_map new_map = { 0 };
+
+  if (!rl_init_map(&new_map, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
+    return false;
+  }
+
+  rl_free_map(&game->map);
+  game->map = new_map;
+
+  SDL_memset(game->visible, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->visible));
+  SDL_memset(
+    game->explored, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->explored));
+
+  SDL_Rect const* room = &game->map.rooms[0];
+  game->rogue.position.x = room->x + room->w / 2;
+  game->rogue.position.y = room->y + room->h / 2;
+
+  update_fov(game);
+  return true;
+}
+
 bool
 rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 {
-  if (!rl_init_map(&game->map, MAP_WIDTH, MAP_HEIGHT)) {
+  rand_seed(&game->rng, 1234);
+
+  if (!rl_init_map(&game->map, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
     return false;
   }
 
@@ -193,7 +223,11 @@ rl_update_game(struct rl_game* game, float dt)
     game->action_cooldown -= dt;
   }
 
-  if (game->action.type == RL_ACTION_MOVE) {
+  if (game->action.type == RL_ACTION_GEN_MAP) {
+    if (regenerate_map(game)) {
+      game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
+    }
+  } else if (game->action.type == RL_ACTION_MOVE) {
     bool const moved =
       rl_move_entity(&game->rogue, &game->map, game->action.move_vector);
 

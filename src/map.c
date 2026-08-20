@@ -222,7 +222,7 @@ carve_corridors(struct rl_map* map, struct room_graph const* graph)
  * @return whether the generation was successful.
  */
 static bool
-generate_map(struct rl_map* map)
+generate_map(struct rl_map* map, struct rand_state *rng)
 {
   SDL_Rect rect = { 0 };
   rect.w = map->width;
@@ -235,17 +235,14 @@ generate_map(struct rl_map* map)
     return false;
   }
 
-  struct rand_state rng;
-  rand_seed(&rng, 1234);
-
   struct rl_bsp_policy policy;
   policy.min_size = 5;
   policy.stop_chance = 25;
 
-  rl_bsp_split(&tree, 0, &rng, 0, &policy);
+  rl_bsp_split(&tree, 0, rng, 0, &policy);
 
   struct room_graph graph;
-  if (!init_room_graph(&graph, &tree, &rng)) {
+  if (!init_room_graph(&graph, &tree, rng)) {
     rl_bsp_tree_free(&tree);
     return false;
   }
@@ -264,7 +261,7 @@ generate_map(struct rl_map* map)
 }
 
 bool
-rl_init_map(struct rl_map* map, int width, int height)
+rl_init_map(struct rl_map* map, int width, int height, struct rand_state *rng)
 {
   // check whether map has already been initialized
   SDL_assert(map->tiles == NULL);
@@ -278,7 +275,7 @@ rl_init_map(struct rl_map* map, int width, int height)
   map->width = width;
   map->height = height;
 
-  if (!generate_map(map)) {
+  if (!generate_map(map, rng)) {
     rl_free_map(map);
     return false;
   }

@@ -14,8 +14,9 @@
  */
 enum rl_action_type
 {
-  RL_ACTION_NONE, //< No action
-  RL_ACTION_MOVE, //< Move the player
+  RL_ACTION_NONE,     //< No action
+  RL_ACTION_MOVE,     //< Move the player
+  RL_ACTION_GEN_MAP,  //< Re-generate the map (for debugging)
 };
 
 /**

@@ -10,6 +10,7 @@
 #include "action.h"
 #include "entity.h"
 #include "map.h"
+#include "rand.h"
 
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
@@ -25,6 +26,8 @@ struct rl_game
 {
   /** A non-owning pointer to the game's resources */
   struct rl_resources const* resources;
+  /** The random number generator */
+  struct rand_state rng;
   /** The player's next action */
   struct rl_action action;
   /** Time before the next action fires */

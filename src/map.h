@@ -9,6 +9,9 @@
 
 #include "tile.h"
 
+// forward declarations
+struct rand_state;
+
 /**
  * A map.
  */
@@ -30,7 +33,7 @@ struct rl_map
  * Initialize a new map with width and height.
  */
 bool
-rl_init_map(struct rl_map* map, int width, int height);
+rl_init_map(struct rl_map* map, int width, int height, struct rand_state* rng);
 
 /**
  * Free up resources used by map.
