@@ -229,7 +229,7 @@ generate_map(struct rl_map* map)
   rect.h = map->height;
 
   // generate the rooms
-  int const max_depth = 2;
+  int const max_depth = 3;
   struct rl_bsp_tree tree;
   if (!rl_bsp_tree_init(&tree, max_depth, rect)) {
     return false;
@@ -239,7 +239,7 @@ generate_map(struct rl_map* map)
   rand_seed(&rng, 1234);
 
   struct rl_bsp_policy policy;
-  policy.min_size = 4;
+  policy.min_size = 5;
   policy.stop_chance = 25;
 
   rl_bsp_split(&tree, 0, &rng, 0, &policy);
