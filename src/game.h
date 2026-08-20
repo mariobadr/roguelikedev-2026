@@ -12,6 +12,9 @@
 #include "map.h"
 #include "rand.h"
 
+#define MAP_WIDTH 80
+#define MAP_HEIGHT 40
+
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
 

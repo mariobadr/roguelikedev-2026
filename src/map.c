@@ -236,7 +236,7 @@ generate_map(struct rl_map* map, struct rand_state *rng)
   }
 
   struct rl_bsp_policy policy;
-  policy.min_size = 5;
+  policy.min_size = 8;
   policy.stop_chance = 25;
 
   rl_bsp_split(&tree, 0, rng, 0, &policy);

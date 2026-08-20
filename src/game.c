@@ -12,8 +12,6 @@
 #include "render.h"
 #include "resources.h"
 
-#define MAP_WIDTH 40
-#define MAP_HEIGHT 20
 #define FOV_RADIUS 6
 
 static void
