@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#define ACTION_GLOBAL_COOLDOWN (0.115f)
+
 /**
  * The actions a player can perform
  */

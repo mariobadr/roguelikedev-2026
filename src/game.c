@@ -194,11 +194,13 @@ rl_update_game(struct rl_game* game, float dt)
   }
 
   if (game->action.type == RL_ACTION_MOVE) {
-    rl_move_entity(&game->rogue, &game->map, game->action.move_vector);
-    game->action_cooldown = 0.115f;
+    bool const moved =
+      rl_move_entity(&game->rogue, &game->map, game->action.move_vector);
 
-    // the rogue has moved, update the field-of-view
-    update_fov(game);
+    if (moved) {
+      game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
+      update_fov(game);
+    }
   }
 }
 
