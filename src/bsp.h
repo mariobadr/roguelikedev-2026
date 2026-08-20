@@ -18,6 +18,7 @@ struct rand_state;
  */
 enum rl_bsp_split_axis
 {
+  RL_BSP_UNUSED,     //< Invalid node
   RL_BSP_SPLIT_NONE, //< Leaf node
   RL_BSP_SPLIT_X,    //< Node split on x-axis
   RL_BSP_SPLIT_Y     //< Node split on y-axis

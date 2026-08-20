@@ -80,7 +80,9 @@ rl_bsp_split(struct rl_bsp_tree* tree,
 
   // Do the splitting
   struct rl_bsp_node* left = &tree->nodes[rl_bsp_left_of(index)];
+  left->axis = RL_BSP_SPLIT_NONE;
   struct rl_bsp_node* right = &tree->nodes[rl_bsp_right_of(index)];
+  right->axis = RL_BSP_SPLIT_NONE;
 
   if (node->axis == RL_BSP_SPLIT_X) {
     // splitting here should not impact the height
