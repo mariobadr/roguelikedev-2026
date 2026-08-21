@@ -64,8 +64,10 @@ struct rl_bsp_tree
  */
 struct rl_bsp_policy
 {
-  /** The minimum size of a rect in the tree. */
-  int min_size;
+  /** The minimum width of a rect in the tree. */
+  int min_width;
+  /** The minimum height of a rect in the tree. */
+  int min_height;
   /** The probability to avoid a split (for larger rooms). */
   int stop_chance;
 };
