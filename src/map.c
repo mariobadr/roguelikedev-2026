@@ -35,17 +35,19 @@ static SDL_Rect
 generate_room(SDL_Rect const* bounds, struct rand_state* rng)
 {
   int const margin = 1;
-  int const min_size = 3;
+  // how much smaller than the leaf a room can be, per axis
+  int const min_shave = 1;
+  int const max_shave = 3;
 
-  int w = (int)rand_next_between(rng, min_size, bounds->w - 2 * margin);
+  int shave_w = (int)rand_next_between(rng, min_shave, max_shave);
+  int shave_h = (int)rand_next_between(rng, min_shave, max_shave);
 
-  int h = (int)rand_next_between(rng, min_size, bounds->h - 2 * margin);
+  int w = bounds->w - 2 * margin - shave_w;
+  int h = bounds->h - 2 * margin - shave_h;
 
-  int x = (int)rand_next_between(
-    rng, bounds->x + margin, bounds->x + bounds->w - w - margin);
-
-  int y = (int)rand_next_between(
-    rng, bounds->y + margin, bounds->y + bounds->h - h - margin);
+  // room can sit anywhere within the space freed up by the shave
+  int x = bounds->x + margin + (int)rand_next_between(rng, 0, shave_w);
+  int y = bounds->y + margin + (int)rand_next_between(rng, 0, shave_h);
 
   return (SDL_Rect){
     .x = x,
@@ -222,7 +224,7 @@ carve_corridors(struct rl_map* map, struct room_graph const* graph)
  * @return whether the generation was successful.
  */
 static bool
-generate_map(struct rl_map* map, struct rand_state *rng)
+generate_map(struct rl_map* map, struct rand_state* rng)
 {
   SDL_Rect rect = { 0 };
   rect.w = map->width;
@@ -263,7 +265,7 @@ generate_map(struct rl_map* map, struct rand_state *rng)
 }
 
 bool
-rl_init_map(struct rl_map* map, int width, int height, struct rand_state *rng)
+rl_init_map(struct rl_map* map, int width, int height, struct rand_state* rng)
 {
   // check whether map has already been initialized
   SDL_assert(map->tiles == NULL);
