@@ -68,8 +68,10 @@ struct rl_bsp_policy
   int min_width;
   /** The minimum height of a rect in the tree. */
   int min_height;
-  /** The probability to avoid a split (for larger rooms). */
-  int stop_chance;
+  /** The maximum width:height ratio. */
+  double max_wh_ratio;
+  /** The maximum height:width ratio. */
+  double max_hw_ratio;
 };
 
 /**

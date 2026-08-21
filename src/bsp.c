@@ -51,25 +51,20 @@ rl_bsp_split(struct rl_bsp_tree* tree,
     return;
   }
 
-  // Make the stop chance a function of depth. This way depth 0 (the root) can
-  // never stop. The more deep you go, though, the higher the chance of not
-  // splitting.
-  int stop_chance = (policy->stop_chance * depth) / tree->max_depth;
-  if (rand_next_up_to(rng, 99) < stop_chance) {
-    // don't split further
-    return;
-  }
-
   // Determine how this node will be split
   if (can_split_x && can_split_y) {
     // Can split either way; decide based on width:height ratio
-    if (node->rect.w > node->rect.h) {
+    double wh_ratio = (double)node->rect.w / node->rect.h;
+    double hw_ratio = (double)node->rect.h / node->rect.w;
+
+    if (wh_ratio > policy->max_wh_ratio) {
       node->axis = RL_BSP_SPLIT_X;
-    } else if (node->rect.h > node->rect.w) {
+    } else if (hw_ratio > policy->max_hw_ratio) {
       node->axis = RL_BSP_SPLIT_Y;
     } else {
       node->axis = rand_next_between(rng, RL_BSP_SPLIT_X, RL_BSP_SPLIT_Y);
     }
+
   } else if (can_split_x) {
     // Can only split on the x-axis
     node->axis = RL_BSP_SPLIT_X;
