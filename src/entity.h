@@ -8,7 +8,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 // forward declarations
-struct rl_map;
+struct rl_tile_map;
 
 /**
  * An entity in the game.
@@ -32,7 +32,7 @@ struct rl_entity
  */
 bool
 rl_move_entity(struct rl_entity* entity,
-               struct rl_map const* map,
+               struct rl_tile_map const* map,
                SDL_Point move_vector);
 
 #endif // GINC_ROGUELIKE_ENTITY_H

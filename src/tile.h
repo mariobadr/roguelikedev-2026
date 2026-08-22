@@ -11,8 +11,8 @@
  */
 enum rl_tile_type
 {
-  RL_TILE_WALL, //< A wall tile
-  RL_TILE_FLOOR //< A floor tile
+  RL_TILE_WALL,  //< A wall tile
+  RL_TILE_FLOOR, //< A floor tile
 };
 
 /**

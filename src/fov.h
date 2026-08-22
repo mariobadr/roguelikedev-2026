@@ -7,7 +7,7 @@
 #include <SDL3/SDL_rect.h>
 
 // forward declarations
-struct rl_map;
+struct rl_tile_map;
 
 /**
  * Calculate the field of view from origin and save it to out.
@@ -22,7 +22,7 @@ struct rl_map;
  * @param out    The output array of visible tiles.
  */
 void
-rl_compute_fov(struct rl_map const* map,
+rl_compute_fov(struct rl_tile_map const* map,
                SDL_Point origin,
                int radius,
                bool* out);

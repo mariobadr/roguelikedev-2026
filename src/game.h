@@ -9,8 +9,8 @@
 
 #include "action.h"
 #include "entity.h"
-#include "map.h"
 #include "rand.h"
+#include "world.h"
 
 #define MAP_WIDTH 80
 #define MAP_HEIGHT 40
@@ -38,7 +38,7 @@ struct rl_game
   /** The player entity */
   struct rl_entity rogue;
   /** One map (for now) */
-  struct rl_map map;
+  struct rl_world world;
   /** Tiles the player can see */
   bool* visible;
   /** Tiles the player has seen before */

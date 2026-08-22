@@ -12,13 +12,13 @@
 #include "render.h"
 #include "resources.h"
 
-#define FOV_RADIUS 6
+#define FOV_RADIUS 8
 
 static void
 update_fov(struct rl_game* game)
 {
-  rl_compute_fov(&game->map, game->rogue.position, FOV_RADIUS, game->visible);
-  for (int i = 0; i < game->map.width * game->map.height; i++) {
+  rl_compute_fov(&game->world.map, game->rogue.position, FOV_RADIUS, game->visible);
+  for (int i = 0; i < game->world.map.width * game->world.map.height; i++) {
     if (game->visible[i]) {
       game->explored[i] = true;
     }
@@ -80,9 +80,9 @@ draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game* game)
 {
   struct rl_gfx_tile gfx = { 0 };
 
-  for (int y = 0; y < game->map.height; y++) {
-    for (int x = 0; x < game->map.width; x++) {
-      size_t const index = rl_map_index_of(&game->map, x, y);
+  for (int y = 0; y < game->world.map.height; y++) {
+    for (int x = 0; x < game->world.map.width; x++) {
+      size_t const index = rl_map_index_of(&game->world.map, x, y);
 
       if (!game->explored[index]) {
         continue;
@@ -90,7 +90,7 @@ draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game* game)
 
       float const brightness = rl_calculate_brightness(
         game->rogue.position, (SDL_Point){ x, y }, FOV_RADIUS);
-      struct rl_tile const tile = rl_get_tile(&game->map, x, y);
+      struct rl_tile const tile = rl_get_tile(&game->world.map, x, y);
 
       set_tile_gfx(&gfx, tile, game->visible[index], brightness);
       rl_draw_tile(renderer, font, &gfx, x * GLYPH_WIDTH, y * GLYPH_HEIGHT);
@@ -121,24 +121,23 @@ draw_entity(SDL_Renderer* renderer,
 static bool
 regenerate_map(struct rl_game* game)
 {
-  struct rl_map new_map = { 0 };
-
-  if (!rl_init_map(&new_map, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
+  struct rl_world new_world = { 0 };
+  if (!rl_init_world(&new_world, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
     return false;
   }
 
-  rl_free_map(&game->map);
-  game->map = new_map;
+  rl_free_world(&game->world);
+  game->world = new_world;
+
+  SDL_Rect const* room = &game->world.layout.rooms[0];
+  game->rogue.position.x = room->x + room->w / 2;
+  game->rogue.position.y = room->y + room->h / 2;
 
   SDL_memset(game->visible, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->visible));
   SDL_memset(
     game->explored, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->explored));
-
-  SDL_Rect const* room = &game->map.rooms[0];
-  game->rogue.position.x = room->x + room->w / 2;
-  game->rogue.position.y = room->y + room->h / 2;
-
   update_fov(game);
+
   return true;
 }
 
@@ -147,7 +146,7 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 {
   rand_seed(&game->rng, 1234);
 
-  if (!rl_init_map(&game->map, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
+  if(!rl_init_world(&game->world, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
     return false;
   }
 
@@ -170,7 +169,7 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
   game->rogue.glyph = '@';
 
   // just put the rogue at the centre of the first room
-  SDL_Rect const* room = &game->map.rooms[0];
+  SDL_Rect const* room = &game->world.layout.rooms[0];
   game->rogue.position.x = room->x + room->w / 2;
   game->rogue.position.y = room->y + room->h / 2;
   // and make sure we have an initial field-of-view
@@ -195,7 +194,7 @@ rl_free_game(struct rl_game* game)
   SDL_free(game->explored);
   game->explored = NULL;
 
-  rl_free_map(&game->map);
+  rl_free_world(&game->world);
 }
 
 bool
@@ -227,7 +226,7 @@ rl_update_game(struct rl_game* game, float dt)
     }
   } else if (game->action.type == RL_ACTION_MOVE) {
     bool const moved =
-      rl_move_entity(&game->rogue, &game->map, game->action.move_vector);
+      rl_move_entity(&game->rogue, &game->world.map, game->action.move_vector);
 
     if (moved) {
       game->action_cooldown = ACTION_GLOBAL_COOLDOWN;

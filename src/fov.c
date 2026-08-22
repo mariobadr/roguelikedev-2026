@@ -1,13 +1,13 @@
 #include "fov.h"
 
-#include "map.h"
+#include "tile_map.h"
 
 /**
  * State shared by every scan.
  */
 struct fov_context
 {
-  struct rl_map const* map;
+  struct rl_tile_map const* map;
   SDL_Point origin;
   int radius;
 };
@@ -147,7 +147,7 @@ scan_octant(struct fov_context const* context,
 }
 
 void
-rl_compute_fov(struct rl_map const* map,
+rl_compute_fov(struct rl_tile_map const* map,
                SDL_Point origin,
                int radius,
                bool* out)

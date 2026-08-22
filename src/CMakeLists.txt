@@ -15,11 +15,11 @@ set(GAME_SOURCES
     game.h
     input.c
     input.h
+    layout.c
+    layout.h
     lighting.c
     lighting.h
     main.c
-    map.c
-    map.h
     palette.h
     rand.c
     rand.h
@@ -27,8 +27,12 @@ set(GAME_SOURCES
     render.h
     resources.c
     resources.h
+    tile_map.c
+    tile_map.h
     tile.c
     tile.h
+    world.c
+    world.h
 )
 
 

@@ -1,10 +1,10 @@
 #include "entity.h"
 
-#include "map.h"
+#include "tile_map.h"
 
 bool
 rl_move_entity(struct rl_entity* entity,
-               struct rl_map const* map,
+               struct rl_tile_map const* map,
                SDL_Point move_vector)
 {
   SDL_Point dst = { 0 };
