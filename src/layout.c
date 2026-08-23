@@ -7,6 +7,40 @@
 #include "bsp.h"
 #include "rand.h"
 
+/* Room generation */
+
+/**
+ * @return a randomly generated rectangle within bounds.
+ */
+static SDL_Rect
+generate_room(SDL_Rect const* bounds, struct rand_state* rng)
+{
+  int const margin = 1;
+  // how much smaller than the leaf a room can be, per axis
+  int const min_shave = 1;
+  int const max_shave = 3;
+
+  int shave_w = (int)rand_next_between(rng, min_shave, max_shave);
+  int shave_h = (int)rand_next_between(rng, min_shave, max_shave);
+
+  int w = bounds->w - 2 * margin - shave_w;
+  int h = bounds->h - 2 * margin - shave_h;
+
+  // room can sit anywhere within the space freed up by the shave
+  int x = bounds->x + margin + (int)rand_next_between(rng, 0, shave_w);
+  int y = bounds->y + margin + (int)rand_next_between(rng, 0, shave_h);
+
+  SDL_Rect rect = { 0 };
+  rect.x = x;
+  rect.y = y;
+  rect.w = w;
+  rect.h = h;
+
+  return rect;
+}
+
+/* Corridor generation */
+
 /**
  * The interval [start, end).
  */
@@ -69,7 +103,7 @@ static void
 nearest_on_axis(struct extent a, struct extent b, int* out_a, int* out_b)
 {
   if (b.start >= a.end) {
-    *out_a = a.end;     // a's wall tile facing b
+    *out_a = a.end;       // a's wall tile facing b
     *out_b = b.start - 1; // b's wall tile facing a
   } else if (a.start >= b.end) {
     *out_a = a.start - 1;
@@ -98,38 +132,6 @@ nearest_points(SDL_Rect const* a,
 
   nearest_on_axis(a_x, b_x, &pa->x, &pb->x);
   nearest_on_axis(a_y, b_y, &pa->y, &pb->y);
-}
-
-/**
- * @return a randomly generated rectangle within bounds.
- */
-static SDL_Rect
-generate_room(SDL_Rect const* bounds, struct rand_state* rng)
-{
-  int const margin = 1;
-  // how much smaller than the leaf a room can be, per axis
-  int const min_shave = 1;
-  int const max_shave = 3;
-
-  int shave_w = (int)rand_next_between(rng, min_shave, max_shave);
-  int shave_h = (int)rand_next_between(rng, min_shave, max_shave);
-
-  int w = bounds->w - 2 * margin - shave_w;
-  int h = bounds->h - 2 * margin - shave_h;
-
-  // room can sit anywhere within the space freed up by the shave
-  int x = bounds->x + margin + (int)rand_next_between(rng, 0, shave_w);
-  int y = bounds->y + margin + (int)rand_next_between(rng, 0, shave_h);
-
-  SDL_Rect rect = { 0 };
-  rect.x = x;
-  rect.y = y;
-  rect.w = w;
-  rect.h = h;
-
-  SDL_Log("Generated room: (%d, %d, %d, %d)", x, y, w, h);
-
-  return rect;
 }
 
 /**
@@ -180,29 +182,146 @@ make_vertical_line(int y1, int y2, int x)
  * @return a (straight or L-shaped) corridor connecting two points.
  */
 static struct rl_corridor
-make_corridor(SDL_Point a, SDL_Point b)
+make_corridor(SDL_Point a, SDL_Point b, int room_a, int room_b)
 {
   struct rl_corridor corridor = { 0 };
+  corridor.room_a = room_a;
+  corridor.room_b = room_b;
 
   if (a.x == b.x) {
     corridor.segments[0] = make_vertical_line(a.y, b.y, b.x);
     corridor.segment_count = 1;
-    SDL_Log("Generated vertical corridor: (%d, %d, %d)", a.y, b.y, b.x);
   } else if (a.y == b.y) {
     corridor.segments[0] = make_horizontal_line(a.x, b.x, a.y);
     corridor.segment_count = 1;
-    SDL_Log("Generated horizontal corridor: (%d, %d, %d)", a.x, b.x, a.y);
   } else {
     // an L-shape
     corridor.segments[0] = make_horizontal_line(a.x, b.x, a.y);
     corridor.segments[1] = make_vertical_line(a.y, b.y, b.x);
     corridor.segment_count = 2;
-    SDL_Log(
-      "Generated L: (%d, %d, %d) + (%d, %d, %d)", a.x, b.x, a.y, a.y, b.y, b.x);
   }
 
   return corridor;
 }
+
+/* Extra corridor generation */
+
+enum quadrant
+{
+  QUADRANT_TL, //< top-left
+  QUADRANT_TR, //< top-right
+  QUADRANT_BL, //< bottom-left
+  QUADRANT_BR, //< bottom-right
+};
+
+/**
+ * @return which map quadrant a room's center falls into.
+ */
+static enum quadrant
+get_quadrant(SDL_Rect const* room, int width, int height)
+{
+  int cx = room->x + room->w / 2, cy = room->y + room->h / 2;
+  bool right = cx >= width / 2;
+  bool bottom = cy >= height / 2;
+
+  if (!bottom && !right) {
+    return QUADRANT_TL;
+  }
+
+  if (!bottom && right) {
+    return QUADRANT_TR;
+  }
+
+  if (bottom && !right) {
+    return QUADRANT_BL;
+  }
+
+  return QUADRANT_BR;
+}
+
+/**
+ * @return true if a corridor already connects the given two rooms, in
+ * either direction.
+ */
+static bool
+corridor_exists(struct rl_layout const* out, int room_a, int room_b)
+{
+  for (int i = 0; i < out->corridor_count; i++) {
+    struct rl_corridor const* c = &out->corridors[i];
+    if ((c->room_a == room_a && c->room_b == room_b) ||
+        (c->room_a == room_b && c->room_b == room_a)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Connect the closest pair of rooms across two quadrants with a corridor.
+ */
+static bool
+connect_quadrants(struct rl_layout* out,
+                  int width,
+                  int height,
+                  enum quadrant qa,
+                  enum quadrant qb)
+{
+  bool found = false;
+  int best_a = 0, best_b = 0, best_dist = 0;
+
+  for (int i = 0; i < out->room_count; i++) {
+    if (get_quadrant(&out->rooms[i], width, height) != qa) {
+      // rooms[i] is not in this quadrant a
+      continue;
+    }
+
+    for (int j = 0; j < out->room_count; j++) {
+      if (get_quadrant(&out->rooms[j], width, height) != qb) {
+        // rooms[j] is not in quadrant b
+        continue;
+      }
+
+      int d2 = rect_center_dist_sq(&out->rooms[i], &out->rooms[j]);
+      if (!found || d2 < best_dist) {
+        found = true;
+        best_dist = d2;
+        best_a = i;
+        best_b = j;
+      }
+    }
+  }
+
+  if (!found) {
+    // one of the quadrants had no rooms in it - possibe?
+    return false;
+  }
+
+  if (corridor_exists(out, best_a, best_b)) {
+    return false;
+  }
+
+  SDL_Point door_a, door_b;
+  nearest_points(&out->rooms[best_a], &out->rooms[best_b], &door_a, &door_b);
+  out->corridors[out->corridor_count] =
+    make_corridor(door_a, door_b, best_a, best_b);
+  out->corridor_count++;
+
+  return true;
+}
+
+/**
+ * Add up to 4 extra corridors connecting the map's quadrants.
+ */
+static void
+add_extra_corridors(struct rl_layout* out, int width, int height)
+{
+  connect_quadrants(out, width, height, QUADRANT_TL, QUADRANT_TR);
+  connect_quadrants(out, width, height, QUADRANT_TL, QUADRANT_BL);
+  connect_quadrants(out, width, height, QUADRANT_TR, QUADRANT_BR);
+  connect_quadrants(out, width, height, QUADRANT_BL, QUADRANT_BR);
+}
+
+/* Layout generation */
 
 /**
  * A contiguous span of room indices.
@@ -265,7 +384,8 @@ connect_bsp_subtree(struct rl_layout* out,
   // connect best_a and best_b with a corridor
   SDL_Point door_a, door_b;
   nearest_points(&out->rooms[best_a], &out->rooms[best_b], &door_a, &door_b);
-  out->corridors[out->corridor_count] = make_corridor(door_a, door_b);
+  out->corridors[out->corridor_count] =
+    make_corridor(door_a, door_b, best_a, best_b);
   out->corridor_count++;
 
   struct room_span r = { 0 };
@@ -274,6 +394,8 @@ connect_bsp_subtree(struct rl_layout* out,
 
   return r;
 }
+
+/* Public API */
 
 bool
 rl_init_layout(struct rl_layout* layout,
@@ -308,7 +430,7 @@ rl_init_layout(struct rl_layout* layout,
   }
 
   layout->corridors =
-    SDL_calloc(tree.leaf_count - 1, sizeof(*layout->corridors));
+    SDL_calloc(tree.leaf_count - 1 + 4, sizeof(*layout->corridors));
   if (layout->corridors == NULL) {
     SDL_Log("SDL_calloc failed: %s", SDL_GetError());
     rl_free_layout(layout);
@@ -318,6 +440,7 @@ rl_init_layout(struct rl_layout* layout,
   }
 
   connect_bsp_subtree(layout, &tree, 0, rng);
+  add_extra_corridors(layout, width, height);
 
   rl_bsp_tree_free(&tree);
   return true;

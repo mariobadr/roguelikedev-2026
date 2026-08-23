@@ -19,6 +19,9 @@ struct rl_corridor
   SDL_Rect segments[2];
   /** The actual number of segments. */
   int segment_count;
+  /** Indices of the two rooms this corridor connects. */
+  int room_a;
+  int room_b;
 };
 
 struct rl_layout
