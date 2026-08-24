@@ -4,6 +4,7 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 
+#include "command.h"
 #include "controls.h"
 #include "fov.h"
 #include "lighting.h"
@@ -17,7 +18,7 @@
 static void
 update_fov(struct rl_game* game)
 {
-  rl_compute_fov(&game->world.map, game->rogue.position, FOV_RADIUS, game->visible);
+  rl_compute_fov(&game->world.map, game->world.rogue.position, FOV_RADIUS, game->visible);
   for (int i = 0; i < game->world.map.width * game->world.map.height; i++) {
     if (game->visible[i]) {
       game->explored[i] = true;
@@ -76,7 +77,7 @@ set_tile_gfx(struct rl_gfx_tile* gfx,
 }
 
 static void
-draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game* game)
+draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game const* game)
 {
   struct rl_gfx_tile gfx = { 0 };
 
@@ -89,7 +90,7 @@ draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game* game)
       }
 
       float const brightness = rl_calculate_brightness(
-        game->rogue.position, (SDL_Point){ x, y }, FOV_RADIUS);
+        game->world.rogue.position, (SDL_Point){ x, y }, FOV_RADIUS);
       struct rl_tile const tile = rl_get_tile(&game->world.map, x, y);
 
       set_tile_gfx(&gfx, tile, game->visible[index], brightness);
@@ -129,10 +130,6 @@ regenerate_map(struct rl_game* game)
   rl_free_world(&game->world);
   game->world = new_world;
 
-  SDL_Rect const* room = &game->world.layout.rooms[0];
-  game->rogue.position.x = room->x + room->w / 2;
-  game->rogue.position.y = room->y + room->h / 2;
-
   SDL_memset(game->visible, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->visible));
   SDL_memset(
     game->explored, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->explored));
@@ -146,7 +143,7 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 {
   rand_seed(&game->rng, 1234);
 
-  if(!rl_init_world(&game->world, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
+  if (!rl_init_world(&game->world, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
     return false;
   }
 
@@ -165,18 +162,11 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
   }
 
   game->resources = resources;
+  game->action = RL_ACTION_NONE;
+  game->action_cooldown = 0.0f;
 
-  game->rogue.glyph = '@';
-
-  // just put the rogue at the centre of the first room
-  SDL_Rect const* room = &game->world.layout.rooms[0];
-  game->rogue.position.x = room->x + room->w / 2;
-  game->rogue.position.y = room->y + room->h / 2;
   // and make sure we have an initial field-of-view
   update_fov(game);
-
-  game->action.type = RL_ACTION_NONE;
-  game->action_cooldown = 0.0f;
 
   return true;
 }
@@ -201,14 +191,14 @@ bool
 rl_handle_input(struct rl_game* game, struct inpt_state const* istate)
 {
   // reset the action for this frame
-  game->action.type = RL_ACTION_NONE;
+  game->action = RL_ACTION_NONE;
 
   if (game->action_cooldown > 0.0f) {
     // still recovering from the last action
     return true;
   }
 
-  game->action = rl_translate_input(istate, game->rogue.position);
+  game->action = rl_translate_input(istate, game->world.rogue.position);
 
   return true;
 }
@@ -220,18 +210,23 @@ rl_update_game(struct rl_game* game, float dt)
     game->action_cooldown -= dt;
   }
 
-  if (game->action.type == RL_ACTION_GEN_MAP) {
+  if (game->action == RL_ACTION_DEBUG_GENMAP) {
     if (regenerate_map(game)) {
       game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
     }
-  } else if (game->action.type == RL_ACTION_MOVE) {
-    bool const moved =
-      rl_move_entity(&game->rogue, &game->world.map, game->action.move_vector);
 
-    if (moved) {
-      game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
-      update_fov(game);
-    }
+    return;
+  }
+
+  SDL_Point const prev = game->world.rogue.position;
+  struct rl_command cmd = rl_build_command(game->action);
+  rl_update_world(&game->world, &cmd);
+
+  if (prev.x != game->world.rogue.position.x ||
+      prev.y != game->world.rogue.position.y) {
+    // the rogue moved
+    update_fov(game);
+    game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
   }
 }
 
@@ -246,5 +241,5 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
   SDL_RenderClear(renderer);
 
   draw_map(renderer, game->resources->font, game);
-  draw_entity(renderer, game->resources->font, &game->rogue);
+  draw_entity(renderer, game->resources->font, &game->world.rogue);
 }

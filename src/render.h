@@ -25,7 +25,7 @@ struct rl_gfx_tile
   Uint8 glyph;
   /** Foreground tint applied to the glyph. */
   SDL_FColor fg;
-  /** Background color of the tile. */
+  /** Background colour of the tile. */
   SDL_FColor bg;
 };
 

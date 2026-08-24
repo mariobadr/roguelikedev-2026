@@ -8,6 +8,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "action.h"
+#include "command.h"
 #include "entity.h"
 #include "rand.h"
 #include "world.h"
@@ -32,11 +33,9 @@ struct rl_game
   /** The random number generator */
   struct rand_state rng;
   /** The player's next action */
-  struct rl_action action;
+  enum rl_action action;
   /** Time before the next action fires */
   float action_cooldown;
-  /** The player entity */
-  struct rl_entity rogue;
   /** One map (for now) */
   struct rl_world world;
   /** Tiles the player can see */

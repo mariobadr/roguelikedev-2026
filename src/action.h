@@ -7,28 +7,22 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+/**
+ * How long between subsequent actions.
+ */
 #define ACTION_GLOBAL_COOLDOWN (0.115f)
 
 /**
  * The actions a player can perform
  */
-enum rl_action_type
+enum rl_action
 {
-  RL_ACTION_NONE,     //< No action
-  RL_ACTION_MOVE,     //< Move the player
-  RL_ACTION_GEN_MAP,  //< Re-generate the map (for debugging)
-};
-
-/**
- * An action that can be applied to update the game.
- */
-struct rl_action
-{
-  enum rl_action_type type;
-  union
-  {
-    SDL_Point move_vector;
-  };
+  RL_ACTION_NONE,
+  RL_ACTION_MOVE_UP,
+  RL_ACTION_MOVE_DOWN,
+  RL_ACTION_MOVE_LEFT,
+  RL_ACTION_MOVE_RIGHT,
+  RL_ACTION_DEBUG_GENMAP
 };
 
 #endif // GINC_ROGUELIKE_ACTION_H

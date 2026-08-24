@@ -5,6 +5,8 @@ set(GAME_SOURCES
     action.h
     bsp.c
     bsp.h
+    command.c
+    command.h
     controls.c
     controls.h
     entity.c

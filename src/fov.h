@@ -10,16 +10,12 @@
 struct rl_tile_map;
 
 /**
- * Calculate the field of view from origin and save it to out.
+ * Update out with a field of view from origin.
  *
- * Existing values in out are cleared before visibility is calculated. The
- * output array must have space for at least map->width * map->height elements.
- * Origin must be within map and radius must not be negative.
- *
- * @param map    The map to inspect.
- * @param origin The centre of the field of view, in tile coordinates.
- * @param radius The maximum view distance, in tiles.
- * @param out    The output array of visible tiles.
+ * @param map       a map to inspect for calculating the field of view
+ * @param origin    the centre point
+ * @param radius    the radius of the circle around origin
+ * @param out       The visibility of the tiles in map
  */
 void
 rl_compute_fov(struct rl_tile_map const* map,

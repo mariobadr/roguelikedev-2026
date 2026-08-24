@@ -14,7 +14,7 @@ struct inpt_state;
 /**
  * Translate the current input state into a game action.
  */
-struct rl_action
+enum rl_action
 rl_translate_input(struct inpt_state const* istate, SDL_Point rogue_position);
 
 #endif // GINC_ROGUELIKE_CONTROLS_H

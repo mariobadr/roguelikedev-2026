@@ -25,16 +25,26 @@ rl_init_world(struct rl_world* world,
               struct rand_state* rng)
 
 {
-  if (!rl_init_map(&world->map, width, height)) {
+  // randomly generate the dungeon layout
+  if (!rl_init_layout(&world->layout, width, height, rng)) {
     return false;
   }
 
-  if (!rl_init_layout(&world->layout, width, height, rng)) {
+  // allocate space for the tile map
+  if (!rl_init_map(&world->map, width, height)) {
     rl_free_world(world);
     return false;
   }
 
+  // update the tiles in the map based on the layout
   carve_map(&world->map, &world->layout);
+
+  world->rogue = rl_create_entity(RL_ENTITY_ROGUE);
+
+  // just put the rogue at the centre of the first room
+  SDL_Rect const* room = &world->layout.rooms[0];
+  world->rogue.position.x = room->x + room->w / 2;
+  world->rogue.position.y = room->y + room->h / 2;
 
   return true;
 }
@@ -48,4 +58,17 @@ rl_free_world(struct rl_world* world)
 
   rl_free_layout(&world->layout);
   rl_free_map(&world->map);
+}
+
+void
+rl_update_world(struct rl_world* world, struct rl_command const* player_command)
+{
+  if (player_command->type == RL_COMMAND_NONE) {
+    // if the player didn't take a turn, no other entity should either
+    return;
+  }
+
+  if (player_command->type == RL_COMMAND_MOVE) {
+    rl_move_entity(&world->rogue, &world->map, player_command->direction);
+  }
 }

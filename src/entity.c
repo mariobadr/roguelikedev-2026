@@ -1,6 +1,30 @@
 #include "entity.h"
 
+#include "palette.h"
 #include "tile_map.h"
+
+struct rl_entity
+rl_create_entity(enum rl_entity_type type)
+{
+  struct rl_entity entity = { 0 };
+
+  switch (type) {
+    case RL_ENTITY_RAT:
+      entity.glyph = 'r';
+      entity.colour = RL_COLOUR_YELLOW[5];
+      entity.name = "Rat";
+      break;
+    case RL_ENTITY_ROGUE:
+      entity.glyph = '@';
+      entity.colour = RL_COLOUR_WHITE;
+      entity.name = "Rogue";
+      break;
+    default:
+      break;
+  }
+
+  return entity;
+}
 
 bool
 rl_move_entity(struct rl_entity* entity,
