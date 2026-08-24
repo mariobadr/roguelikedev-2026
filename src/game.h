@@ -10,6 +10,7 @@
 #include "action.h"
 #include "command.h"
 #include "entity.h"
+#include "fov.h"
 #include "rand.h"
 #include "world.h"
 
@@ -38,10 +39,8 @@ struct rl_game
   float action_cooldown;
   /** One map (for now) */
   struct rl_world world;
-  /** Tiles the player can see */
-  bool* visible;
-  /** Tiles the player has seen before */
-  bool* explored;
+  /** Player's field-of-view */
+  struct rl_fov fov;
 };
 
 /**

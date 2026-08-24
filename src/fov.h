@@ -10,17 +10,32 @@
 struct rl_tile_map;
 
 /**
- * Update out with a field of view from origin.
- *
- * @param map       a map to inspect for calculating the field of view
- * @param origin    the centre point
- * @param radius    the radius of the circle around origin
- * @param out       The visibility of the tiles in map
+ * The field-of-view for an entity.
  */
+struct rl_fov
+{
+  /** The farthest out the entity can see. */
+  int radius;
+  /** Cells the entity can see */
+  bool* visible;
+  /** Cells the entity has seen before */
+  bool* explored; // TODO: this shouldn't be here when we have multiple levels
+  /** The total cell count (size of visible and explored). */
+  int cell_count;
+};
+
+bool
+rl_init_fov(struct rl_fov* fov, int cell_count, int radius);
+
 void
-rl_compute_fov(struct rl_tile_map const* map,
-               SDL_Point origin,
-               int radius,
-               bool* out);
+rl_free_fov(struct rl_fov* fov);
+
+void
+rl_clear_fov(struct rl_fov* fov);
+
+void
+rl_update_fov(struct rl_fov* fov,
+              struct rl_tile_map const* map,
+              SDL_Point origin);
 
 #endif // GINC_ROGUELIKE_FOV_H

@@ -1,5 +1,8 @@
 #include "fov.h"
 
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_log.h>
+
 #include "tile_map.h"
 
 /**
@@ -146,11 +149,19 @@ scan_octant(struct fov_context const* context,
   }
 }
 
-void
-rl_compute_fov(struct rl_tile_map const* map,
-               SDL_Point origin,
-               int radius,
-               bool* out)
+/**
+ * Update out with a field of view from origin.
+ *
+ * @param map       a map to inspect for calculating the field of view
+ * @param origin    the centre point
+ * @param radius    the radius of the circle around origin
+ * @param out       The visibility of the tiles in map
+ */
+static void
+compute_fov(struct rl_tile_map const* map,
+            SDL_Point origin,
+            int radius,
+            bool* out)
 {
   // set everything to not visible
   SDL_memset(out, 0, map->width * map->height * sizeof(*out));
@@ -167,5 +178,65 @@ rl_compute_fov(struct rl_tile_map const* map,
 
   for (int octant = 0; octant < 8; octant++) {
     scan_octant(&context, &octants[octant], 1, 1.0, 0.0, out);
+  }
+}
+
+bool
+rl_init_fov(struct rl_fov* fov, int cell_count, int radius)
+{
+  fov->visible = SDL_calloc(cell_count, sizeof(*fov->visible));
+  if (fov->visible == NULL) {
+    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+    return false;
+  }
+
+  fov->explored = SDL_calloc(cell_count, sizeof(*fov->explored));
+  if (fov->explored == NULL) {
+    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+    rl_free_fov(fov);
+    return false;
+  }
+
+  fov->cell_count = cell_count;
+  fov->radius = radius;
+
+  return true;
+}
+
+void
+rl_free_fov(struct rl_fov* fov)
+{
+  if (fov == NULL) {
+    return;
+  }
+
+  SDL_free(fov->visible);
+  fov->visible = NULL;
+
+  SDL_free(fov->explored);
+  fov->explored = NULL;
+
+  fov->cell_count = 0;
+  fov->radius = 0;
+}
+
+void
+rl_clear_fov(struct rl_fov* fov)
+{
+  SDL_memset(fov->visible, 0, fov->cell_count * sizeof(*fov->visible));
+  SDL_memset(fov->explored, 0, fov->cell_count * sizeof(*fov->explored));
+}
+
+void
+rl_update_fov(struct rl_fov* fov,
+              struct rl_tile_map const* map,
+              SDL_Point origin)
+{
+  compute_fov(map, origin, fov->radius, fov->visible);
+
+  for (int i = 0; i < map->width * map->height; i++) {
+    if (fov->visible[i]) {
+      fov->explored[i] = true;
+    }
   }
 }

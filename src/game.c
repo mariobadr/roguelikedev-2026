@@ -4,27 +4,13 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 
-#include "command.h"
 #include "controls.h"
-#include "fov.h"
 #include "lighting.h"
 #include "palette.h"
-#include "rand.h"
 #include "render.h"
 #include "resources.h"
 
 #define FOV_RADIUS 5
-
-static void
-update_fov(struct rl_game* game)
-{
-  rl_compute_fov(&game->world.map, game->world.rogue.position, FOV_RADIUS, game->visible);
-  for (int i = 0; i < game->world.map.width * game->world.map.height; i++) {
-    if (game->visible[i]) {
-      game->explored[i] = true;
-    }
-  }
-}
 
 static void
 set_wall_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
@@ -48,8 +34,7 @@ set_floor_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
   SDL_FColor const* fov_shades = RL_COLOUR_GRAY;
 
   if (visible) {
-    gfx->bg =
-      rl_apply_brightness(fov_shades[6], fov_shades[9], brightness);
+    gfx->bg = rl_apply_brightness(fov_shades[6], fov_shades[9], brightness);
   } else {
     gfx->bg = RL_COLOUR_NONE;
   }
@@ -85,7 +70,7 @@ draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game const* game)
     for (int x = 0; x < game->world.map.width; x++) {
       size_t const index = rl_map_index_of(&game->world.map, x, y);
 
-      if (!game->explored[index]) {
+      if (!game->fov.explored[index]) {
         continue;
       }
 
@@ -93,7 +78,7 @@ draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game const* game)
         game->world.rogue.position, (SDL_Point){ x, y }, FOV_RADIUS);
       struct rl_tile const tile = rl_get_tile(&game->world.map, x, y);
 
-      set_tile_gfx(&gfx, tile, game->visible[index], brightness);
+      set_tile_gfx(&gfx, tile, game->fov.visible[index], brightness);
       rl_draw_tile(renderer, font, &gfx, x * GLYPH_WIDTH, y * GLYPH_HEIGHT);
     }
   }
@@ -130,10 +115,8 @@ regenerate_map(struct rl_game* game)
   rl_free_world(&game->world);
   game->world = new_world;
 
-  SDL_memset(game->visible, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->visible));
-  SDL_memset(
-    game->explored, 0, MAP_WIDTH * MAP_HEIGHT * sizeof(*game->explored));
-  update_fov(game);
+  rl_clear_fov(&game->fov);
+  rl_update_fov(&game->fov, &game->world.map, game->world.rogue.position);
 
   return true;
 }
@@ -147,26 +130,17 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
     return false;
   }
 
-  game->visible = SDL_calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(*game->visible));
-  if (game->visible == NULL) {
-    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+  if (!rl_init_fov(&game->fov, MAP_WIDTH * MAP_HEIGHT, FOV_RADIUS)) {
     rl_free_game(game);
     return false;
   }
 
-  game->explored = SDL_calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(*game->explored));
-  if (game->explored == NULL) {
-    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
-    rl_free_game(game);
-    return false;
-  }
+  // make sure the rogue has an initial field-of-view
+  rl_update_fov(&game->fov, &game->world.map, game->world.rogue.position);
 
   game->resources = resources;
   game->action = RL_ACTION_NONE;
   game->action_cooldown = 0.0f;
-
-  // and make sure we have an initial field-of-view
-  update_fov(game);
 
   return true;
 }
@@ -178,12 +152,7 @@ rl_free_game(struct rl_game* game)
     return;
   }
 
-  SDL_free(game->visible);
-  game->visible = NULL;
-
-  SDL_free(game->explored);
-  game->explored = NULL;
-
+  rl_free_fov(&game->fov);
   rl_free_world(&game->world);
 }
 
@@ -210,7 +179,9 @@ rl_update_game(struct rl_game* game, float dt)
     game->action_cooldown -= dt;
   }
 
-  if (game->action == RL_ACTION_DEBUG_GENMAP) {
+  if (game->action == RL_ACTION_NONE) {
+    return;
+  } else if (game->action == RL_ACTION_DEBUG_GENMAP) {
     if (regenerate_map(game)) {
       game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
     }
@@ -225,7 +196,8 @@ rl_update_game(struct rl_game* game, float dt)
   if (prev.x != game->world.rogue.position.x ||
       prev.y != game->world.rogue.position.y) {
     // the rogue moved
-    update_fov(game);
+    rl_update_fov(&game->fov, &game->world.map, game->world.rogue.position);
+
     game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
   }
 }
