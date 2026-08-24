@@ -1,42 +1,128 @@
 /**
  * @file palette.h
+ *
+ * Hex values from: https://github.com/yeun/open-color
+ * MIT License
+ * Copyright (c) 2016 heeyeun
  */
 #ifndef GINC_ROGUELIKE_PALETTE_H
 #define GINC_ROGUELIKE_PALETTE_H
 
 #include <SDL3/SDL_pixels.h>
 
+#define RL_HEX_TO_FCOLOR(hex)                                                  \
+  { ((hex) >> 16 & 0xFF) / 255.0f,                                             \
+    ((hex) >> 8 & 0xFF) / 255.0f,                                              \
+    ((hex) & 0xFF) / 255.0f,                                                   \
+    1.00f }
+
 static const SDL_FColor RL_COLOUR_NONE = { 0.00f, 0.00f, 0.00f, 0.00f };
 static const SDL_FColor RL_COLOUR_WHITE = { 1.00f, 1.00f, 1.00f, 1.00f };
 
-// shades of slate gray
-static const SDL_FColor RL_COLOUR_SLATE[] = {
-    { 0.03f, 0.03f, 0.05f, 1.00f },
-    { 0.08f, 0.08f, 0.13f, 1.00f },
-    { 0.15f, 0.15f, 0.22f, 1.00f },
-    { 0.28f, 0.28f, 0.38f, 1.00f },
-    { 0.50f, 0.50f, 0.63f, 1.00f },
-    { 0.78f, 0.78f, 0.88f, 1.00f },
+static const SDL_FColor RL_COLOUR_GRAY[] = {
+  RL_HEX_TO_FCOLOR(0xf8f9fa), RL_HEX_TO_FCOLOR(0xf1f3f5),
+  RL_HEX_TO_FCOLOR(0xe9ecef), RL_HEX_TO_FCOLOR(0xdee2e6),
+  RL_HEX_TO_FCOLOR(0xced4da), RL_HEX_TO_FCOLOR(0xadb5bd),
+  RL_HEX_TO_FCOLOR(0x868e96), RL_HEX_TO_FCOLOR(0x495057),
+  RL_HEX_TO_FCOLOR(0x343a40), RL_HEX_TO_FCOLOR(0x212529),
 };
 
-// shades of yellow
+static const SDL_FColor RL_COLOUR_RED[] = {
+  RL_HEX_TO_FCOLOR(0xfff5f5), RL_HEX_TO_FCOLOR(0xffe3e3),
+  RL_HEX_TO_FCOLOR(0xffc9c9), RL_HEX_TO_FCOLOR(0xffa8a8),
+  RL_HEX_TO_FCOLOR(0xff8787), RL_HEX_TO_FCOLOR(0xff6b6b),
+  RL_HEX_TO_FCOLOR(0xfa5252), RL_HEX_TO_FCOLOR(0xf03e3e),
+  RL_HEX_TO_FCOLOR(0xe03131), RL_HEX_TO_FCOLOR(0xc92a2a),
+};
+
+static const SDL_FColor RL_COLOUR_PINK[] = {
+  RL_HEX_TO_FCOLOR(0xfff0f6), RL_HEX_TO_FCOLOR(0xffdeeb),
+  RL_HEX_TO_FCOLOR(0xfcc2d7), RL_HEX_TO_FCOLOR(0xfaa2c1),
+  RL_HEX_TO_FCOLOR(0xf783ac), RL_HEX_TO_FCOLOR(0xf06595),
+  RL_HEX_TO_FCOLOR(0xe64980), RL_HEX_TO_FCOLOR(0xd6336c),
+  RL_HEX_TO_FCOLOR(0xc2255c), RL_HEX_TO_FCOLOR(0xa61e4d),
+};
+
+static const SDL_FColor RL_COLOUR_GRAPE[] = {
+  RL_HEX_TO_FCOLOR(0xf8f0fc), RL_HEX_TO_FCOLOR(0xf3d9fa),
+  RL_HEX_TO_FCOLOR(0xeebefa), RL_HEX_TO_FCOLOR(0xe599f7),
+  RL_HEX_TO_FCOLOR(0xda77f2), RL_HEX_TO_FCOLOR(0xcc5de8),
+  RL_HEX_TO_FCOLOR(0xbe4bdb), RL_HEX_TO_FCOLOR(0xae3ec9),
+  RL_HEX_TO_FCOLOR(0x9c36b5), RL_HEX_TO_FCOLOR(0x862e9c),
+};
+
+static const SDL_FColor RL_COLOUR_VIOLET[] = {
+  RL_HEX_TO_FCOLOR(0xf3f0ff), RL_HEX_TO_FCOLOR(0xe5dbff),
+  RL_HEX_TO_FCOLOR(0xd0bfff), RL_HEX_TO_FCOLOR(0xb197fc),
+  RL_HEX_TO_FCOLOR(0x9775fa), RL_HEX_TO_FCOLOR(0x845ef7),
+  RL_HEX_TO_FCOLOR(0x7950f2), RL_HEX_TO_FCOLOR(0x7048e8),
+  RL_HEX_TO_FCOLOR(0x6741d9), RL_HEX_TO_FCOLOR(0x5f3dc4),
+};
+
+static const SDL_FColor RL_COLOUR_INDIGO[] = {
+  RL_HEX_TO_FCOLOR(0xedf2ff), RL_HEX_TO_FCOLOR(0xdbe4ff),
+  RL_HEX_TO_FCOLOR(0xbac8ff), RL_HEX_TO_FCOLOR(0x91a7ff),
+  RL_HEX_TO_FCOLOR(0x748ffc), RL_HEX_TO_FCOLOR(0x5c7cfa),
+  RL_HEX_TO_FCOLOR(0x4c6ef5), RL_HEX_TO_FCOLOR(0x4263eb),
+  RL_HEX_TO_FCOLOR(0x3b5bdb), RL_HEX_TO_FCOLOR(0x364fc7),
+};
+
+static const SDL_FColor RL_COLOUR_BLUE[] = {
+  RL_HEX_TO_FCOLOR(0xe7f5ff), RL_HEX_TO_FCOLOR(0xd0ebff),
+  RL_HEX_TO_FCOLOR(0xa5d8ff), RL_HEX_TO_FCOLOR(0x74c0fc),
+  RL_HEX_TO_FCOLOR(0x4dabf7), RL_HEX_TO_FCOLOR(0x339af0),
+  RL_HEX_TO_FCOLOR(0x228be6), RL_HEX_TO_FCOLOR(0x1c7ed6),
+  RL_HEX_TO_FCOLOR(0x1971c2), RL_HEX_TO_FCOLOR(0x1864ab),
+};
+
+static const SDL_FColor RL_COLOUR_CYAN[] = {
+  RL_HEX_TO_FCOLOR(0xe3fafc), RL_HEX_TO_FCOLOR(0xc5f6fa),
+  RL_HEX_TO_FCOLOR(0x99e9f2), RL_HEX_TO_FCOLOR(0x66d9e8),
+  RL_HEX_TO_FCOLOR(0x3bc9db), RL_HEX_TO_FCOLOR(0x22b8cf),
+  RL_HEX_TO_FCOLOR(0x15aabf), RL_HEX_TO_FCOLOR(0x1098ad),
+  RL_HEX_TO_FCOLOR(0x0c8599), RL_HEX_TO_FCOLOR(0x0b7285),
+};
+
+static const SDL_FColor RL_COLOUR_TEAL[] = {
+  RL_HEX_TO_FCOLOR(0xe6fcf5), RL_HEX_TO_FCOLOR(0xc3fae8),
+  RL_HEX_TO_FCOLOR(0x96f2d7), RL_HEX_TO_FCOLOR(0x63e6be),
+  RL_HEX_TO_FCOLOR(0x38d9a9), RL_HEX_TO_FCOLOR(0x20c997),
+  RL_HEX_TO_FCOLOR(0x12b886), RL_HEX_TO_FCOLOR(0x0ca678),
+  RL_HEX_TO_FCOLOR(0x099268), RL_HEX_TO_FCOLOR(0x087f5b),
+};
+
+static const SDL_FColor RL_COLOUR_GREEN[] = {
+  RL_HEX_TO_FCOLOR(0xebfbee), RL_HEX_TO_FCOLOR(0xd3f9d8),
+  RL_HEX_TO_FCOLOR(0xb2f2bb), RL_HEX_TO_FCOLOR(0x8ce99a),
+  RL_HEX_TO_FCOLOR(0x69db7c), RL_HEX_TO_FCOLOR(0x51cf66),
+  RL_HEX_TO_FCOLOR(0x40c057), RL_HEX_TO_FCOLOR(0x37b24d),
+  RL_HEX_TO_FCOLOR(0x2f9e44), RL_HEX_TO_FCOLOR(0x2b8a3e),
+};
+
+static const SDL_FColor RL_COLOUR_LIME[] = {
+  RL_HEX_TO_FCOLOR(0xf4fce3), RL_HEX_TO_FCOLOR(0xe9fac8),
+  RL_HEX_TO_FCOLOR(0xd8f5a2), RL_HEX_TO_FCOLOR(0xc0eb75),
+  RL_HEX_TO_FCOLOR(0xa9e34b), RL_HEX_TO_FCOLOR(0x94d82d),
+  RL_HEX_TO_FCOLOR(0x82c91e), RL_HEX_TO_FCOLOR(0x74b816),
+  RL_HEX_TO_FCOLOR(0x66a80f), RL_HEX_TO_FCOLOR(0x5c940d),
+};
+
 static const SDL_FColor RL_COLOUR_YELLOW[] = {
-    { 0.05f, 0.05f, 0.03f, 1.00f },
-    { 0.13f, 0.13f, 0.08f, 1.00f },
-    { 0.22f, 0.22f, 0.15f, 1.00f },
-    { 0.38f, 0.38f, 0.28f, 1.00f },
-    { 0.63f, 0.63f, 0.50f, 1.00f },
-    { 0.88f, 0.88f, 0.78f, 1.00f },
+  RL_HEX_TO_FCOLOR(0xfff9db), RL_HEX_TO_FCOLOR(0xfff3bf),
+  RL_HEX_TO_FCOLOR(0xffec99), RL_HEX_TO_FCOLOR(0xffe066),
+  RL_HEX_TO_FCOLOR(0xffd43b), RL_HEX_TO_FCOLOR(0xfcc419),
+  RL_HEX_TO_FCOLOR(0xfab005), RL_HEX_TO_FCOLOR(0xf59f00),
+  RL_HEX_TO_FCOLOR(0xf08c00), RL_HEX_TO_FCOLOR(0xe67700),
 };
 
-// shades of orange
 static const SDL_FColor RL_COLOUR_ORANGE[] = {
-    { 0.05f, 0.03f, 0.00f, 1.00f },
-    { 0.13f, 0.08f, 0.01f, 1.00f },
-    { 0.22f, 0.14f, 0.02f, 1.00f },
-    { 0.38f, 0.25f, 0.04f, 1.00f },
-    { 0.63f, 0.45f, 0.10f, 1.00f },
-    { 0.95f, 0.74f, 0.22f, 1.00f },
+  RL_HEX_TO_FCOLOR(0xfff4e6), RL_HEX_TO_FCOLOR(0xffe8cc),
+  RL_HEX_TO_FCOLOR(0xffd8a8), RL_HEX_TO_FCOLOR(0xffc078),
+  RL_HEX_TO_FCOLOR(0xffa94d), RL_HEX_TO_FCOLOR(0xff922b),
+  RL_HEX_TO_FCOLOR(0xfd7e14), RL_HEX_TO_FCOLOR(0xf76707),
+  RL_HEX_TO_FCOLOR(0xe8590c), RL_HEX_TO_FCOLOR(0xd9480f),
 };
+
+#undef RL_HEX_TO_FCOLOR
 
 #endif // GINC_ROGUELIKE_PALETTE_H

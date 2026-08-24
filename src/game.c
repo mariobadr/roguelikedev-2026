@@ -13,7 +13,7 @@
 #include "render.h"
 #include "resources.h"
 
-#define FOV_RADIUS 8
+#define FOV_RADIUS 5
 
 static void
 update_fov(struct rl_game* game)
@@ -31,12 +31,12 @@ set_wall_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
 {
   gfx->glyph = '#';
   gfx->bg = RL_COLOUR_NONE;
-  SDL_FColor const* fov_shades = RL_COLOUR_SLATE;
+  SDL_FColor const* fov_shades = RL_COLOUR_GRAY;
 
   if (visible) {
-    gfx->fg = rl_apply_brightness(fov_shades[5], fov_shades[2], brightness);
+    gfx->fg = rl_apply_brightness(fov_shades[4], fov_shades[8], brightness);
   } else {
-    gfx->fg = RL_COLOUR_SLATE[2];
+    gfx->fg = RL_COLOUR_GRAY[8];
   }
 }
 
@@ -45,11 +45,11 @@ set_floor_gfx(struct rl_gfx_tile* gfx, bool visible, float brightness)
 {
   gfx->glyph = ' ';
   gfx->fg = RL_COLOUR_NONE;
-  SDL_FColor const* fov_shades = RL_COLOUR_SLATE;
+  SDL_FColor const* fov_shades = RL_COLOUR_GRAY;
 
   if (visible) {
     gfx->bg =
-      rl_apply_brightness(fov_shades[3], fov_shades[0], brightness);
+      rl_apply_brightness(fov_shades[6], fov_shades[9], brightness);
   } else {
     gfx->bg = RL_COLOUR_NONE;
   }
@@ -234,10 +234,10 @@ void
 rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
 {
   SDL_SetRenderDrawColorFloat(renderer,
-                              RL_COLOUR_SLATE[0].r,
-                              RL_COLOUR_SLATE[0].g,
-                              RL_COLOUR_SLATE[0].b,
-                              RL_COLOUR_SLATE[0].a);
+                              RL_COLOUR_GRAY[9].r,
+                              RL_COLOUR_GRAY[9].g,
+                              RL_COLOUR_GRAY[9].b,
+                              RL_COLOUR_GRAY[9].a);
   SDL_RenderClear(renderer);
 
   draw_map(renderer, game->resources->font, game);
