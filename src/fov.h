@@ -14,6 +14,8 @@ struct rl_tile_map;
  */
 struct rl_fov
 {
+  /** The centre of the field (circle). */
+  SDL_Point origin;
   /** The farthest out the entity can see. */
   int radius;
   /** Cells the entity can see */

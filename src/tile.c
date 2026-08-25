@@ -1,9 +1,9 @@
 #include "tile.h"
 
 bool
-rl_is_walkable(struct rl_tile tile)
+rl_is_walkable(enum rl_tile tile)
 {
-  switch (tile.type) {
+  switch (tile) {
     case RL_TILE_WALL:
       return false;
     case RL_TILE_FLOOR:
@@ -16,9 +16,9 @@ rl_is_walkable(struct rl_tile tile)
 }
 
 bool
-rl_is_transparent(struct rl_tile tile)
+rl_is_transparent(enum rl_tile tile)
 {
-  switch (tile.type) {
+  switch (tile) {
     case RL_TILE_WALL:
       return false;
     case RL_TILE_FLOOR:

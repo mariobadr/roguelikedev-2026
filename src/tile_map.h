@@ -19,7 +19,7 @@ struct rl_tile_map
   /** The height of the map in tiles. */
   int height;
   /** The tiles in the map. */
-  struct rl_tile* tiles;
+  enum rl_tile* tiles;
 };
 
 /**
@@ -52,15 +52,15 @@ rl_map_contains(struct rl_tile_map const* map, int x, int y);
 /**
  * @return the tile found at (x, y) in map.
  */
-struct rl_tile
+enum rl_tile
 rl_get_tile(struct rl_tile_map const* map, int x, int y);
 
 void
-rl_set_tile(struct rl_tile_map* map, int x, int y, struct rl_tile tile);
+rl_set_tile(struct rl_tile_map* map, int x, int y, enum rl_tile tile);
 
 void
 rl_fill_rect(struct rl_tile_map* map,
              SDL_Rect const* rect,
-             struct rl_tile tile);
+             enum rl_tile tile);
 
 #endif // GINC_ROGUELIKE_TILE_MAP_H

@@ -25,12 +25,10 @@ enum rl_entity_type
  */
 struct rl_entity
 {
+  /** The type of entity. */
+  enum rl_entity_type type;
   /** Dispalyed name. */
   char const* name;
-  /** Glyph representing the entity. */
-  Uint8 glyph;
-  /** The glyph's colour. */
-  SDL_FColor colour;
   /** Location in tile coordinates. */
   SDL_Point position;
 };

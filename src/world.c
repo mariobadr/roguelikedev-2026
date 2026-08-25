@@ -3,8 +3,7 @@
 static void
 carve_map(struct rl_tile_map* map, struct rl_layout const* layout)
 {
-  struct rl_tile tile = { 0 };
-  tile.type = RL_TILE_FLOOR;
+  enum rl_tile tile = RL_TILE_FLOOR;
 
   for (int i = 0; i < layout->room_count; i++) {
     rl_fill_rect(map, &layout->rooms[i], tile);

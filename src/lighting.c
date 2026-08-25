@@ -11,14 +11,22 @@ rl_calculate_brightness(SDL_Point source, SDL_Point tile, float radius)
 }
 
 SDL_FColor
-rl_apply_brightness(SDL_FColor brightest, SDL_FColor darkest, float brightness)
+rl_lerp_colour(SDL_FColor a, SDL_FColor b, float alpha)
 {
-  brightness = SDL_clamp(brightness, -1.0f, 1.0f);
+  alpha = SDL_clamp(alpha, -1.0f, 1.0f);
 
   return (SDL_FColor){
-    .r = darkest.r + (brightest.r - darkest.r) * brightness,
-    .g = darkest.g + (brightest.g - darkest.g) * brightness,
-    .b = darkest.b + (brightest.b - darkest.b) * brightness,
-    .a = brightest.a,
+    .r = b.r + (a.r - b.r) * alpha,
+    .g = b.g + (a.g - b.g) * alpha,
+    .b = b.b + (a.b - b.b) * alpha,
+    .a = a.a,
   };
+}
+
+float
+rl_lerp_float(float a, float b, float alpha)
+{
+  alpha = SDL_clamp(alpha, -1.0f, 1.0f);
+
+  return b + (a - b) * alpha;
 }

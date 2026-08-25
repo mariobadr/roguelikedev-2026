@@ -110,7 +110,7 @@ scan_octant(struct fov_context const* context,
       SDL_Point tile_pos = transform(context, octant, dx, dy);
       bool in_bounds = rl_map_contains(context->map, tile_pos.x, tile_pos.y);
 
-      struct rl_tile tile = { 0 };
+      enum rl_tile tile = RL_TILE_WALL;
       if (in_bounds) {
         tile = rl_get_tile(context->map, tile_pos.x, tile_pos.y);
 
@@ -197,6 +197,8 @@ rl_init_fov(struct rl_fov* fov, int cell_count, int radius)
     return false;
   }
 
+  fov->origin.x = 0;
+  fov->origin.y = 0;
   fov->cell_count = cell_count;
   fov->radius = radius;
 
@@ -232,6 +234,7 @@ rl_update_fov(struct rl_fov* fov,
               struct rl_tile_map const* map,
               SDL_Point origin)
 {
+  fov->origin = origin;
   compute_fov(map, origin, fov->radius, fov->visible);
 
   for (int i = 0; i < map->width * map->height; i++) {

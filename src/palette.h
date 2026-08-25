@@ -16,7 +16,7 @@
     ((hex) & 0xFF) / 255.0f,                                                   \
     1.00f }
 
-static const SDL_FColor RL_COLOUR_NONE = { 0.00f, 0.00f, 0.00f, 0.00f };
+static const SDL_FColor RL_COLOUR_BLACK = { 0.00f, 0.00f, 0.00f, 0.00f };
 static const SDL_FColor RL_COLOUR_WHITE = { 1.00f, 1.00f, 1.00f, 1.00f };
 
 static const SDL_FColor RL_COLOUR_GRAY[] = {

@@ -42,7 +42,7 @@ rl_map_contains(struct rl_tile_map const* map, int x, int y)
   return x >= 0 && y >= 0 && x < map->width && y < map->height;
 }
 
-struct rl_tile
+enum rl_tile
 rl_get_tile(struct rl_tile_map const* map, int x, int y)
 {
   SDL_assert(rl_map_contains(map, x, y));
@@ -51,14 +51,14 @@ rl_get_tile(struct rl_tile_map const* map, int x, int y)
 }
 
 void
-rl_set_tile(struct rl_tile_map* map, int x, int y, struct rl_tile tile)
+rl_set_tile(struct rl_tile_map* map, int x, int y, enum rl_tile tile)
 {
   size_t index = rl_map_index_of(map, x, y);
   map->tiles[index] = tile;
 }
 
 void
-rl_fill_rect(struct rl_tile_map* map, SDL_Rect const* rect, struct rl_tile tile)
+rl_fill_rect(struct rl_tile_map* map, SDL_Rect const* rect, enum rl_tile tile)
 {
   for (int y = rect->y; y < rect->y + rect->h; ++y) {
     for (int x = rect->x; x < rect->x + rect->w; ++x) {

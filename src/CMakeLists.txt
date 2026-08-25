@@ -15,6 +15,8 @@ set(GAME_SOURCES
     fov.h
     game.c
     game.h
+    graphics.c
+    graphics.h
     input.c
     input.h
     layout.c
