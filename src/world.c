@@ -101,6 +101,28 @@ spawn_entities(struct rl_world *world, struct rand_state *rng)
   }
 }
 
+static bool
+rl_move_entity(struct rl_entity* entity,
+               struct rl_world const* world,
+               SDL_Point direction)
+{
+  SDL_Point dst = { 0 };
+  dst.x = entity->position.x + direction.x;
+  dst.y = entity->position.y + direction.y;
+
+  if(is_occupied(world, dst)) {
+    return false;
+  }
+
+  if (rl_is_walkable(rl_get_tile(&world->map, dst.x, dst.y))) {
+    entity->position = dst;
+    return true;
+  }
+
+  return false;
+}
+
+
 bool
 rl_init_world(struct rl_world* world,
               int width,
@@ -169,6 +191,6 @@ rl_update_world(struct rl_world* world, struct rl_command const* player_command)
   }
 
   if (player_command->type == RL_COMMAND_MOVE) {
-    rl_move_entity(&world->rogue, &world->map, player_command->direction);
+    rl_move_entity(&world->rogue, world, player_command->direction);
   }
 }
