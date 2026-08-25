@@ -10,6 +10,7 @@
 
 // forward declarations
 struct rl_tile_map;
+struct rand_state;
 
 /**
  * The different types of entities in the game.
@@ -31,6 +32,16 @@ struct rl_entity
   char const* name;
   /** Location in tile coordinates. */
   SDL_Point position;
+  /** The current level. */
+  int level;
+  /** The current number of hit points. */
+  int hp;
+  /** The maximum number of hit points. */
+  int max_hp;
+  /** Impacts the amount of damage done. */
+  int strength;
+  /** Impacts the amount of damage mitigated. */
+  int armor;
 };
 
 /**
@@ -38,5 +49,13 @@ struct rl_entity
  */
 struct rl_entity
 rl_create_entity(enum rl_entity_type type);
+
+/**
+ * @return how much damage was done (or -1 for a miss).
+ */
+int
+rl_attack_entity(struct rl_entity const* attacker,
+                 struct rl_entity* defender,
+                 struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_ENTITY_H

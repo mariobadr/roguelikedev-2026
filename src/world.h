@@ -35,8 +35,9 @@ rl_init_world(struct rl_world* world,
 void
 rl_free_world(struct rl_world* world);
 
-void
+bool
 rl_update_world(struct rl_world* world,
-                struct rl_command const* player_command);
+                struct rl_command const* player_command,
+                struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_WORLD_H

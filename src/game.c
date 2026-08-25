@@ -207,16 +207,19 @@ rl_update_game(struct rl_game* game, float dt)
     return;
   }
 
+  // track previous position for fov updates
   SDL_Point const prev = game->world.rogue.position;
+
   struct rl_command cmd = rl_build_command(game->action);
-  rl_update_world(&game->world, &cmd);
+  if(rl_update_world(&game->world, &cmd, &game->rng)) {
+    // turn taken
+    game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
+  }
 
   if (prev.x != game->world.rogue.position.x ||
       prev.y != game->world.rogue.position.y) {
     // the rogue moved
     rl_update_fov(&game->fov, &game->world.map, game->world.rogue.position);
-
-    game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
   }
 }
 

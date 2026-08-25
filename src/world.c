@@ -24,22 +24,29 @@ carve_map(struct rl_tile_map* map, struct rl_layout const* layout)
   }
 }
 
-static bool
-is_occupied(struct rl_world const *world, SDL_Point position)
+static struct rl_entity*
+find_entity(struct rl_world const *world, SDL_Point position)
 {
   if (world->rogue.position.x == position.x &&
       world->rogue.position.y == position.y) {
-    return true;
+    // casting away const - look away!
+    return (struct rl_entity*)&world->rogue;
   }
 
   for (int i = 0; i < world->entity_count; i++) {
-    struct rl_entity const* entity = &world->entities[i];
+    struct rl_entity * entity = &world->entities[i];
     if (entity->position.x == position.x && entity->position.y == position.y) {
-      return true;
+      return entity;
     }
   }
 
-  return false;
+  return NULL;
+}
+
+static bool
+is_occupied(struct rl_world const *world, SDL_Point position)
+{
+  return find_entity(world, position) != NULL;
 }
 
 static bool
@@ -69,9 +76,9 @@ max_entities_for_room(SDL_Rect const* room)
 {
   int const area = room->w * room->h;
 
-  // scale area down linearly. So, if a rooms area is less than 30, scaled
-  // becomes 0 (i.e., no enemies in small rooms).
-  int const scaled = area / 30;
+  // scale area down linearly. So, if a rooms area is less than the denominator,
+  // scaled becomes 0 (i.e., no enemies in small rooms).
+  int const scaled = area / 25;
 
   return SDL_min(scaled, 4);
 }
@@ -102,18 +109,29 @@ spawn_entities(struct rl_world *world, struct rand_state *rng)
 }
 
 static bool
-rl_move_entity(struct rl_entity* entity,
-               struct rl_world const* world,
-               SDL_Point direction)
+try_attack(struct rl_entity* entity,
+           struct rl_world const* world,
+           SDL_Point dst,
+           struct rand_state* rng)
 {
-  SDL_Point dst = { 0 };
-  dst.x = entity->position.x + direction.x;
-  dst.y = entity->position.y + direction.y;
+  struct rl_entity* e = find_entity(world, dst);
+  if (e != NULL) {
+    int const damage = rl_attack_entity(entity, e, rng);
+    if (damage >= 0) {
+      SDL_Log("Attacked %s for %d damage (HP: %d)", e->name, damage, e->hp);
+    } else {
+      SDL_Log("Missed %s (HP: %d)", e->name, e->hp);
+    }
 
-  if(is_occupied(world, dst)) {
-    return false;
+    return true;
   }
 
+  return false;
+}
+
+static bool
+try_move(struct rl_entity* entity, struct rl_world const* world, SDL_Point dst)
+{
   if (rl_is_walkable(rl_get_tile(&world->map, dst.x, dst.y))) {
     entity->position = dst;
     return true;
@@ -122,6 +140,22 @@ rl_move_entity(struct rl_entity* entity,
   return false;
 }
 
+static bool
+do_move(struct rl_entity* entity,
+        struct rl_world const* world,
+        SDL_Point direction,
+        struct rand_state* rng)
+{
+  SDL_Point dst = { 0 };
+  dst.x = entity->position.x + direction.x;
+  dst.y = entity->position.y + direction.y;
+
+  if (try_attack(entity, world, dst, rng)) {
+    return true;
+  }
+
+  return try_move(entity, world, dst);
+}
 
 bool
 rl_init_world(struct rl_world* world,
@@ -182,15 +216,35 @@ rl_free_world(struct rl_world* world)
   rl_free_map(&world->map);
 }
 
-void
-rl_update_world(struct rl_world* world, struct rl_command const* player_command)
+bool
+rl_update_world(struct rl_world* world,
+                struct rl_command const* cmd,
+                struct rand_state* rng)
 {
-  if (player_command->type == RL_COMMAND_NONE) {
+  if (cmd->type == RL_COMMAND_NONE) {
     // if the player didn't take a turn, no other entity should either
-    return;
+    return false;
   }
 
-  if (player_command->type == RL_COMMAND_MOVE) {
-    rl_move_entity(&world->rogue, world, player_command->direction);
+  bool consume_turn = false;
+  switch (cmd->type) {
+    case RL_COMMAND_MOVE:
+      consume_turn = do_move(&world->rogue, world, cmd->direction, rng);
+      break;
+    default:
+      break;
   }
+
+  // TODO: stop doing a linear scan?
+  for(int i = 0; i < world->entity_count; i++) {
+    struct rl_entity *e = &world->entities[i];
+    if (e->hp <= 0) {
+      SDL_Log("%s died", e->name);
+
+      *e = world->entities[world->entity_count - 1];
+      world->entity_count--;
+    }
+  }
+
+  return consume_turn;
 }
