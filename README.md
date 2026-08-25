@@ -1,5 +1,7 @@
 # Games in C: A Roguelike 
 
+[![AI-DECLARATION: hint](https://img.shields.io/badge/䷼%20AI--DECLARATION-hint-ecfccb?labelColor=ecfccb)](https://ai-declaration.md)
+
 This repository was created for the [RoguelikeDev Does The Complete Roguelike Tutorial (2026)](https://www.reddit.com/r/roguelikedev/comments/1vd9noj/roguelikedev_does_the_complete_roguelike_tutorial/).
 If you would like to compile this code, see [these instructions](BUILDING.md).
 If you would like to play the game, check it out on [itch.io](https://professor-mario.itch.io/roguelikedev-2026) (you can play it in the browser).
