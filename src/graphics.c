@@ -57,6 +57,12 @@ static struct tile_gfx_desc const entity_gfx_table[] = {
     .fg_index = 0,
     .bg_colour = NULL,
   },
+  [RL_ENTITY_RAT] = {
+    .glyph = 'r',
+    .fg_colour = RL_COLOUR_GREEN,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
 };
 
 struct rl_gfx_tile

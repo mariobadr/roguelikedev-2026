@@ -14,10 +14,16 @@ struct rand_state;
 
 struct rl_world
 {
+  /** The layout of the level (currently only one level). */
   struct rl_layout layout;
+  /** A map of the current level. */
   struct rl_tile_map map;
   /** The player entity */
   struct rl_entity rogue;
+  /** All other entities */
+  struct rl_entity* entities;
+  /** The number of other entities */
+  int entity_count;
 };
 
 bool

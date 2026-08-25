@@ -11,26 +11,29 @@
 #include "render.h"
 #include "resources.h"
 
-#define FOV_RADIUS 4
+#define FOV_RADIUS 8
 
 static void
-draw_map(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game const* game)
+draw_map(SDL_Renderer* renderer,
+         SDL_Texture* font,
+         struct rl_tile_map const* map,
+         struct rl_fov const* fov)
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-  for (int y = 0; y < game->world.map.height; y++) {
-    for (int x = 0; x < game->world.map.width; x++) {
-      size_t const index = rl_map_index_of(&game->world.map, x, y);
+  for (int y = 0; y < map->height; y++) {
+    for (int x = 0; x < map->width; x++) {
+      size_t const index = rl_map_index_of(map, x, y);
 
-      if (!game->fov.explored[index]) {
+      if (!fov->explored[index]) {
         // don't draw anything for unexplored tiles
         continue;
       }
 
-      enum rl_tile const tile = rl_get_tile(&game->world.map, x, y);
+      enum rl_tile const tile = rl_get_tile(map, x, y);
       struct rl_gfx_tile gfx = rl_get_tile_gfx(tile);
 
-      if(!game->fov.visible[index]) {
+      if (!fov->visible[index]) {
         // dim explored but not visible tiles
         gfx.fg = rl_lerp_colour(gfx.fg, RL_COLOUR_BLACK, 0.4f);
       }
@@ -83,7 +86,6 @@ draw_entity(SDL_Renderer* renderer,
             SDL_Texture* font,
             struct rl_entity const* entity)
 {
-  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
   struct rl_gfx_tile const tile = rl_get_entity_gfx(entity);
 
   // convert from tile to screen coordinates
@@ -91,6 +93,30 @@ draw_entity(SDL_Renderer* renderer,
   float const fy = entity->position.y * GLYPH_HEIGHT;
 
   rl_draw_tile(renderer, font, &tile, fx, fy);
+}
+
+static void
+draw_entities(SDL_Renderer* renderer,
+              SDL_Texture* font,
+              struct rl_world const* world,
+              struct rl_fov const* fov)
+{
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  // draw the player first
+  draw_entity(renderer, font, &world->rogue);
+
+  // draw all other entities next
+  for (int i = 0; i < world->entity_count; i++) {
+    struct rl_entity const* entity = &world->entities[i];
+
+    size_t const index =
+      rl_map_index_of(&world->map, entity->position.x, entity->position.y);
+
+    if (fov->visible[index]) {
+      draw_entity(renderer, font, &world->entities[i]);
+    }
+  }
 }
 
 /**
@@ -204,7 +230,7 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
                               RL_COLOUR_GRAY[9].a);
   SDL_RenderClear(renderer);
 
-  draw_map(renderer, game->resources->font, game);
-  draw_entity(renderer, game->resources->font, &game->world.rogue);
+  draw_map(renderer, game->resources->font, &game->world.map, &game->fov);
+  draw_entities(renderer, game->resources->font, &game->world, &game->fov);
   draw_light(renderer, &game->world.map, &game->fov);
 }
