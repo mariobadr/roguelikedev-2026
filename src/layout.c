@@ -53,36 +53,36 @@ struct extent
 /**
  * @return the gap between two extents on one axis, or 0 if they overlap.
  */
-static inline int
-axis_gap(struct extent a, struct extent b)
-{
-  if (b.start >= a.end) {
-    return b.start - a.end;
-  }
+// static inline int
+// axis_gap(struct extent a, struct extent b)
+// {
+//   if (b.start >= a.end) {
+//     return b.start - a.end;
+//   }
 
-  if (a.start >= b.end) {
-    return a.start - b.end;
-  }
+//   if (a.start >= b.end) {
+//     return a.start - b.end;
+//   }
 
-  return 0;
-}
+//   return 0;
+// }
 
 /**
  * @return the squared distance between the nearest edges of two rects.
  */
-static int
-rect_gap_dist_sq(SDL_Rect const* a, SDL_Rect const* b)
-{
-  struct extent a_x = { a->x, a->x + a->w };
-  struct extent b_x = { b->x, b->x + b->w };
-  struct extent a_y = { a->y, a->y + a->h };
-  struct extent b_y = { b->y, b->y + b->h };
+// static int
+// rect_gap_dist_sq(SDL_Rect const* a, SDL_Rect const* b)
+// {
+//   struct extent a_x = { a->x, a->x + a->w };
+//   struct extent b_x = { b->x, b->x + b->w };
+//   struct extent a_y = { a->y, a->y + a->h };
+//   struct extent b_y = { b->y, b->y + b->h };
 
-  int dx = axis_gap(a_x, b_x);
-  int dy = axis_gap(a_y, b_y);
+//   int dx = axis_gap(a_x, b_x);
+//   int dy = axis_gap(a_y, b_y);
 
-  return dx * dx + dy * dy;
-}
+//   return dx * dx + dy * dy;
+// }
 
 /**
  * @return the squared distance between the centers of two rects.
