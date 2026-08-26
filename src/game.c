@@ -120,7 +120,9 @@ draw_entities(SDL_Renderer* renderer,
 }
 
 static void
-draw_ui(SDL_Renderer* renderer, SDL_Texture *font, alist(rl_log_line) *messages)
+draw_combat_log(SDL_Renderer* renderer,
+                SDL_Texture* font,
+                alist(rl_log_line) const* messages)
 {
   int const len = (int)alist_len(messages);
   // print messages below the map
@@ -140,6 +142,34 @@ draw_ui(SDL_Renderer* renderer, SDL_Texture *font, alist(rl_log_line) *messages)
 
     fy += GLYPH_HEIGHT;
   }
+}
+
+static void
+draw_side_panel(SDL_Renderer* renderer, SDL_Texture *font, struct rl_game const *game)
+{
+  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
+
+  char text[16];
+  int const len = SDL_snprintf(text, sizeof text, "Health: %d / %d", rogue->hp, rogue->max_hp);
+
+  float fx = (RL_WIDTH_MAP + 1) * GLYPH_WIDTH;
+
+  struct rl_gfx_tile tile = { 0 };
+  tile.fg = RL_COLOUR_GRAY[5];
+  tile.bg = RL_COLOUR_BLACK;
+
+  for(int i = 0; i < len; i++) {
+    tile.glyph = text[i];
+    rl_draw_tile(renderer, font, &tile, fx, 1 * GLYPH_HEIGHT);
+    fx += GLYPH_WIDTH;
+  }
+}
+
+static void
+draw_ui(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game const* game)
+{
+  draw_combat_log(renderer, font, &game->messages);
+  draw_side_panel(renderer, font, game);
 }
 
 /**
@@ -293,5 +323,5 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
   draw_map(renderer, game->resources->font, &game->world.map, &game->fov);
   draw_entities(renderer, game->resources->font, &game->world, &game->fov);
   draw_light(renderer, &game->world.map, &game->fov);
-  draw_ui(renderer, game->resources->font, &game->messages);
+  draw_ui(renderer, game->resources->font, game);
 }
