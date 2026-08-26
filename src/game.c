@@ -103,10 +103,6 @@ draw_entities(SDL_Renderer* renderer,
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-  // draw the player first
-  draw_entity(renderer, font, &world->rogue);
-
-  // draw all other entities next
   for (int i = 0; i < alist_len(&world->entities); i++) {
     struct rl_entity const* entity = alist_at(&world->entities, i);
 
@@ -138,7 +134,9 @@ regenerate_map(struct rl_game* game)
   game->world = new_world;
 
   rl_clear_fov(&game->fov);
-  rl_update_fov(&game->fov, &game->world.map, game->world.rogue.position);
+
+  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
+  rl_update_fov(&game->fov, &game->world.map, rogue->position);
 
   return true;
 }
@@ -148,7 +146,13 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
 {
   rand_seed(&game->rng, 1234);
 
+  if (!alist_alloc(&game->events, 8)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
+    return false;
+  }
+
   if (!rl_init_world(&game->world, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
+    rl_free_game(game);
     return false;
   }
 
@@ -158,7 +162,8 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
   }
 
   // make sure the rogue has an initial field-of-view
-  rl_update_fov(&game->fov, &game->world.map, game->world.rogue.position);
+  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
+  rl_update_fov(&game->fov, &game->world.map, rogue->position);
 
   game->resources = resources;
   game->action = RL_ACTION_NONE;
@@ -176,6 +181,7 @@ rl_free_game(struct rl_game* game)
 
   rl_free_fov(&game->fov);
   rl_free_world(&game->world);
+  alist_free(&game->events);
 }
 
 bool
@@ -189,7 +195,8 @@ rl_handle_input(struct rl_game* game, struct inpt_state const* istate)
     return true;
   }
 
-  game->action = rl_translate_input(istate, game->world.rogue.position);
+  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
+  game->action = rl_translate_input(istate, rogue->position);
 
   return true;
 }
@@ -211,20 +218,39 @@ rl_update_game(struct rl_game* game, float dt)
     return;
   }
 
-  // track previous position for fov updates
-  SDL_Point const prev = game->world.rogue.position;
-
+  // Build a command based on the player's last action
   struct rl_command cmd = rl_build_command(game->action);
-  if(rl_update_world(&game->world, &cmd, &game->rng)) {
+
+  // Do the simulation
+  if (rl_update_world(&game->world, &cmd, &game->events, &game->rng)) {
     // turn taken
     game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
   }
 
-  if (prev.x != game->world.rogue.position.x ||
-      prev.y != game->world.rogue.position.y) {
-    // the rogue moved
-    rl_update_fov(&game->fov, &game->world.map, game->world.rogue.position);
+  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
+  for (int i = 0; i < alist_len(&game->events); i++) {
+    struct rl_event const* event = alist_at(&game->events, i);
+
+    switch (event->type) {
+      case RL_EVENT_MOVE:
+        rl_update_fov(&game->fov, &game->world.map, rogue->position);
+        break;
+      case RL_EVENT_ATTACK:
+        SDL_Log("Attack: %d, %d, %d",
+                event->as.attack.attacker,
+                event->as.attack.defender,
+                event->as.attack.damage);
+        break;
+      case RL_EVENT_DEATH:
+        SDL_Log(
+          "Death: %d, %d", event->as.death.entity, event->as.death.killer);
+        break;
+      default:
+        break;
+    }
   }
+
+  alist_clear(&game->events);
 }
 
 void

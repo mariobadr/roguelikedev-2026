@@ -10,6 +10,7 @@
 #include "action.h"
 #include "command.h"
 #include "entity.h"
+#include "event.h"
 #include "fov.h"
 #include "rand.h"
 #include "world.h"
@@ -41,6 +42,8 @@ struct rl_game
   struct rl_world world;
   /** Player's field-of-view */
   struct rl_fov fov;
+  /** Events triggered during updates. */
+  alist(rl_event) events;
 };
 
 /**

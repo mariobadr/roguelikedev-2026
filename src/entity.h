@@ -28,6 +28,8 @@ struct rl_entity
 {
   /** The type of entity. */
   enum rl_entity_type type;
+  /** A unique identifier. */
+  int id;
   /** Dispalyed name. */
   char const* name;
   /** Location in tile coordinates. */
@@ -45,10 +47,10 @@ struct rl_entity
 };
 
 /**
- * Create a new entity of the given type.
+ * Create a new entity.
  */
 struct rl_entity
-rl_create_entity(enum rl_entity_type type);
+rl_create_entity(enum rl_entity_type type, int id);
 
 /**
  * @return how much damage was done (or -1 for a miss).

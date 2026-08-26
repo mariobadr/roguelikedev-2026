@@ -27,9 +27,12 @@ static struct rl_entity const entity_table[] = {
 };
 
 struct rl_entity
-rl_create_entity(enum rl_entity_type type)
+rl_create_entity(enum rl_entity_type type, int id)
 {
-  return entity_table[type];
+  struct rl_entity entity = entity_table[type];
+  entity.id = id;
+
+  return entity;
 }
 
 int
