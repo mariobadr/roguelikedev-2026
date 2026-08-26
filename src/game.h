@@ -12,11 +12,14 @@
 #include "entity.h"
 #include "event.h"
 #include "fov.h"
+#include "log.h"
 #include "rand.h"
 #include "world.h"
 
-#define MAP_WIDTH 80
-#define MAP_HEIGHT 40
+#define RL_WIDTH_PANEL 16
+#define RL_HEIGHT_MSG_BOX 8
+#define RL_WIDTH_MAP (80 - RL_WIDTH_PANEL)
+#define RL_HEIGHT_MAP (45 - RL_HEIGHT_MSG_BOX)
 
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
@@ -44,6 +47,8 @@ struct rl_game
   struct rl_fov fov;
   /** Events triggered during updates. */
   alist(rl_event) events;
+  /** A log of messages. */
+  alist(rl_log_line) messages;
 };
 
 /**

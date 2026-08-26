@@ -98,8 +98,8 @@ create_renderer(SDL_Window* window)
 
   if (!SDL_SetRenderLogicalPresentation(
         renderer,
-        MAP_WIDTH * 6,
-        MAP_HEIGHT * 8,
+        (RL_WIDTH_MAP + RL_WIDTH_PANEL) * 6,
+        (RL_HEIGHT_MAP + RL_HEIGHT_MSG_BOX) * 8,
         SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)) {
     SDL_Log("SDL_SetRenderLogicalPresentation failed: %s", SDL_GetError());
     SDL_DestroyRenderer(renderer);

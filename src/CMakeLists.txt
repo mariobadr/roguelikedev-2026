@@ -14,6 +14,7 @@ set(GAME_SOURCES
     controls.h
     entity.c
     entity.h
+    event.h
     fov.c
     fov.h
     game.c
@@ -26,6 +27,8 @@ set(GAME_SOURCES
     layout.h
     lighting.c
     lighting.h
+    log.c
+    log.h
     main.c
     palette.h
     rand.c

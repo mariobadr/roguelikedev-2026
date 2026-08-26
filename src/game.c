@@ -119,6 +119,29 @@ draw_entities(SDL_Renderer* renderer,
   }
 }
 
+static void
+draw_ui(SDL_Renderer* renderer, SDL_Texture *font, alist(rl_log_line) *messages)
+{
+  int const len = (int)alist_len(messages);
+  // print messages below the map
+  float fy = RL_HEIGHT_MAP * GLYPH_HEIGHT;
+  // no scrolling controls yet, so show only the latest messages
+  int const start = SDL_max(0, len - RL_HEIGHT_MSG_BOX);
+
+  for(int i = start; i < len; i++) {
+    struct rl_log_line const *line = alist_at(messages, i);
+
+    for (int j = 0; j < line->len; j++) {
+      struct rl_gfx_tile tile = { .glyph = line->msg[j].glyph,
+                                  .fg = line->msg[j].fg,
+                                  .bg = RL_COLOUR_BLACK };
+      rl_draw_tile(renderer, font, &tile, j * GLYPH_WIDTH, fy);
+    }
+
+    fy += GLYPH_HEIGHT;
+  }
+}
+
 /**
  * TODO: fix all the duplication between here and rl_init_game
  */
@@ -126,7 +149,7 @@ static bool
 regenerate_map(struct rl_game* game)
 {
   struct rl_world new_world = { 0 };
-  if (!rl_init_world(&new_world, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
+  if (!rl_init_world(&new_world, RL_WIDTH_MAP, RL_HEIGHT_MAP, &game->rng)) {
     return false;
   }
 
@@ -151,12 +174,18 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
     return false;
   }
 
-  if (!rl_init_world(&game->world, MAP_WIDTH, MAP_HEIGHT, &game->rng)) {
+  if (!alist_alloc(&game->messages, 8)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
     rl_free_game(game);
     return false;
   }
 
-  if (!rl_init_fov(&game->fov, MAP_WIDTH * MAP_HEIGHT, FOV_RADIUS)) {
+  if (!rl_init_world(&game->world, RL_WIDTH_MAP, RL_HEIGHT_MAP, &game->rng)) {
+    rl_free_game(game);
+    return false;
+  }
+
+  if (!rl_init_fov(&game->fov, RL_WIDTH_MAP * RL_HEIGHT_MAP, FOV_RADIUS)) {
     rl_free_game(game);
     return false;
   }
@@ -236,14 +265,12 @@ rl_update_game(struct rl_game* game, float dt)
         rl_update_fov(&game->fov, &game->world.map, rogue->position);
         break;
       case RL_EVENT_ATTACK:
-        SDL_Log("Attack: %d, %d, %d",
-                event->as.attack.attacker,
-                event->as.attack.defender,
-                event->as.attack.damage);
+        *alist_push(&game->messages) =
+          rl_build_attack_log(&game->world, &event->as.attack);
         break;
       case RL_EVENT_DEATH:
-        SDL_Log(
-          "Death: %d, %d", event->as.death.entity, event->as.death.killer);
+        *alist_push(&game->messages) =
+          rl_build_death_log(&game->world, &event->as.death);
         break;
       default:
         break;
@@ -266,4 +293,5 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
   draw_map(renderer, game->resources->font, &game->world.map, &game->fov);
   draw_entities(renderer, game->resources->font, &game->world, &game->fov);
   draw_light(renderer, &game->world.map, &game->fov);
+  draw_ui(renderer, game->resources->font, &game->messages);
 }
