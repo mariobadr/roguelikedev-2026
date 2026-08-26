@@ -215,7 +215,7 @@ rl_init_world(struct rl_world* world,
 
   // spawn the other entities
   spawn_entities(world, rng);
-  SDL_Log("Number of spawned entities: %d", alist_len(&world->entities));
+  SDL_Log("Number of spawned entities: %zu", alist_len(&world->entities));
 
   return true;
 }
