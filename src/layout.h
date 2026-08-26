@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "array.h"
+
 // forward declarations
 struct rand_state;
 
@@ -24,16 +26,25 @@ struct rl_corridor
   int room_b;
 };
 
+/**
+ * An array of rectangles.
+ */
+array_define_as(SDL_Rect, rl_room);
+
+/**
+ * An array of corridors.
+ */
+array_define_as(struct rl_corridor, rl_corridor);
+
+/**
+ * Where rooms and corridors can be found.
+ */
 struct rl_layout
 {
   /** The rooms in the layout. */
-  SDL_Rect* rooms;
-  /** The number of rooms in the layout. */
-  int room_count;
+  array(rl_room) rooms;
   /** The corridors in the layout. */
-  struct rl_corridor* corridors;
-  /** The number of corridors. */
-  int corridor_count;
+  array(rl_corridor) corridors;
 };
 
 bool

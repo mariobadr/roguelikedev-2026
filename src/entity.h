@@ -58,4 +58,13 @@ rl_attack_entity(struct rl_entity const* attacker,
                  struct rl_entity* defender,
                  struct rand_state* rng);
 
+/**
+ * @return whether entity is alive.
+ */
+static inline bool
+rl_entity_is_alive(struct rl_entity const* entity)
+{
+  return entity->hp > 0;
+}
+
 #endif // GINC_ROGUELIKE_ENTITY_H

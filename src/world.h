@@ -4,6 +4,7 @@
 #ifndef GINC_ROGUELIKE_WORLD_H
 #define GINC_ROGUELIKE_WORLD_H
 
+#include "alist.h"
 #include "command.h"
 #include "entity.h"
 #include "layout.h"
@@ -11,6 +12,8 @@
 
 // forward declarations
 struct rand_state;
+
+alist_define_as(struct rl_entity, rl_entity);
 
 struct rl_world
 {
@@ -21,9 +24,7 @@ struct rl_world
   /** The player entity */
   struct rl_entity rogue;
   /** All other entities */
-  struct rl_entity* entities;
-  /** The number of other entities */
-  int entity_count;
+  alist(rl_entity) entities;
 };
 
 bool

@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "array.h"
+
 // forward declarations
 struct rand_state;
 
@@ -36,13 +38,9 @@ struct rl_bsp_node
 };
 
 /**
- * @return whether node is a leaf.
+ * An array of nodes.
  */
-static inline bool
-rl_bsp_node_is_leaf(struct rl_bsp_node const* node)
-{
-  return node->axis == RL_BSP_SPLIT_NONE;
-}
+array_define_as(struct rl_bsp_node, rl_bsp_node);
 
 /**
  * A BSP tree.
@@ -51,12 +49,10 @@ struct rl_bsp_tree
 {
   /** The maximum depth of the tree. */
   int max_depth;
-  /** Total number of nodes created. */
-  int node_count;
   /** Total number of leaf nodes. */
   int leaf_count;
   /** All possible nodes in the tree. */
-  struct rl_bsp_node* nodes;
+  array(rl_bsp_node) nodes;
 };
 
 /**
@@ -111,6 +107,15 @@ rl_bsp_split(struct rl_bsp_tree* tree,
              struct rand_state* rng,
              int depth,
              struct rl_bsp_policy const* policy);
+
+/**
+ * @return whether node is a leaf.
+ */
+static inline bool
+rl_bsp_node_is_leaf(struct rl_bsp_node const* node)
+{
+  return node->axis == RL_BSP_SPLIT_NONE;
+}
 
 /**
  * @return the index of the left child of the node at index.

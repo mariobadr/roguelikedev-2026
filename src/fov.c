@@ -184,22 +184,22 @@ compute_fov(struct rl_tile_map const* map,
 bool
 rl_init_fov(struct rl_fov* fov, int cell_count, int radius)
 {
-  fov->visible = SDL_calloc(cell_count, sizeof(*fov->visible));
-  if (fov->visible == NULL) {
-    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+  if(!array_alloc(&fov->visible, cell_count)) {
+    SDL_Log("array_alloc failed: %s", SDL_GetError());
     return false;
   }
 
-  fov->explored = SDL_calloc(cell_count, sizeof(*fov->explored));
-  if (fov->explored == NULL) {
-    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+  if(!array_alloc(&fov->explored, cell_count)) {
+    SDL_Log("array_alloc failed: %s", SDL_GetError());
     rl_free_fov(fov);
     return false;
   }
 
+  fov->visible.len = cell_count;
+  fov->explored.len = cell_count;
+
   fov->origin.x = 0;
   fov->origin.y = 0;
-  fov->cell_count = cell_count;
   fov->radius = radius;
 
   return true;
@@ -212,21 +212,21 @@ rl_free_fov(struct rl_fov* fov)
     return;
   }
 
-  SDL_free(fov->visible);
-  fov->visible = NULL;
+  array_free(&fov->visible);
+  array_free(&fov->explored);
 
-  SDL_free(fov->explored);
-  fov->explored = NULL;
-
-  fov->cell_count = 0;
   fov->radius = 0;
 }
 
 void
 rl_clear_fov(struct rl_fov* fov)
 {
-  SDL_memset(fov->visible, 0, fov->cell_count * sizeof(*fov->visible));
-  SDL_memset(fov->explored, 0, fov->cell_count * sizeof(*fov->explored));
+  SDL_memset(fov->visible.data,
+             0,
+             array_len(&fov->visible) * sizeof(*fov->visible.data));
+  SDL_memset(fov->explored.data,
+             0,
+             array_len(&fov->explored) * sizeof(*fov->explored.data));
 }
 
 void
@@ -235,11 +235,11 @@ rl_update_fov(struct rl_fov* fov,
               SDL_Point origin)
 {
   fov->origin = origin;
-  compute_fov(map, origin, fov->radius, fov->visible);
+  compute_fov(map, origin, fov->radius, fov->visible.data);
 
   for (int i = 0; i < map->width * map->height; i++) {
-    if (fov->visible[i]) {
-      fov->explored[i] = true;
+    if (*array_at(&fov->visible, i)) {
+      *array_at(&fov->explored, i) = true;
     }
   }
 }

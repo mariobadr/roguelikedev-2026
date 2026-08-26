@@ -246,14 +246,62 @@ get_quadrant(SDL_Rect const* room, int width, int height)
 static bool
 corridor_exists(struct rl_layout const* out, int room_a, int room_b)
 {
-  for (int i = 0; i < out->corridor_count; i++) {
-    struct rl_corridor const* c = &out->corridors[i];
+  for (int i = 0; i < array_len(&out->corridors); i++) {
+    struct rl_corridor const* c = array_at(&out->corridors, i);
     if ((c->room_a == room_a && c->room_b == room_b) ||
         (c->room_a == room_b && c->room_b == room_a)) {
       return true;
     }
   }
   return false;
+}
+
+/**
+ * Finds the closest pair of rooms (by center distance) with one room in
+ * quadrant qa and the other in quadrant qb.
+ *
+ * @return false if either quadrant has no rooms in it.
+ */
+static bool
+find_closest_pair_in_quadrants(array(rl_room) const* rooms,
+                               int width,
+                               int height,
+                               enum quadrant qa,
+                               enum quadrant qb,
+                               int* out_a,
+                               int* out_b)
+{
+  bool found = false;
+  int best_a = 0, best_b = 0, best_dist = 0;
+
+  for (int i = 0; i < array_len(rooms); i++) {
+    if (get_quadrant(array_at(rooms, i), width, height) != qa) {
+      // rooms[i] is not in quadrant a
+      continue;
+    }
+
+    for (int j = 0; j < array_len(rooms); j++) {
+      if (get_quadrant(array_at(rooms, j), width, height) != qb) {
+        // rooms[j] is not in quadrant b
+        continue;
+      }
+
+      int d2 = rect_center_dist_sq(array_at(rooms, i), array_at(rooms, j));
+      if (!found || d2 < best_dist) {
+        found = true;
+        best_dist = d2;
+        best_a = i;
+        best_b = j;
+      }
+    }
+  }
+
+  if (found) {
+    *out_a = best_a;
+    *out_b = best_b;
+  }
+
+  return found;
 }
 
 /**
@@ -266,32 +314,9 @@ connect_quadrants(struct rl_layout* out,
                   enum quadrant qa,
                   enum quadrant qb)
 {
-  bool found = false;
-  int best_a = 0, best_b = 0, best_dist = 0;
-
-  for (int i = 0; i < out->room_count; i++) {
-    if (get_quadrant(&out->rooms[i], width, height) != qa) {
-      // rooms[i] is not in this quadrant a
-      continue;
-    }
-
-    for (int j = 0; j < out->room_count; j++) {
-      if (get_quadrant(&out->rooms[j], width, height) != qb) {
-        // rooms[j] is not in quadrant b
-        continue;
-      }
-
-      int d2 = rect_center_dist_sq(&out->rooms[i], &out->rooms[j]);
-      if (!found || d2 < best_dist) {
-        found = true;
-        best_dist = d2;
-        best_a = i;
-        best_b = j;
-      }
-    }
-  }
-
-  if (!found) {
+  int best_a, best_b;
+  if (!find_closest_pair_in_quadrants(
+        &out->rooms, width, height, qa, qb, &best_a, &best_b)) {
     // one of the quadrants had no rooms in it - possibe?
     return false;
   }
@@ -301,10 +326,11 @@ connect_quadrants(struct rl_layout* out,
   }
 
   SDL_Point door_a, door_b;
-  nearest_points(&out->rooms[best_a], &out->rooms[best_b], &door_a, &door_b);
-  out->corridors[out->corridor_count] =
-    make_corridor(door_a, door_b, best_a, best_b);
-  out->corridor_count++;
+  nearest_points(array_at(&out->rooms, best_a),
+                 array_at(&out->rooms, best_b),
+                 &door_a,
+                 &door_b);
+  *array_push(&out->corridors) = make_corridor(door_a, door_b, best_a, best_b);
 
   return true;
 }
@@ -333,6 +359,35 @@ struct room_span
 };
 
 /**
+ * Finds the closest pair of rooms between two room spans.
+ */
+static void
+find_closest_pair_in_spans(array(rl_room) const* rooms,
+                           struct room_span a,
+                           struct room_span b,
+                           int* out_a,
+                           int* out_b)
+{
+  int best_a = a.start, best_b = b.start;
+  int best_dist =
+    rect_center_dist_sq(array_at(rooms, a.start), array_at(rooms, b.start));
+
+  for (int i = a.start; i < a.start + a.count; i++) {
+    for (int j = b.start; j < b.start + b.count; j++) {
+      int d2 = rect_center_dist_sq(array_at(rooms, i), array_at(rooms, j));
+      if (d2 < best_dist) {
+        best_dist = d2;
+        best_a = i;
+        best_b = j;
+      }
+    }
+  }
+
+  *out_a = best_a;
+  *out_b = best_b;
+}
+
+/**
  * Recursively builds rooms from a BSP subtree and connects them with corridors.
  *
  * @return the span of room indices generated for this subtree.
@@ -343,14 +398,12 @@ connect_bsp_subtree(struct rl_layout* out,
                     int node_index,
                     struct rand_state* rng)
 {
-  struct rl_bsp_node const* node = &tree->nodes[node_index];
+  struct rl_bsp_node const* node = array_at(&tree->nodes, node_index);
 
   if (rl_bsp_node_is_leaf(node)) {
     // base case
-    int const room_index = out->room_count;
-
-    out->rooms[room_index] = generate_room(&node->rect, rng);
-    out->room_count++;
+    int const room_index = (int)array_len(&out->rooms);
+    *array_push(&out->rooms) = generate_room(&node->rect, rng);
 
     // this is a leaf, so only one room here
     struct room_span r = { 0 };
@@ -366,27 +419,16 @@ connect_bsp_subtree(struct rl_layout* out,
   struct room_span right =
     connect_bsp_subtree(out, tree, rl_bsp_right_of(node_index), rng);
 
-  int best_a = left.start, best_b = right.start;
-  int best_dist =
-    rect_center_dist_sq(&out->rooms[left.start], &out->rooms[right.start]);
-
-  for (int i = left.start; i < left.start + left.count; i++) {
-    for (int j = right.start; j < right.start + right.count; j++) {
-      int d2 = rect_center_dist_sq(&out->rooms[i], &out->rooms[j]);
-      if (d2 < best_dist) {
-        best_dist = d2;
-        best_a = i;
-        best_b = j;
-      }
-    }
-  }
+  int best_a, best_b;
+  find_closest_pair_in_spans(&out->rooms, left, right, &best_a, &best_b);
 
   // connect best_a and best_b with a corridor
   SDL_Point door_a, door_b;
-  nearest_points(&out->rooms[best_a], &out->rooms[best_b], &door_a, &door_b);
-  out->corridors[out->corridor_count] =
-    make_corridor(door_a, door_b, best_a, best_b);
-  out->corridor_count++;
+  nearest_points(array_at(&out->rooms, best_a),
+                 array_at(&out->rooms, best_b),
+                 &door_a,
+                 &door_b);
+  *array_push(&out->corridors) = make_corridor(door_a, door_b, best_a, best_b);
 
   struct room_span r = { 0 };
   r.start = left.start;
@@ -420,22 +462,16 @@ rl_init_layout(struct rl_layout* layout,
   policy.max_hw_ratio = 2.0;
   rl_bsp_split(&tree, 0, rng, 0, &policy);
 
-  layout->rooms = SDL_calloc(tree.leaf_count, sizeof(*layout->rooms));
-  if (layout->rooms == NULL) {
-    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
-    rl_free_layout(layout);
-
+  if(!array_alloc(&layout->rooms, tree.leaf_count)) {
+    SDL_Log("array_alloc failed: %s", SDL_GetError());
     rl_bsp_tree_free(&tree);
     return false;
   }
 
-  layout->corridors =
-    SDL_calloc(tree.leaf_count - 1 + 4, sizeof(*layout->corridors));
-  if (layout->corridors == NULL) {
-    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
-    rl_free_layout(layout);
-
+  if (!array_alloc(&layout->corridors, tree.leaf_count - 1 + 4)) {
+    SDL_Log("array_alloc failed: %s", SDL_GetError());
     rl_bsp_tree_free(&tree);
+    rl_free_layout(layout);
     return false;
   }
 
@@ -453,11 +489,6 @@ rl_free_layout(struct rl_layout* layout)
     return;
   }
 
-  SDL_free(layout->rooms);
-  layout->rooms = NULL;
-  layout->room_count = 0;
-
-  SDL_free(layout->corridors);
-  layout->corridors = NULL;
-  layout->corridor_count = 0;
+  array_free(&layout->rooms);
+  array_free(&layout->corridors);
 }

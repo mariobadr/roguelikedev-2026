@@ -25,7 +25,7 @@ draw_map(SDL_Renderer* renderer,
     for (int x = 0; x < map->width; x++) {
       size_t const index = rl_map_index_of(map, x, y);
 
-      if (!fov->explored[index]) {
+      if (!fov->explored.data[index]) {
         // don't draw anything for unexplored tiles
         continue;
       }
@@ -33,7 +33,7 @@ draw_map(SDL_Renderer* renderer,
       enum rl_tile const tile = rl_get_tile(map, x, y);
       struct rl_gfx_tile gfx = rl_get_tile_gfx(tile);
 
-      if (!fov->visible[index]) {
+      if (!fov->visible.data[index]) {
         // dim explored but not visible tiles
         gfx.fg = rl_lerp_colour(gfx.fg, RL_COLOUR_BLACK, 0.4f);
       }
@@ -61,7 +61,7 @@ draw_light(SDL_Renderer* renderer,
     for (int x = 0; x < map->width; x++) {
       size_t const index = rl_map_index_of(map, x, y);
 
-      if (!fov->visible[index]) {
+      if (!fov->visible.data[index]) {
         // not visible, so there's no "glow" to add
         continue;
       }
@@ -107,14 +107,18 @@ draw_entities(SDL_Renderer* renderer,
   draw_entity(renderer, font, &world->rogue);
 
   // draw all other entities next
-  for (int i = 0; i < world->entity_count; i++) {
-    struct rl_entity const* entity = &world->entities[i];
+  for (int i = 0; i < alist_len(&world->entities); i++) {
+    struct rl_entity const* entity = alist_at(&world->entities, i);
+
+    if (!rl_entity_is_alive(entity)) {
+      continue;
+    }
 
     size_t const index =
       rl_map_index_of(&world->map, entity->position.x, entity->position.y);
 
-    if (fov->visible[index]) {
-      draw_entity(renderer, font, &world->entities[i]);
+    if (fov->visible.data[index]) {
+      draw_entity(renderer, font, entity);
     }
   }
 }

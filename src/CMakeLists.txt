@@ -2,6 +2,9 @@
 # Source files
 ###############################################################################
 set(GAME_SOURCES
+    alist.c
+    alist.h
+    array.h
     action.h
     bsp.c
     bsp.h
