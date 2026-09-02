@@ -7,7 +7,7 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
-#include "array.h"
+#include "container/array.h"
 
 // forward declarations
 struct rand_state;

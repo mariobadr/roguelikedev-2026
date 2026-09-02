@@ -1,8 +1,6 @@
 #include "entity.h"
 
-#include "palette.h"
-#include "rand.h"
-#include "tile_map.h"
+#include "procgen/rand.h"
 
 #define MISS_CHANCE 5
 #define ARMOR_SCALING 20

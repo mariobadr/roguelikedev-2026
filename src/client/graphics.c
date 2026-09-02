@@ -1,6 +1,6 @@
 #include "graphics.h"
 
-#include "entity.h"
+#include "game/entity.h"
 #include "palette.h"
 
 struct tile_gfx_desc

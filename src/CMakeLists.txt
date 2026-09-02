@@ -2,47 +2,52 @@
 # Source files
 ###############################################################################
 set(GAME_SOURCES
-    alist.c
-    alist.h
-    array.h
-    action.h
-    bsp.c
-    bsp.h
-    command.c
-    command.h
-    controls.c
-    controls.h
-    entity.c
-    entity.h
-    event.h
-    fov.c
-    fov.h
-    game.c
-    game.h
-    graphics.c
-    graphics.h
-    input.c
-    input.h
-    layout.c
-    layout.h
-    lighting.c
-    lighting.h
-    log.c
-    log.h
+    client/controls.c
+    client/controls.h
+    client/graphics.c
+    client/graphics.h
+    client/input.c
+    client/input.h
+    client/lighting.c
+    client/lighting.h
+    client/log.c
+    client/log.h
+    client/palette.h
+    client/render.c
+    client/render.h
+    client/resources.c
+    client/resources.h
+    client/client.c
+    client/client.h
+    client/ui.h
+    client/view.c
+    client/view.h
+    container/alist.c
+    container/alist.h
+    container/array.h
+    game/action.h
+    game/command.c
+    game/command.h
+    game/entity.c
+    game/entity.h
+    game/event.h
+    game/fov.c
+    game/fov.h
+    game/game_state.c
+    game/game_state.h
+    game/tile_map.c
+    game/tile_map.h
+    game/tile.c
+    game/tile.h
+    game/world.c
+    game/world.h
+    procgen/bsp.c
+    procgen/bsp.h
+    procgen/layout.c
+    procgen/layout.h
+    procgen/rand.c
+    procgen/rand.h
     main.c
-    palette.h
-    rand.c
-    rand.h
-    render.c
-    render.h
-    resources.c
-    resources.h
-    tile_map.c
-    tile_map.h
-    tile.c
-    tile.h
-    world.c
-    world.h
 )
 
 
@@ -51,6 +56,11 @@ set(GAME_SOURCES
 ###############################################################################
 set(GAME_TARGET ${PROJECT_NAME})
 add_executable(${GAME_TARGET} ${GAME_SOURCES})
+
+target_include_directories(${GAME_TARGET}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 target_link_libraries(${GAME_TARGET}
     PRIVATE

@@ -1,9 +1,10 @@
 #include "log.h"
 
-#include "event.h"
-#include "graphics.h"
-#include "palette.h"
-#include "world.h"
+#include "game/event.h"
+#include "game/world.h"
+
+#include "client/graphics.h"
+#include "client/palette.h"
 
 static void
 append(struct rl_log_line* line, char const* text, SDL_FColor fg)

@@ -123,6 +123,4 @@ static const SDL_FColor RL_COLOUR_ORANGE[] = {
   RL_HEX_TO_FCOLOR(0xe8590c), RL_HEX_TO_FCOLOR(0xd9480f),
 };
 
-#undef RL_HEX_TO_FCOLOR
-
 #endif // GINC_ROGUELIKE_PALETTE_H

@@ -6,7 +6,7 @@
 
 #include <SDL3/SDL_rect.h>
 
-#include "action.h"
+#include "game/action.h"
 
 // forward declarations
 struct inpt_state;

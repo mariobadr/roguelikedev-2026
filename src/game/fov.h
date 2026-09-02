@@ -6,7 +6,7 @@
 
 #include <SDL3/SDL_rect.h>
 
-#include "array.h"
+#include "container/array.h"
 
 // forward declarations
 struct rl_tile_map;

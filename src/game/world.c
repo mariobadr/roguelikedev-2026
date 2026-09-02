@@ -4,7 +4,7 @@
 #include <SDL3/SDL_log.h>
 
 #include "event.h"
-#include "rand.h"
+#include "procgen/rand.h"
 
 static void
 carve_map(struct rl_tile_map* map, struct rl_layout const* layout)

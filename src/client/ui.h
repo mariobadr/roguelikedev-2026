@@ -16,8 +16,6 @@
 #ifndef GINC_ROGUELIKE_UI_H
 #define GINC_ROGUELIKE_UI_H
 
-#include <SDL3/SDL_stdinc.h>
-
 /** The width of the entire UI. */
 #define RL_UI_WIDTH 80
 /** The height of the entire UI. */

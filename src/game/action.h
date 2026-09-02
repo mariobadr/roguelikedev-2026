@@ -4,9 +4,6 @@
 #ifndef GINC_ROGUELIKE_ACTION_H
 #define GINC_ROGUELIKE_ACTION_H
 
-#include <SDL3/SDL_rect.h>
-#include <SDL3/SDL_stdinc.h>
-
 /**
  * How long between subsequent actions.
  */

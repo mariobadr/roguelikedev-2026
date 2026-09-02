@@ -10,23 +10,22 @@
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 
-#include "game.h"
-#include "input.h"
-#include "resources.h"
-#include "ui.h"
+#include "client/input.h"
+#include "client/client.h"
+#include "client/ui.h"
 
 struct application
 {
+  /* Platform state*/
   SDL_Window* window;
   SDL_Renderer* renderer;
 
-  struct rl_resources resources;
-  struct inpt_state istate;
-
+  /* Game loop state */
   Uint64 freq;
   Uint64 last;
 
-  struct rl_game game;
+  /* Client state */
+  struct rl_client client;
 };
 
 /**
@@ -60,9 +59,7 @@ destroy_application(struct application* app)
     return;
   }
 
-  rl_free_game(&app->game);
-  rl_destroy_resources(&app->resources);
-
+  rl_free_client(&app->client);
   SDL_DestroyRenderer(app->renderer);
   SDL_DestroyWindow(app->window);
 
@@ -136,14 +133,7 @@ create_application(void)
     return NULL;
   }
 
-  if (!rl_load_resources(&app->resources, app->renderer)) {
-    destroy_application(app);
-    return NULL;
-  }
-
-  inpt_init_state(&app->istate);
-
-  if (!rl_init_game(&app->game, &app->resources)) {
+  if (!rl_init_client(&app->client, app->renderer)) {
     destroy_application(app);
     return NULL;
   }
@@ -268,7 +258,7 @@ SDL_AppEvent(void* appstate, SDL_Event* event)
   }
 
   SDL_ConvertEventToRenderCoordinates(app->renderer, event);
-  handle_input_event(&app->istate, event);
+  handle_input_event(&app->client.istate, event);
 
   return SDL_APP_CONTINUE;
 }
@@ -283,23 +273,17 @@ SDL_AppIterate(void* appstate)
   Uint64 delta = now - app->last;
   app->last = now;
 
-  if (!rl_handle_input(&app->game, &app->istate)) {
-    return SDL_APP_SUCCESS;
-  }
-
   // avoid very large delta times
   delta = SDL_min(delta, app->freq / 4);
   float const frame_dt = (float)delta / (float)app->freq;
 
-  // update game state
-  rl_update_game(&app->game, frame_dt);
+  rl_update_client(&app->client, frame_dt);
 
-  // render game state
-  rl_render_game(&app->game, app->renderer);
+  rl_render_client(&app->client, app->renderer);
   SDL_RenderPresent(app->renderer);
 
   // reset transient input for next frame
-  inpt_reset_state(&app->istate);
+  inpt_reset_state(&app->client.istate);
 
   return SDL_APP_CONTINUE;
 }

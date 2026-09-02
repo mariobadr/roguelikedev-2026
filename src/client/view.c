@@ -1,18 +1,17 @@
-#include "game.h"
+#include "view.h"
 
-#include <SDL3/SDL_error.h>
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 
-#include "controls.h"
-#include "graphics.h"
-#include "lighting.h"
-#include "palette.h"
-#include "render.h"
-#include "resources.h"
-#include "ui.h"
+#include "game/game_state.h"
 
-#define FOV_RADIUS 8
+#include "client/graphics.h"
+#include "client/lighting.h"
+#include "client/log.h"
+#include "client/palette.h"
+#include "client/render.h"
+#include "client/resources.h"
+#include "client/client.h"
+#include "client/ui.h"
 
 static SDL_FPoint
 tile_to_screen(int x, int y)
@@ -98,8 +97,8 @@ draw_entity(SDL_Renderer* renderer,
             struct rl_entity const* entity)
 {
   struct rl_gfx_tile const tile = rl_get_entity_gfx(entity);
-  SDL_FPoint const position = tile_to_screen(
-    RL_UI_MAP_X + entity->position.x, RL_UI_MAP_Y + entity->position.y);
+  SDL_FPoint const position = tile_to_screen(RL_UI_MAP_X + entity->position.x,
+                                             RL_UI_MAP_Y + entity->position.y);
 
   rl_draw_tile(renderer, font, &tile, position.x, position.y);
 }
@@ -185,9 +184,10 @@ draw_combat_log(SDL_Renderer* renderer,
 static void
 draw_side_panel(SDL_Renderer* renderer,
                 SDL_Texture* font,
-                struct rl_game const* game)
+                struct rl_game_state const* game_state)
 {
-  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
+  struct rl_entity const* rogue =
+    rl_get_entity(&game_state->world, RL_ROGUE_ID);
 
   char text[16];
   SDL_snprintf(text, sizeof(text), "HP: %d / %d", rogue->hp, rogue->max_hp);
@@ -216,157 +216,15 @@ draw_top_panel(SDL_Renderer* renderer, SDL_Texture* font)
 }
 
 static void
-draw_ui(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game const* game)
+draw_ui(SDL_Renderer* renderer, SDL_Texture* font, struct rl_client const* client)
 {
-  draw_combat_log(renderer, font, &game->messages);
-  draw_side_panel(renderer, font, game);
+  draw_combat_log(renderer, font, &client->messages);
+  draw_side_panel(renderer, font, &client->game_state);
   draw_top_panel(renderer, font);
 }
 
-/**
- * TODO: fix all the duplication between here and rl_init_game
- */
-static bool
-regenerate_map(struct rl_game* game)
-{
-  struct rl_world new_world = { 0 };
-  if (!rl_init_world(
-        &new_world, RL_UI_MAP_WIDTH, RL_UI_MAP_HEIGHT, &game->rng)) {
-    return false;
-  }
-
-  rl_free_world(&game->world);
-  game->world = new_world;
-
-  rl_clear_fov(&game->fov);
-
-  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
-  rl_update_fov(&game->fov, &game->world.map, rogue->position);
-
-  return true;
-}
-
-bool
-rl_init_game(struct rl_game* game, struct rl_resources const* resources)
-{
-  rand_seed(&game->rng, 1234);
-
-  if (!alist_alloc(&game->events, 8)) {
-    SDL_Log("alist_alloc failed: %s", SDL_GetError());
-    return false;
-  }
-
-  if (!alist_alloc(&game->messages, 8)) {
-    SDL_Log("alist_alloc failed: %s", SDL_GetError());
-    rl_free_game(game);
-    return false;
-  }
-
-  if (!rl_init_world(
-        &game->world, RL_UI_MAP_WIDTH, RL_UI_MAP_HEIGHT, &game->rng)) {
-    rl_free_game(game);
-    return false;
-  }
-
-  if (!rl_init_fov(
-        &game->fov, RL_UI_MAP_WIDTH * RL_UI_MAP_HEIGHT, FOV_RADIUS)) {
-    rl_free_game(game);
-    return false;
-  }
-
-  // make sure the rogue has an initial field-of-view
-  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
-  rl_update_fov(&game->fov, &game->world.map, rogue->position);
-
-  game->resources = resources;
-  game->action = RL_ACTION_NONE;
-  game->action_cooldown = 0.0f;
-
-  return true;
-}
-
 void
-rl_free_game(struct rl_game* game)
-{
-  if (game == NULL) {
-    return;
-  }
-
-  rl_free_fov(&game->fov);
-  rl_free_world(&game->world);
-  alist_free(&game->messages);
-  alist_free(&game->events);
-}
-
-bool
-rl_handle_input(struct rl_game* game, struct inpt_state const* istate)
-{
-  // reset the action for this frame
-  game->action = RL_ACTION_NONE;
-
-  if (game->action_cooldown > 0.0f) {
-    // still recovering from the last action
-    return true;
-  }
-
-  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
-  game->action = rl_translate_input(istate, rogue->position);
-
-  return true;
-}
-
-void
-rl_update_game(struct rl_game* game, float dt)
-{
-  if (game->action_cooldown > 0.0f) {
-    game->action_cooldown -= dt;
-  }
-
-  if (game->action == RL_ACTION_NONE) {
-    return;
-  } else if (game->action == RL_ACTION_DEBUG_GENMAP) {
-    if (regenerate_map(game)) {
-      game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
-    }
-
-    return;
-  }
-
-  // Build a command based on the player's last action
-  struct rl_command cmd = rl_build_command(game->action);
-
-  // Do the simulation
-  if (rl_update_world(&game->world, &cmd, &game->events, &game->rng)) {
-    // turn taken
-    game->action_cooldown = ACTION_GLOBAL_COOLDOWN;
-  }
-
-  struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
-  for (int i = 0; i < alist_len(&game->events); i++) {
-    struct rl_event const* event = alist_at(&game->events, i);
-
-    switch (event->type) {
-      case RL_EVENT_MOVE:
-        rl_update_fov(&game->fov, &game->world.map, rogue->position);
-        break;
-      case RL_EVENT_ATTACK:
-        *alist_push(&game->messages) =
-          rl_build_attack_log(&game->world, &event->as.attack);
-        break;
-      case RL_EVENT_DEATH:
-        *alist_push(&game->messages) =
-          rl_build_death_log(&game->world, &event->as.death);
-        break;
-      default:
-        break;
-    }
-  }
-
-  alist_clear(&game->events);
-}
-
-void
-rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
+rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
 {
   SDL_SetRenderDrawColorFloat(renderer,
                               RL_COLOUR_GRAY[9].r,
@@ -375,8 +233,16 @@ rl_render_game(struct rl_game* game, SDL_Renderer* renderer)
                               RL_COLOUR_GRAY[9].a);
   SDL_RenderClear(renderer);
 
-  draw_map(renderer, game->resources->font, &game->world.map, &game->fov);
-  draw_entities(renderer, game->resources->font, &game->world, &game->fov);
-  draw_light(renderer, &game->world.map, &game->fov);
-  draw_ui(renderer, game->resources->font, game);
+  draw_map(renderer,
+           client->resources.font,
+           &client->game_state.world.map,
+           &client->game_state.fov);
+  draw_entities(renderer,
+                client->resources.font,
+                &client->game_state.world,
+                &client->game_state.fov);
+  draw_light(renderer,
+             &client->game_state.world.map,
+             &client->game_state.fov);
+  draw_ui(renderer, client->resources.font, client);
 }

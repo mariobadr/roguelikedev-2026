@@ -7,7 +7,7 @@
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_stdinc.h>
 
-#include "alist.h"
+#include "container/alist.h"
 
 // forward declarations
 struct rl_world;

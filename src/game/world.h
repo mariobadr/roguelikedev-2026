@@ -4,11 +4,11 @@
 #ifndef GINC_ROGUELIKE_WORLD_H
 #define GINC_ROGUELIKE_WORLD_H
 
-#include "alist.h"
+#include "container/alist.h"
 #include "command.h"
 #include "entity.h"
 #include "event.h"
-#include "layout.h"
+#include "procgen/layout.h"
 #include "tile_map.h"
 
 // forward declarations

@@ -5,7 +5,7 @@
 #define GINC_ROGUELIKE_GRAPHICS_H
 
 #include "render.h"
-#include "tile.h"
+#include "game/tile.h"
 
 // forward declarations
 struct rl_entity;

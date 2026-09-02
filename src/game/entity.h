@@ -4,12 +4,10 @@
 #ifndef GINC_ROGUELIKE_ENTITY_H
 #define GINC_ROGUELIKE_ENTITY_H
 
-#include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
 // forward declarations
-struct rl_tile_map;
 struct rand_state;
 
 /**
