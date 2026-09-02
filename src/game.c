@@ -10,8 +10,18 @@
 #include "palette.h"
 #include "render.h"
 #include "resources.h"
+#include "ui.h"
 
 #define FOV_RADIUS 8
+
+static SDL_FPoint
+tile_to_screen(int x, int y)
+{
+  return (SDL_FPoint){
+    .x = x * GLYPH_WIDTH,
+    .y = y * GLYPH_HEIGHT,
+  };
+}
 
 static void
 draw_map(SDL_Renderer* renderer,
@@ -38,11 +48,10 @@ draw_map(SDL_Renderer* renderer,
         gfx.fg = rl_lerp_colour(gfx.fg, RL_COLOUR_BLACK, 0.4f);
       }
 
-      // convert from tile to screen coordinates
-      float const fx = x * GLYPH_WIDTH;
-      float const fy = y * GLYPH_HEIGHT;
+      SDL_FPoint const position =
+        tile_to_screen(RL_UI_MAP_X + x, RL_UI_MAP_Y + y);
 
-      rl_draw_tile(renderer, font, &gfx, fx, fy);
+      rl_draw_tile(renderer, font, &gfx, position.x, position.y);
     }
   }
 }
@@ -70,12 +79,14 @@ draw_light(SDL_Renderer* renderer,
         fov->origin, (SDL_Point){ x, y }, (float)fov->radius);
       float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
 
-      // convert from tile to screen coordinates
-      float const fx = x * GLYPH_WIDTH;
-      float const fy = y * GLYPH_HEIGHT;
-      SDL_FRect const cell = { fx, fy, GLYPH_WIDTH, GLYPH_HEIGHT };
+      SDL_FPoint const position =
+        tile_to_screen(RL_UI_MAP_X + x, RL_UI_MAP_Y + y);
 
       SDL_SetRenderDrawColorFloat(renderer, light.r, light.g, light.b, alpha);
+
+      SDL_FRect const cell = {
+        position.x, position.y, GLYPH_WIDTH, GLYPH_HEIGHT
+      };
       SDL_RenderFillRect(renderer, &cell);
     }
   }
@@ -87,12 +98,10 @@ draw_entity(SDL_Renderer* renderer,
             struct rl_entity const* entity)
 {
   struct rl_gfx_tile const tile = rl_get_entity_gfx(entity);
+  SDL_FPoint const position = tile_to_screen(
+    RL_UI_MAP_X + entity->position.x, RL_UI_MAP_Y + entity->position.y);
 
-  // convert from tile to screen coordinates
-  float const fx = entity->position.x * GLYPH_WIDTH;
-  float const fy = entity->position.y * GLYPH_HEIGHT;
-
-  rl_draw_tile(renderer, font, &tile, fx, fy);
+  rl_draw_tile(renderer, font, &tile, position.x, position.y);
 }
 
 static void
@@ -120,24 +129,53 @@ draw_entities(SDL_Renderer* renderer,
 }
 
 static void
+draw_text(SDL_Renderer* renderer,
+          SDL_Texture* font,
+          char const* text,
+          int x,
+          int y,
+          size_t max_width,
+          SDL_FColor colour)
+{
+  float const fx = x * GLYPH_WIDTH;
+  float const fy = y * GLYPH_HEIGHT;
+
+  struct rl_gfx_tile tile = { 0 };
+  tile.fg = colour;
+  tile.bg = RL_COLOUR_BLACK;
+
+  size_t const length = SDL_min(SDL_strlen(text), max_width);
+  for (size_t i = 0; i < length; i++) {
+    tile.glyph = text[i];
+    rl_draw_tile(renderer, font, &tile, fx + i * GLYPH_WIDTH, fy);
+  }
+}
+
+static void
 draw_combat_log(SDL_Renderer* renderer,
                 SDL_Texture* font,
                 alist(rl_log_line) const* messages)
 {
+  float const fx = RL_UI_BPANEL_X * GLYPH_WIDTH;
+  float fy = RL_UI_BPANEL_Y * GLYPH_HEIGHT;
+
   int const len = (int)alist_len(messages);
-  // print messages below the map
-  float fy = RL_HEIGHT_MAP * GLYPH_HEIGHT;
+
   // no scrolling controls yet, so show only the latest messages
-  int const start = SDL_max(0, len - RL_HEIGHT_MSG_BOX);
+  int const start = SDL_max(0, len - RL_UI_BPANEL_HEIGHT);
 
-  for(int i = start; i < len; i++) {
-    struct rl_log_line const *line = alist_at(messages, i);
+  struct rl_gfx_tile tile = { 0 };
+  tile.bg = RL_COLOUR_BLACK;
 
-    for (int j = 0; j < line->len; j++) {
-      struct rl_gfx_tile tile = { .glyph = line->msg[j].glyph,
-                                  .fg = line->msg[j].fg,
-                                  .bg = RL_COLOUR_BLACK };
-      rl_draw_tile(renderer, font, &tile, j * GLYPH_WIDTH, fy);
+  for (int i = start; i < len; i++) {
+    struct rl_log_line const* line = alist_at(messages, i);
+
+    // truncate line, just in case (no word wrap yet)
+    int const width = SDL_min(line->len, RL_UI_MAP_WIDTH);
+    for (int j = 0; j < width; j++) {
+      tile.glyph = line->msg[j].glyph;
+      tile.fg = line->msg[j].fg;
+      rl_draw_tile(renderer, font, &tile, fx + j * GLYPH_WIDTH, fy);
     }
 
     fy += GLYPH_HEIGHT;
@@ -145,24 +183,36 @@ draw_combat_log(SDL_Renderer* renderer,
 }
 
 static void
-draw_side_panel(SDL_Renderer* renderer, SDL_Texture *font, struct rl_game const *game)
+draw_side_panel(SDL_Renderer* renderer,
+                SDL_Texture* font,
+                struct rl_game const* game)
 {
   struct rl_entity const* rogue = rl_get_entity(&game->world, RL_ROGUE_ID);
 
   char text[16];
-  int const len = SDL_snprintf(text, sizeof text, "Health: %d / %d", rogue->hp, rogue->max_hp);
+  SDL_snprintf(text, sizeof(text), "HP: %d / %d", rogue->hp, rogue->max_hp);
 
-  float fx = (RL_WIDTH_MAP + 1) * GLYPH_WIDTH;
+  draw_text(renderer,
+            font,
+            text,
+            RL_UI_RPANEL_X,
+            RL_UI_RPANEL_Y,
+            RL_UI_RPANEL_WIDTH,
+            RL_COLOUR_GRAY[5]);
+}
 
-  struct rl_gfx_tile tile = { 0 };
-  tile.fg = RL_COLOUR_GRAY[5];
-  tile.bg = RL_COLOUR_BLACK;
+static void
+draw_top_panel(SDL_Renderer* renderer, SDL_Texture* font)
+{
+  const char* text = "\x18 W | \x1B A | \x19 S | \x1A D";
 
-  for(int i = 0; i < len; i++) {
-    tile.glyph = text[i];
-    rl_draw_tile(renderer, font, &tile, fx, 1 * GLYPH_HEIGHT);
-    fx += GLYPH_WIDTH;
-  }
+  draw_text(renderer,
+            font,
+            text,
+            RL_UI_TPANEL_X,
+            RL_UI_TPANEL_Y,
+            RL_UI_TPANEL_WIDTH,
+            RL_COLOUR_GRAY[5]);
 }
 
 static void
@@ -170,6 +220,7 @@ draw_ui(SDL_Renderer* renderer, SDL_Texture* font, struct rl_game const* game)
 {
   draw_combat_log(renderer, font, &game->messages);
   draw_side_panel(renderer, font, game);
+  draw_top_panel(renderer, font);
 }
 
 /**
@@ -179,7 +230,8 @@ static bool
 regenerate_map(struct rl_game* game)
 {
   struct rl_world new_world = { 0 };
-  if (!rl_init_world(&new_world, RL_WIDTH_MAP, RL_HEIGHT_MAP, &game->rng)) {
+  if (!rl_init_world(
+        &new_world, RL_UI_MAP_WIDTH, RL_UI_MAP_HEIGHT, &game->rng)) {
     return false;
   }
 
@@ -210,12 +262,14 @@ rl_init_game(struct rl_game* game, struct rl_resources const* resources)
     return false;
   }
 
-  if (!rl_init_world(&game->world, RL_WIDTH_MAP, RL_HEIGHT_MAP, &game->rng)) {
+  if (!rl_init_world(
+        &game->world, RL_UI_MAP_WIDTH, RL_UI_MAP_HEIGHT, &game->rng)) {
     rl_free_game(game);
     return false;
   }
 
-  if (!rl_init_fov(&game->fov, RL_WIDTH_MAP * RL_HEIGHT_MAP, FOV_RADIUS)) {
+  if (!rl_init_fov(
+        &game->fov, RL_UI_MAP_WIDTH * RL_UI_MAP_HEIGHT, FOV_RADIUS)) {
     rl_free_game(game);
     return false;
   }
@@ -240,6 +294,7 @@ rl_free_game(struct rl_game* game)
 
   rl_free_fov(&game->fov);
   rl_free_world(&game->world);
+  alist_free(&game->messages);
   alist_free(&game->events);
 }
 

@@ -13,6 +13,7 @@
 #include "game.h"
 #include "input.h"
 #include "resources.h"
+#include "ui.h"
 
 struct application
 {
@@ -78,12 +79,6 @@ destroy_application(struct application* app)
 static SDL_Renderer*
 create_renderer(SDL_Window* window)
 {
-  SDL_DisplayID display = SDL_GetDisplayForWindow(window);
-  if (display == 0) {
-    SDL_Log("SDL_GetDisplayForWindow failed: %s", SDL_GetError());
-    return NULL;
-  }
-
   SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
   if (renderer == NULL) {
     SDL_Log("SDL_CreateRenderer failed: %s", SDL_GetError());
@@ -98,8 +93,8 @@ create_renderer(SDL_Window* window)
 
   if (!SDL_SetRenderLogicalPresentation(
         renderer,
-        (RL_WIDTH_MAP + RL_WIDTH_PANEL) * 6,
-        (RL_HEIGHT_MAP + RL_HEIGHT_MSG_BOX) * 8,
+        (RL_UI_WIDTH) * 6,
+        (RL_UI_HEIGHT) * 8,
         SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)) {
     SDL_Log("SDL_SetRenderLogicalPresentation failed: %s", SDL_GetError());
     SDL_DestroyRenderer(renderer);

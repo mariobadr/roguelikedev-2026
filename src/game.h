@@ -16,11 +16,6 @@
 #include "rand.h"
 #include "world.h"
 
-#define RL_WIDTH_PANEL 16
-#define RL_HEIGHT_MSG_BOX 8
-#define RL_WIDTH_MAP (80 - RL_WIDTH_PANEL)
-#define RL_HEIGHT_MAP (45 - RL_HEIGHT_MSG_BOX)
-
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
 

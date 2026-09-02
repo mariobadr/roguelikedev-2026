@@ -2,6 +2,7 @@
 
 #include "input.h"
 #include "render.h"
+#include "ui.h"
 
 /**
  * @return -1 for negative, 1 for positive, and 0 for zero
@@ -51,8 +52,10 @@ handle_mouse_input(struct inpt_state const* istate, SDL_Point rogue)
     return RL_ACTION_NONE;
   }
 
-  int const target_x = (int)SDL_floorf(istate->mouse.position.x / GLYPH_WIDTH);
-  int const target_y = (int)SDL_floorf(istate->mouse.position.y / GLYPH_HEIGHT);
+  int const target_x =
+    (int)SDL_floorf(istate->mouse.position.x / GLYPH_WIDTH) - RL_UI_MAP_X;
+  int const target_y =
+    (int)SDL_floorf(istate->mouse.position.y / GLYPH_HEIGHT) - RL_UI_MAP_Y;
 
   int const delta_x = target_x - rogue.x;
   int const delta_y = target_y - rogue.y;
