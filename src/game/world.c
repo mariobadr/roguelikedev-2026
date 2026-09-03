@@ -27,40 +27,6 @@ carve_map(grid(rl_tile) * map, struct rl_layout const* layout)
   }
 }
 
-static struct rl_actor*
-add_actor(struct rl_world* world, enum rl_actor_type type)
-{
-  struct rl_actor new_actor = rl_create_actor(type, world->next_actor_id);
-  *alist_push(&world->actors) = new_actor;
-
-  return alist_at(&world->actors, world->next_actor_id++);
-}
-
-static struct rl_actor*
-find_actor(struct rl_world const* world, SDL_Point position)
-{
-  for (int i = 0; i < alist_len(&world->actors); i++) {
-    struct rl_actor* actor = alist_at(&world->actors, i);
-    if (actor->pos.x == position.x && actor->pos.y == position.y) {
-      return actor;
-    }
-  }
-
-  return NULL;
-}
-
-static bool
-is_occupied(struct rl_world const* world, SDL_Point position)
-{
-  struct rl_actor* actor = find_actor(world, position);
-
-  if (actor == NULL) {
-    return false;
-  }
-
-  return rl_actor_is_alive(actor);
-}
-
 static bool
 assign_spawn_point(struct rl_world const* world,
                    SDL_Rect const* room,
@@ -70,12 +36,12 @@ assign_spawn_point(struct rl_world const* world,
   int const max_attempts = 10; // hack; temporary?
 
   for (int attempt = 0; attempt < max_attempts; attempt++) {
-    SDL_Point p;
-    p.x = (int)rand_next_between(rng, room->x, room->x + room->w - 1);
-    p.y = (int)rand_next_between(rng, room->y, room->y + room->h - 1);
+    SDL_Point pos;
+    pos.x = (int)rand_next_between(rng, room->x, room->x + room->w - 1);
+    pos.y = (int)rand_next_between(rng, room->y, room->y + room->h - 1);
 
-    if (!is_occupied(world, p)) {
-      *out = p;
+    if (rl_find_actor(world, pos) == NULL) {
+      *out = pos;
       return true;
     }
   }
@@ -103,7 +69,7 @@ spawn_actors(struct rl_world* world, struct rand_state* rng)
 
     int const count = (int)rand_next_up_to(rng, max_actors_for_room(room_rect));
     for (int j = 0; j < count; j++) {
-      struct rl_actor* actor = add_actor(world, RL_ACTOR_RAT);
+      struct rl_actor* actor = rl_add_actor(world, RL_ACTOR_RAT);
       assign_spawn_point(world, room_rect, rng, &actor->pos);
     }
   }
@@ -131,9 +97,8 @@ steer_actor(SDL_Point* direction,
       continue;
     }
 
-    struct rl_actor const* occupant = find_actor(world, next);
-    if (occupant != NULL && rl_actor_is_alive(occupant) &&
-        occupant->id != RL_ROGUE_ID) {
+    struct rl_actor const* occupant = rl_find_actor(world, next);
+    if (occupant != NULL && occupant->id != RL_ROGUE_ID) {
       // the tile is occupied by a non-rogue actor
       continue;
     }
@@ -181,8 +146,8 @@ try_attack(struct rl_actor* attacker,
            alist(rl_event) * events,
            struct rand_state* rng)
 {
-  struct rl_actor* defender = find_actor(world, dst);
-  if (defender == NULL || !rl_actor_is_alive(defender)) {
+  struct rl_actor* defender = rl_find_actor(world, dst);
+  if (defender == NULL) {
     return false;
   }
 
@@ -277,7 +242,7 @@ rl_init_world(struct rl_world* world,
   carve_map(&world->map, &world->layout);
 
   // the main character
-  struct rl_actor* rogue = add_actor(world, RL_ACTOR_ROGUE);
+  struct rl_actor* rogue = rl_add_actor(world, RL_ACTOR_ROGUE);
   // just put the rogue at the centre of the first room
   SDL_Rect const* room = array_at(&world->layout.rooms, 0);
   rogue->pos.x = room->x + room->w / 2;
@@ -303,6 +268,53 @@ rl_free_world(struct rl_world* world)
   grid_free(&world->map);
 }
 
+struct rl_actor*
+rl_get_actor(struct rl_world const* world, int id)
+{
+  if (id >= alist_len(&world->actors)) {
+    return NULL;
+  }
+
+  return alist_at(&world->actors, id);
+}
+
+struct rl_item*
+rl_get_item(struct rl_world const* world, int id)
+{
+  if (id >= alist_len(&world->items)) {
+    return NULL;
+  }
+
+  return alist_at(&world->items, id);
+}
+
+struct rl_actor*
+rl_find_actor(struct rl_world const* world, SDL_Point position)
+{
+  for (int i = 0; i < alist_len(&world->actors); i++) {
+    struct rl_actor* actor = alist_at(&world->actors, i);
+    if (!rl_actor_is_alive(actor)) {
+      // ignore dead actors
+      continue;
+    }
+
+    if (actor->pos.x == position.x && actor->pos.y == position.y) {
+      return actor;
+    }
+  }
+
+  return NULL;
+}
+
+struct rl_actor*
+rl_add_actor(struct rl_world* world, enum rl_actor_type type)
+{
+  struct rl_actor new_actor = rl_create_actor(type, world->next_actor_id);
+  *alist_push(&world->actors) = new_actor;
+
+  return alist_at(&world->actors, world->next_actor_id++);
+}
+
 bool
 rl_apply_command(struct rl_world* world,
                  struct rl_command const* cmd,
@@ -313,7 +325,7 @@ rl_apply_command(struct rl_world* world,
     return false;
   }
 
-  struct rl_actor* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  struct rl_actor* rogue = alist_at(&world->actors, RL_ROGUE_ID);
   if (!rl_actor_is_alive(rogue)) {
     // the rogue is dead
     return false;
@@ -374,14 +386,4 @@ rl_update_actors(struct rl_world* world,
       return;
     }
   }
-}
-
-struct rl_actor*
-rl_get_actor(struct rl_world const* world, int id)
-{
-  if (id >= alist_len(&world->actors)) {
-    return NULL;
-  }
-
-  return alist_at(&world->actors, id);
 }

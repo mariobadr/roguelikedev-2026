@@ -9,10 +9,11 @@
 #include "container/grid.h"
 #include "procgen/layout.h"
 
-#include "actor.h"
-#include "command.h"
-#include "event.h"
-#include "tile_map.h"
+#include "game/actor.h"
+#include "game/command.h"
+#include "game/event.h"
+#include "game/item.h"
+#include "game/tile_map.h"
 
 // forward declarations
 struct rand_state;
@@ -29,6 +30,11 @@ struct rl_fov;
 alist_define_as(struct rl_actor, rl_actor);
 
 /**
+ * An growable array of items.
+ */
+alist_define_as(struct rl_item, rl_item);
+
+/**
  * The game world.
  */
 struct rl_world
@@ -39,8 +45,10 @@ struct rl_world
   grid(rl_tile) map;
   /** Next available actor identifier. */
   int next_actor_id;
-  /** All other actors */
+  /** All actors, including the rogue. */
   alist(rl_actor) actors;
+  /** All items. */
+  alist(rl_item) items;
   /** A map of distances to reach the player. */
   grid(int) distances;
 };
@@ -53,6 +61,30 @@ rl_init_world(struct rl_world* world,
 
 void
 rl_free_world(struct rl_world* world);
+
+/**
+ * @return the actor corresponding to the given ID (NULL if not found)
+ */
+struct rl_actor*
+rl_get_actor(struct rl_world const* world, int id);
+
+/**
+ * @return the item corresponding to the given ID (NULL if not found)
+ */
+struct rl_item*
+rl_get_item(struct rl_world const* world, int id);
+
+/**
+ * @return the (alive) actor at position, or NULL if no actor was found.
+ */
+struct rl_actor*
+rl_find_actor(struct rl_world const* world, SDL_Point position);
+
+/**
+ * @return the newly added actor of the given type.
+ */
+struct rl_actor*
+rl_add_actor(struct rl_world* world, enum rl_actor_type type);
 
 bool
 rl_apply_command(struct rl_world* world,
