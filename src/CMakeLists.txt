@@ -26,6 +26,7 @@ set(GAME_SOURCES
     container/alist.c
     container/alist.h
     container/array.h
+    container/grid.h
     game/action.h
     game/actor.c
     game/actor.h

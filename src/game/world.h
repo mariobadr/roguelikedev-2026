@@ -6,6 +6,7 @@
 
 #include "container/array.h"
 #include "container/alist.h"
+#include "container/grid.h"
 #include "procgen/layout.h"
 
 #include "actor.h"
@@ -41,7 +42,7 @@ struct rl_world
   /** All other actors */
   alist(rl_actor) actors;
   /** A map of distances to reach the player. */
-  array(int) distances;
+  grid(int) distances;
 };
 
 bool

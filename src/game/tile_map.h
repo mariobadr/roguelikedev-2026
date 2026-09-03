@@ -7,20 +7,38 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "container/grid.h"
+
 #include "tile.h"
+
+grid_define_as(enum rl_tile, rl_tile);
 
 /**
  * A tile map.
  */
 struct rl_tile_map
 {
-  /** The width of the map in tiles. */
-  int width;
-  /** The height of the map in tiles. */
-  int height;
   /** The tiles in the map. */
-  enum rl_tile* tiles;
+  grid(rl_tile) tiles;
 };
+
+/**
+ * @return the width of the map in tiles.
+ */
+static inline int
+rl_map_width(struct rl_tile_map const* map)
+{
+  return grid_width(&map->tiles);
+}
+
+/**
+ * @return the height of the map in tiles.
+ */
+static inline int
+rl_map_height(struct rl_tile_map const* map)
+{
+  return grid_height(&map->tiles);
+}
 
 /**
  * Initialize a new map with width and height.
@@ -40,7 +58,7 @@ rl_free_map(struct rl_tile_map* map);
 static inline size_t
 rl_map_index_of(struct rl_tile_map const* map, int x, int y)
 {
-  return y * map->width + x;
+  return grid_index_of(&map->tiles, x, y);
 }
 
 /**

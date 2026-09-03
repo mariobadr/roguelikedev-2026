@@ -7,7 +7,7 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_rect.h>
 
-#include "container/array.h"
+#include "container/grid.h"
 
 // forward declarations
 struct rl_tile_map;
@@ -23,7 +23,7 @@ static SDL_Point const RL_PATH_DIRS[] = { { 1, 0 },
                                           { 0, -1 } };
 
 bool
-rl_build_dijkstra_map(array(int) * distances,
+rl_build_dijkstra_map(grid(int) * distances,
                       struct rl_tile_map const* map,
                       SDL_Point target);
 

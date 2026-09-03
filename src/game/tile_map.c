@@ -8,16 +8,12 @@ bool
 rl_init_map(struct rl_tile_map* map, int width, int height)
 {
   // check whether map has already been initialized
-  SDL_assert(map->tiles == NULL);
+  SDL_assert(map->tiles.data == NULL);
 
-  map->tiles = SDL_calloc(width * height, sizeof(*map->tiles));
-  if (map->tiles == NULL) {
-    SDL_Log("SDL_calloc failed: %s", SDL_GetError());
+  if (!grid_alloc(&map->tiles, width, height)) {
+    SDL_Log("grid_alloc failed: %s", SDL_GetError());
     return false;
   }
-
-  map->width = width;
-  map->height = height;
 
   return true;
 }
@@ -29,17 +25,13 @@ rl_free_map(struct rl_tile_map* map)
     return;
   }
 
-  SDL_free(map->tiles);
-  map->tiles = NULL;
-
-  map->width = 0;
-  map->height = 0;
+  grid_free(&map->tiles);
 }
 
 bool
 rl_map_contains(struct rl_tile_map const* map, int x, int y)
 {
-  return x >= 0 && y >= 0 && x < map->width && y < map->height;
+  return grid_contains(&map->tiles, x, y);
 }
 
 enum rl_tile
@@ -47,14 +39,13 @@ rl_get_tile(struct rl_tile_map const* map, int x, int y)
 {
   SDL_assert(rl_map_contains(map, x, y));
 
-  return map->tiles[y * map->width + x];
+  return *grid_at(&map->tiles, x, y);
 }
 
 void
 rl_set_tile(struct rl_tile_map* map, int x, int y, enum rl_tile tile)
 {
-  size_t index = rl_map_index_of(map, x, y);
-  map->tiles[index] = tile;
+  *grid_at(&map->tiles, x, y) = tile;
 }
 
 void

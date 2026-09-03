@@ -125,8 +125,7 @@ steer_actor(SDL_Point* direction,
       continue;
     }
 
-    size_t next_index = rl_map_index_of(&world->map, next.x, next.y);
-    int next_distance = *array_at(&world->distances, next_index);
+    int next_distance = *grid_at(&world->distances, next.x, next.y);
 
     if (next_distance >= best_distance) {
       continue;
@@ -152,7 +151,6 @@ steer_actor(SDL_Point* direction,
 
 static bool
 try_wake(struct rl_actor* actor,
-         struct rl_tile_map const* map,
          struct rl_fov const* fov,
          alist(rl_event) * events)
 {
@@ -161,8 +159,7 @@ try_wake(struct rl_actor* actor,
     return true;
   }
 
-  size_t const map_index = rl_map_index_of(map, actor->pos.x, actor->pos.y);
-  if (!*array_at(&fov->visible, map_index)) {
+  if (!*grid_at(&fov->visible, actor->pos.x, actor->pos.y)) {
     // actor hasn't seen player yet
     return false;
   }
@@ -266,15 +263,12 @@ rl_init_world(struct rl_world* world,
     return false;
   }
 
-  // allocate space for the actors
-  if (!array_alloc(&world->distances, width * height)) {
-    SDL_Log("array_alloc failed: %s", SDL_GetError());
+  // allocate space for the distance map
+  if (!grid_alloc(&world->distances, width, height)) {
+    SDL_Log("grid_alloc failed: %s", SDL_GetError());
     rl_free_world(world);
     return false;
   }
-
-  // consider all elements as "used"
-  world->distances.len = world->distances.cap;
 
   // update the tiles in the map based on the layout
   carve_map(&world->map, &world->layout);
@@ -300,7 +294,7 @@ rl_free_world(struct rl_world* world)
     return;
   }
 
-  array_free(&world->distances);
+  grid_free(&world->distances);
   alist_free(&world->actors);
   rl_free_layout(&world->layout);
   rl_free_map(&world->map);
@@ -361,7 +355,7 @@ rl_update_actors(struct rl_world* world,
       continue;
     }
 
-    if (!try_wake(actor, &world->map, fov, events)) {
+    if (!try_wake(actor, fov, events)) {
       // actor is asleep
       continue;
     }

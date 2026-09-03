@@ -20,8 +20,8 @@ draw_map(SDL_Renderer* renderer,
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-  for (int y = 0; y < map->height; y++) {
-    for (int x = 0; x < map->width; x++) {
+  for (int y = 0; y < rl_map_height(map); y++) {
+    for (int x = 0; x < rl_map_width(map); x++) {
       size_t const index = rl_map_index_of(map, x, y);
 
       if (!fov->explored.data[index]) {
@@ -52,8 +52,8 @@ draw_light(SDL_Renderer* renderer,
   // the colour of the light source - make this an argument?
   SDL_FColor const light = RL_COLOUR_GRAY[6];
 
-  for (int y = 0; y < map->height; y++) {
-    for (int x = 0; x < map->width; x++) {
+  for (int y = 0; y < rl_map_height(map); y++) {
+    for (int x = 0; x < rl_map_width(map); x++) {
       size_t const index = rl_map_index_of(map, x, y);
 
       if (!fov->visible.data[index]) {

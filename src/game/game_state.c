@@ -52,7 +52,7 @@ rl_init_game_state(struct rl_game_state* game_state,
     return false;
   }
 
-  if (!rl_init_fov(&game_state->fov, map_width * map_height, FOV_RADIUS)) {
+  if (!rl_init_fov(&game_state->fov, map_width, map_height, FOV_RADIUS)) {
     rl_free_game_state(game_state);
     return false;
   }

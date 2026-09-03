@@ -1,5 +1,6 @@
 #include "fov.h"
 
+#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
@@ -161,14 +162,14 @@ static void
 compute_fov(struct rl_tile_map const* map,
             SDL_Point origin,
             int radius,
-            bool* out)
+            grid(boolean) * out)
 {
   // set everything to not visible
-  SDL_memset(out, 0, map->width * map->height * sizeof(*out));
+  SDL_memset(out->data, 0, grid_count(out) * sizeof(*out->data));
 
   // but, of course, the origin is visible
   size_t index = rl_map_index_of(map, origin.x, origin.y);
-  out[index] = true;
+  *grid_at_index(out, index) = true;
 
   // things that don't change when calling scan_octant
   struct fov_context context = { 0 };
@@ -177,26 +178,23 @@ compute_fov(struct rl_tile_map const* map,
   context.radius = radius;
 
   for (int octant = 0; octant < 8; octant++) {
-    scan_octant(&context, &octants[octant], 1, 1.0, 0.0, out);
+    scan_octant(&context, &octants[octant], 1, 1.0, 0.0, out->data);
   }
 }
 
 bool
-rl_init_fov(struct rl_fov* fov, int cell_count, int radius)
+rl_init_fov(struct rl_fov* fov, int width, int height, int radius)
 {
-  if(!array_alloc(&fov->visible, cell_count)) {
-    SDL_Log("array_alloc failed: %s", SDL_GetError());
+  if(!grid_alloc(&fov->visible, width, height)) {
+    SDL_Log("grid_alloc failed: %s", SDL_GetError());
     return false;
   }
 
-  if(!array_alloc(&fov->explored, cell_count)) {
-    SDL_Log("array_alloc failed: %s", SDL_GetError());
+  if(!grid_alloc(&fov->explored, width, height)) {
+    SDL_Log("grid_alloc failed: %s", SDL_GetError());
     rl_free_fov(fov);
     return false;
   }
-
-  fov->visible.len = cell_count;
-  fov->explored.len = cell_count;
 
   fov->origin.x = -1;
   fov->origin.y = -1;
@@ -212,8 +210,8 @@ rl_free_fov(struct rl_fov* fov)
     return;
   }
 
-  array_free(&fov->visible);
-  array_free(&fov->explored);
+  grid_free(&fov->visible);
+  grid_free(&fov->explored);
 
   fov->radius = 0;
 }
@@ -228,12 +226,12 @@ rl_clear_fov(struct rl_fov* fov)
   // make everything not visible
   SDL_memset(fov->visible.data,
              0,
-             array_len(&fov->visible) * sizeof(*fov->visible.data));
+             grid_count(&fov->visible) * sizeof(*fov->visible.data));
 
   // make everything unexplored
   SDL_memset(fov->explored.data,
              0,
-             array_len(&fov->explored) * sizeof(*fov->explored.data));
+             grid_count(&fov->explored) * sizeof(*fov->explored.data));
 }
 
 void
@@ -241,16 +239,19 @@ rl_update_fov(struct rl_fov* fov,
               struct rl_tile_map const* map,
               SDL_Point origin)
 {
+  SDL_assert(grid_same_shape(&fov->visible, &map->tiles));
+  SDL_assert(grid_same_shape(&fov->explored, &map->tiles));
+
   if (fov->origin.x == origin.x && fov->origin.y == origin.y) {
     return;
   }
 
   fov->origin = origin;
-  compute_fov(map, origin, fov->radius, fov->visible.data);
+  compute_fov(map, origin, fov->radius, &fov->visible);
 
-  for (int i = 0; i < map->width * map->height; i++) {
-    if (*array_at(&fov->visible, i)) {
-      *array_at(&fov->explored, i) = true;
+  for (size_t i = 0; i < grid_count(&fov->visible); i++) {
+    if (*grid_at_index(&fov->visible, i)) {
+      *grid_at_index(&fov->explored, i) = true;
     }
   }
 }
