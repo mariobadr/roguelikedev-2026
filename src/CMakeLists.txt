@@ -41,6 +41,8 @@ set(GAME_SOURCES
     game/item.h
     game/pathfinding.c
     game/pathfinding.h
+    game/spawn.c
+    game/spawn.h
     game/tile_map.c
     game/tile_map.h
     game/tile.c
