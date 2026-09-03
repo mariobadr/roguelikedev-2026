@@ -13,24 +13,13 @@
  */
 enum rl_event_type
 {
-  RL_EVENT_MOVE,
   RL_EVENT_ATTACK,
   RL_EVENT_DEATH,
+  RL_EVENT_AWAKEN,
 };
 
 /**
- * Entity movement.
- */
-struct rl_event_move
-{
-  /** Identifier of the moving entity. */
-  int entity;
-  /** Entity's current position. */
-  SDL_Point position;
-};
-
-/**
- * Entity attacks.
+ * An entity attacks.
  */
 struct rl_event_attack
 {
@@ -42,12 +31,24 @@ struct rl_event_attack
   int damage;
 };
 
+/**
+ * An entity dies.
+ */
 struct rl_event_death
 {
   /** Identifier of the dying entity. */
   int entity;
   /** Identifier of the killing entity. */
   int killer;
+};
+
+/**
+ * An entity awakens.
+ */
+struct rl_event_awaken
+{
+  /** Identifier of the now awake entity. */
+  int entity;
 };
 
 /**
@@ -59,9 +60,9 @@ struct rl_event
 
   union
   {
-    struct rl_event_move move;
     struct rl_event_attack attack;
     struct rl_event_death death;
+    struct rl_event_awaken awaken;
   } as;
 };
 

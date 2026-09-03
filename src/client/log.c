@@ -58,3 +58,19 @@ rl_build_death_log(struct rl_world const* world,
   append(&line, ".", RL_COLOUR_GRAY[5]);
   return line;
 }
+
+struct rl_log_line
+rl_build_awaken_log(struct rl_world const* world,
+                    struct rl_event_awaken const* event)
+{
+  struct rl_entity const* entity = rl_get_entity(world, event->entity);
+
+  // build up the log line piece by piece
+  struct rl_log_line line = { 0 };
+
+  append(&line, "A ", RL_COLOUR_GRAY[5]);
+  append(&line, entity->name, rl_get_entity_gfx(entity).fg);
+  append(&line, " woke up!", RL_COLOUR_GRAY[5]);
+
+  return line;
+}

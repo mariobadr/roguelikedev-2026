@@ -198,8 +198,8 @@ rl_init_fov(struct rl_fov* fov, int cell_count, int radius)
   fov->visible.len = cell_count;
   fov->explored.len = cell_count;
 
-  fov->origin.x = 0;
-  fov->origin.y = 0;
+  fov->origin.x = -1;
+  fov->origin.y = -1;
   fov->radius = radius;
 
   return true;
@@ -221,9 +221,16 @@ rl_free_fov(struct rl_fov* fov)
 void
 rl_clear_fov(struct rl_fov* fov)
 {
+  // invalidate the origin
+  fov->origin.x = -1;
+  fov->origin.y = -1;
+
+  // make everything not visible
   SDL_memset(fov->visible.data,
              0,
              array_len(&fov->visible) * sizeof(*fov->visible.data));
+
+  // make everything unexplored
   SDL_memset(fov->explored.data,
              0,
              array_len(&fov->explored) * sizeof(*fov->explored.data));
@@ -234,6 +241,10 @@ rl_update_fov(struct rl_fov* fov,
               struct rl_tile_map const* map,
               SDL_Point origin)
 {
+  if (fov->origin.x == origin.x && fov->origin.y == origin.y) {
+    return;
+  }
+
   fov->origin = origin;
   compute_fov(map, origin, fov->radius, fov->visible.data);
 

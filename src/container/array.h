@@ -111,6 +111,7 @@
 #define array_clear(a) ((a)->len = 0)
 
 // define some common array types
+array_define(int);
 array_define_as(bool, boolean);
 
 #endif // GINC_CONTAINER_ARRAY_H

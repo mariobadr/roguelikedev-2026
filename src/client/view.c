@@ -97,8 +97,8 @@ draw_entity(SDL_Renderer* renderer,
             struct rl_entity const* entity)
 {
   struct rl_gfx_tile const tile = rl_get_entity_gfx(entity);
-  SDL_FPoint const position = tile_to_screen(RL_UI_MAP_X + entity->position.x,
-                                             RL_UI_MAP_Y + entity->position.y);
+  SDL_FPoint const position = tile_to_screen(RL_UI_MAP_X + entity->pos.x,
+                                             RL_UI_MAP_Y + entity->pos.y);
 
   rl_draw_tile(renderer, font, &tile, position.x, position.y);
 }
@@ -119,7 +119,7 @@ draw_entities(SDL_Renderer* renderer,
     }
 
     size_t const index =
-      rl_map_index_of(&world->map, entity->position.x, entity->position.y);
+      rl_map_index_of(&world->map, entity->pos.x, entity->pos.y);
 
     if (fov->visible.data[index]) {
       draw_entity(renderer, font, entity);

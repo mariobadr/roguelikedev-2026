@@ -31,7 +31,9 @@ struct rl_entity
   /** Dispalyed name. */
   char const* name;
   /** Location in tile coordinates. */
-  SDL_Point position;
+  SDL_Point pos;
+  /** Whether the entity is "active". */
+  bool awake;
   /** The current level. */
   int level;
   /** The current number of hit points. */

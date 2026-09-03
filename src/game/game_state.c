@@ -29,7 +29,7 @@ regenerate_map(struct rl_game_state* game_state)
 
   struct rl_entity const* rogue =
     rl_get_entity(&game_state->world, RL_ROGUE_ID);
-  rl_update_fov(&game_state->fov, &game_state->world.map, rogue->position);
+  rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
 
   return true;
 }
@@ -60,7 +60,7 @@ rl_init_game_state(struct rl_game_state* game_state,
   // make sure the rogue has an initial field-of-view
   struct rl_entity const* rogue =
     rl_get_entity(&game_state->world, RL_ROGUE_ID);
-  rl_update_fov(&game_state->fov, &game_state->world.map, rogue->position);
+  rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
 
   game_state->map_width = map_width;
   game_state->map_height = map_height;
@@ -89,8 +89,7 @@ rl_update_game_state(struct rl_game_state* game_state,
   // clear the last update's events
   alist_clear(&game_state->events);
 
-  game_state->action_cooldown =
-    SDL_max(0.0f, game_state->action_cooldown - dt);
+  game_state->action_cooldown = SDL_max(0.0f, game_state->action_cooldown - dt);
   if (game_state->action_cooldown > 0.0f) {
     return;
   }
@@ -110,25 +109,18 @@ rl_update_game_state(struct rl_game_state* game_state,
   // Build a command based on the player's last action
   struct rl_command cmd = rl_build_command(action);
 
-  // Do the simulation
-  if (rl_update_world(
-        &game_state->world, &cmd, &game_state->events, &game_state->rng)) {
-    // turn taken
+  bool turn_taken = rl_apply_command(
+    &game_state->world, &cmd, &game_state->events, &game_state->rng);
+
+  if (turn_taken) {
     game_state->action_cooldown = ACTION_GLOBAL_COOLDOWN;
-  }
 
-  struct rl_entity const* rogue =
-    rl_get_entity(&game_state->world, RL_ROGUE_ID);
-  for (int i = 0; i < alist_len(&game_state->events); i++) {
-    struct rl_event const* event = alist_at(&game_state->events, i);
-
-    switch (event->type) {
-      case RL_EVENT_MOVE:
-        rl_update_fov(
-          &game_state->fov, &game_state->world.map, rogue->position);
-        break;
-      default:
-        break;
-    }
+    struct rl_entity const* rogue =
+      rl_get_entity(&game_state->world, RL_ROGUE_ID);
+    rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
+    rl_update_entities(&game_state->world,
+                       &game_state->fov,
+                       &game_state->events,
+                       &game_state->rng);
   }
 }

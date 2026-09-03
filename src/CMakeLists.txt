@@ -35,6 +35,8 @@ set(GAME_SOURCES
     game/fov.h
     game/game_state.c
     game/game_state.h
+    game/pathfinding.c
+    game/pathfinding.h
     game/tile_map.c
     game/tile_map.h
     game/tile.c

@@ -50,7 +50,7 @@ rl_update_client(struct rl_client* client, float dt)
   struct rl_entity const* rogue =
     rl_get_entity(&client->game_state.world, RL_ROGUE_ID);
   enum rl_action const action =
-    rl_translate_input(&client->istate, rogue->position);
+    rl_translate_input(&client->istate, rogue->pos);
   rl_update_game_state(&client->game_state, action, dt);
 
   for (int i = 0; i < alist_len(&client->game_state.events); i++) {
@@ -65,6 +65,9 @@ rl_update_client(struct rl_client* client, float dt)
         *alist_push(&client->messages) =
           rl_build_death_log(&client->game_state.world, &event->as.death);
         break;
+      case RL_EVENT_AWAKEN:
+        *alist_push(&client->messages) =
+          rl_build_awaken_log(&client->game_state.world, &event->as.awaken);
       default:
         break;
     }

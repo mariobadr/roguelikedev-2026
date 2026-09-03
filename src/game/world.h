@@ -4,15 +4,18 @@
 #ifndef GINC_ROGUELIKE_WORLD_H
 #define GINC_ROGUELIKE_WORLD_H
 
+#include "container/array.h"
 #include "container/alist.h"
+#include "procgen/layout.h"
+
 #include "command.h"
 #include "entity.h"
 #include "event.h"
-#include "procgen/layout.h"
 #include "tile_map.h"
 
 // forward declarations
 struct rand_state;
+struct rl_fov;
 
 /**
  * The identifier for the rogue player in any world.
@@ -37,6 +40,8 @@ struct rl_world
   int next_entity_id;
   /** All other entities */
   alist(rl_entity) entities;
+  /** A map of distances to reach the player. */
+  array(int) distances;
 };
 
 bool
@@ -49,10 +54,16 @@ void
 rl_free_world(struct rl_world* world);
 
 bool
-rl_update_world(struct rl_world* world,
-                struct rl_command const* player_command,
-                alist(rl_event) * events,
-                struct rand_state* rng);
+rl_apply_command(struct rl_world* world,
+                 struct rl_command const* player_command,
+                 alist(rl_event) * events,
+                 struct rand_state* rng);
+
+void
+rl_update_entities(struct rl_world* world,
+                   struct rl_fov const* fov,
+                   alist(rl_event) * events,
+                   struct rand_state* rng);
 
 struct rl_entity*
 rl_get_entity(struct rl_world const* world, int id);

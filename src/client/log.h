@@ -13,6 +13,7 @@
 struct rl_world;
 struct rl_event_attack;
 struct rl_event_death;
+struct rl_event_awaken;
 
 struct rl_log_char
 {
@@ -35,5 +36,9 @@ rl_build_attack_log(struct rl_world const* world,
 struct rl_log_line
 rl_build_death_log(struct rl_world const* world,
                    struct rl_event_death const* event);
+
+struct rl_log_line
+rl_build_awaken_log(struct rl_world const* world,
+                    struct rl_event_awaken const* event);
 
 #endif // GINC_ROGUELIKE_LOG_H

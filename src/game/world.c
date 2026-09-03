@@ -3,8 +3,11 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
-#include "event.h"
 #include "procgen/rand.h"
+
+#include "event.h"
+#include "fov.h"
+#include "pathfinding.h"
 
 static void
 carve_map(struct rl_tile_map* map, struct rl_layout const* layout)
@@ -37,7 +40,7 @@ find_entity(struct rl_world const* world, SDL_Point position)
 {
   for (int i = 0; i < alist_len(&world->entities); i++) {
     struct rl_entity* entity = alist_at(&world->entities, i);
-    if (entity->position.x == position.x && entity->position.y == position.y) {
+    if (entity->pos.x == position.x && entity->pos.y == position.y) {
       return entity;
     }
   }
@@ -101,9 +104,77 @@ spawn_entities(struct rl_world* world, struct rand_state* rng)
       (int)rand_next_up_to(rng, max_entities_for_room(room_rect));
     for (int j = 0; j < count; j++) {
       struct rl_entity* entity = add_entity(world, RL_ENTITY_RAT);
-      assign_spawn_point(world, room_rect, rng, &entity->position);
+      assign_spawn_point(world, room_rect, rng, &entity->pos);
     }
   }
+}
+
+static bool
+steer_entity(SDL_Point* direction,
+             struct rl_entity const* entity,
+             struct rl_world const* world)
+{
+  int best_distance = RL_INFINITE_DISTANCE;
+
+  for (size_t i = 0; i < SDL_arraysize(RL_PATH_DIRS); i++) {
+    SDL_Point next = { 0 };
+    next.x = entity->pos.x + RL_PATH_DIRS[i].x;
+    next.y = entity->pos.y + RL_PATH_DIRS[i].y;
+
+    if (!rl_map_contains(&world->map, next.x, next.y)) {
+      continue;
+    }
+
+    size_t next_index = rl_map_index_of(&world->map, next.x, next.y);
+    int next_distance = *array_at(&world->distances, next_index);
+
+    if (next_distance >= best_distance) {
+      continue;
+    }
+
+    struct rl_entity const* occupant = find_entity(world, next);
+    if (occupant != NULL && rl_entity_is_alive(occupant) &&
+        occupant->id != RL_ROGUE_ID) {
+      // the tile is occupied by a non-rogue entity
+      continue;
+    }
+
+    best_distance = next_distance;
+    *direction = RL_PATH_DIRS[i];
+  }
+
+  if (best_distance == RL_INFINITE_DISTANCE) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool
+try_wake(struct rl_entity* entity,
+         struct rl_tile_map const* map,
+         struct rl_fov const* fov,
+         alist(rl_event) * events)
+{
+  if (entity->awake) {
+    // already awake
+    return true;
+  }
+
+  size_t const map_index = rl_map_index_of(map, entity->pos.x, entity->pos.y);
+  if (!*array_at(&fov->visible, map_index)) {
+    // entity hasn't seen player yet
+    return false;
+  }
+
+  entity->awake = true;
+
+  struct rl_event event = { 0 };
+  event.type = RL_EVENT_AWAKEN;
+  event.as.awaken.entity = entity->id;
+  *alist_push(events) = event;
+
+  return true;
 }
 
 static bool
@@ -138,19 +209,10 @@ try_attack(struct rl_entity* attacker,
 }
 
 static bool
-try_move(struct rl_entity* entity,
-         struct rl_world const* world,
-         SDL_Point dst,
-         alist(rl_event) * events)
+try_move(struct rl_entity* entity, struct rl_world const* world, SDL_Point dst)
 {
   if (rl_is_walkable(rl_get_tile(&world->map, dst.x, dst.y))) {
-    entity->position = dst;
-    struct rl_event event = { 0 };
-    event.type = RL_EVENT_MOVE;
-    event.as.move.entity = entity->id;
-    event.as.move.position = dst;
-    *alist_push(events) = event;
-
+    entity->pos = dst;
     return true;
   }
 
@@ -165,14 +227,14 @@ do_move(struct rl_entity* entity,
         struct rand_state* rng)
 {
   SDL_Point dst = { 0 };
-  dst.x = entity->position.x + direction.x;
-  dst.y = entity->position.y + direction.y;
+  dst.x = entity->pos.x + direction.x;
+  dst.y = entity->pos.y + direction.y;
 
   if (try_attack(entity, world, dst, events, rng)) {
     return true;
   }
 
-  if (try_move(entity, world, dst, events)) {
+  if (try_move(entity, world, dst)) {
     return true;
   }
 
@@ -200,8 +262,19 @@ rl_init_world(struct rl_world* world,
   // allocate space for the entities
   if (!alist_alloc(&world->entities, 16)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
+    rl_free_world(world);
     return false;
   }
+
+  // allocate space for the entities
+  if (!array_alloc(&world->distances, width * height)) {
+    SDL_Log("array_alloc failed: %s", SDL_GetError());
+    rl_free_world(world);
+    return false;
+  }
+
+  // consider all elements as "used"
+  world->distances.len = world->distances.cap;
 
   // update the tiles in the map based on the layout
   carve_map(&world->map, &world->layout);
@@ -210,8 +283,8 @@ rl_init_world(struct rl_world* world,
   struct rl_entity* rogue = add_entity(world, RL_ENTITY_ROGUE);
   // just put the rogue at the centre of the first room
   SDL_Rect const* room = array_at(&world->layout.rooms, 0);
-  rogue->position.x = room->x + room->w / 2;
-  rogue->position.y = room->y + room->h / 2;
+  rogue->pos.x = room->x + room->w / 2;
+  rogue->pos.y = room->y + room->h / 2;
 
   // spawn the other entities
   spawn_entities(world, rng);
@@ -227,23 +300,27 @@ rl_free_world(struct rl_world* world)
     return;
   }
 
+  array_free(&world->distances);
   alist_free(&world->entities);
   rl_free_layout(&world->layout);
   rl_free_map(&world->map);
 }
 
 bool
-rl_update_world(struct rl_world* world,
-                struct rl_command const* cmd,
-                alist(rl_event) * events,
-                struct rand_state* rng)
+rl_apply_command(struct rl_world* world,
+                 struct rl_command const* cmd,
+                 alist(rl_event) * events,
+                 struct rand_state* rng)
 {
   if (cmd->type == RL_COMMAND_NONE) {
-    // if the player didn't take a turn, no other entity should either
     return false;
   }
 
   struct rl_entity* rogue = rl_get_entity(world, RL_ROGUE_ID);
+  if (!rl_entity_is_alive(rogue)) {
+    // the rogue is dead
+    return false;
+  }
 
   bool consume_turn = false;
   switch (cmd->type) {
@@ -255,6 +332,51 @@ rl_update_world(struct rl_world* world,
   }
 
   return consume_turn;
+}
+
+void
+rl_update_entities(struct rl_world* world,
+                   struct rl_fov const* fov,
+                   alist(rl_event) * events,
+                   struct rand_state* rng)
+{
+  struct rl_entity const* rogue = rl_get_entity(world, RL_ROGUE_ID);
+  if (!rl_entity_is_alive(rogue)) {
+    // the player is dead
+    return;
+  }
+
+  // build the distance map where the target is the player
+  if (!rl_build_dijkstra_map(&world->distances, &world->map, rogue->pos)) {
+    return;
+  }
+
+  // wake up entities in the player's field-of-view and/or
+  // move entities closer to the player
+  for (int i = 1; i < alist_len(&world->entities); i++) {
+    struct rl_entity* entity = alist_at(&world->entities, i);
+
+    if (!rl_entity_is_alive(entity)) {
+      // entity is dead
+      continue;
+    }
+
+    if (!try_wake(entity, &world->map, fov, events)) {
+      // entity is asleep
+      continue;
+    }
+
+    // move the entity toward the player
+    SDL_Point direction;
+    if (steer_entity(&direction, entity, world)) {
+      do_move(entity, world, direction, events, rng);
+    }
+
+    if (!rl_entity_is_alive(rogue)) {
+      // the player is dead
+      return;
+    }
+  }
 }
 
 struct rl_entity*
