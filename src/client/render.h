@@ -11,40 +11,39 @@
 typedef struct SDL_Renderer SDL_Renderer;
 typedef struct SDL_Texture SDL_Texture;
 
+// forward declarations
+struct rl_gfx_tile;
+struct rl_text;
+
 #define GLYPH_WIDTH (6.0f)
 #define GLYPH_HEIGHT (8.0f)
 #define FONT_ROWS (16)
 #define FONT_COLS (16)
 
-/**
- * A graphical tile.
- */
-struct rl_gfx_tile
-{
-  /** Glyph index into the font. */
-  Uint8 glyph;
-  /** Foreground tint applied to the glyph. */
-  SDL_FColor fg;
-  /** Background colour of the tile. */
-  SDL_FColor bg;
-};
+void
+rl_fill_tile(SDL_Renderer* renderer, SDL_FColor colour, int col, int row);
 
-/**
- * Render the tile at destination (x, y).
- *
- * @param renderer the SDL renderer to use
- * @param font     the font texture
- * @param tile     the tile to render
- * @param x        the x-coordinate of the destination
- * @param y        the y-coordinate of the destination
- *
- * @return whether rendering was completely successful.
- */
-bool
+void
 rl_draw_tile(SDL_Renderer* renderer,
              SDL_Texture* font,
              struct rl_gfx_tile const* tile,
-             float x,
-             float y);
+             int col,
+             int row);
+
+void
+rl_draw_string(SDL_Renderer* renderer,
+               SDL_Texture* font,
+               char const* text,
+               SDL_FColor fg,
+               SDL_FColor bg,
+               int col,
+               int row);
+
+void
+rl_draw_text(SDL_Renderer* renderer,
+             SDL_Texture* font,
+             struct rl_text const* text,
+             int col,
+             int row);
 
 #endif // GINC_ROGUELIKE_RENDER_H

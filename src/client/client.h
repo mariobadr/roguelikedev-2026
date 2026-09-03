@@ -9,8 +9,8 @@
 #include "container/alist.h"
 #include "game/game_state.h"
 
+#include "client/game_log.h"
 #include "client/input.h"
-#include "client/log.h"
 #include "client/resources.h"
 
 // external forward declarations
@@ -24,8 +24,7 @@ struct rl_client
   struct rl_resources resources;
   /** Game state. */
   struct rl_game_state game_state;
-  /** A log of messages. */
-  alist(rl_log_line) messages;
+  struct rl_game_log log;
 };
 
 bool

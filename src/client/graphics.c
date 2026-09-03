@@ -87,3 +87,26 @@ rl_get_entity_gfx(struct rl_entity const* entity)
 
   return gfx;
 }
+
+
+struct rl_gfx_tile
+rl_get_text_gfx(enum rl_text_style style)
+{
+  struct rl_gfx_tile gfx = { 0 };
+  gfx.fg = RL_COLOUR_GRAY[5];
+  gfx.bg = RL_COLOUR_BLACK;
+
+  switch (style) {
+    case RL_TEXT_PLAYER:
+      gfx.fg = RL_COLOUR_GRAY[0];
+      break;
+    case RL_TEXT_ENEMY:
+      gfx.fg = RL_COLOUR_ORANGE[9];
+      break;
+    case RL_TEXT_NORMAL:
+    default:
+      break;
+  }
+
+  return gfx;
+}

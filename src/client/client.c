@@ -23,8 +23,7 @@ rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
     return false;
   }
 
-  if (!alist_alloc(&client->messages, 8)) {
-    SDL_Log("alist_alloc failed: %s", SDL_GetError());
+  if (!rl_init_game_log(&client->log)) {
     rl_free_client(client);
     return false;
   }
@@ -39,7 +38,7 @@ rl_free_client(struct rl_client* client)
     return;
   }
 
-  alist_free(&client->messages);
+  rl_free_game_log(&client->log);
   rl_free_game_state(&client->game_state);
   rl_destroy_resources(&client->resources);
 }
@@ -55,22 +54,7 @@ rl_update_client(struct rl_client* client, float dt)
 
   for (int i = 0; i < alist_len(&client->game_state.events); i++) {
     struct rl_event const* event = alist_at(&client->game_state.events, i);
-
-    switch (event->type) {
-      case RL_EVENT_ATTACK:
-        *alist_push(&client->messages) =
-          rl_build_attack_log(&client->game_state.world, &event->as.attack);
-        break;
-      case RL_EVENT_DEATH:
-        *alist_push(&client->messages) =
-          rl_build_death_log(&client->game_state.world, &event->as.death);
-        break;
-      case RL_EVENT_AWAKEN:
-        *alist_push(&client->messages) =
-          rl_build_awaken_log(&client->game_state.world, &event->as.awaken);
-      default:
-        break;
-    }
+    rl_game_log_on_event(&client->log, event, &client->game_state.world);
   }
 }
 

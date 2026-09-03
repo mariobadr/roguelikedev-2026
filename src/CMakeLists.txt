@@ -2,23 +2,24 @@
 # Source files
 ###############################################################################
 set(GAME_SOURCES
+    client/client.c
+    client/client.h
     client/controls.c
     client/controls.h
+    client/game_log.c
+    client/game_log.h
     client/graphics.c
     client/graphics.h
     client/input.c
     client/input.h
     client/lighting.c
     client/lighting.h
-    client/log.c
-    client/log.h
     client/palette.h
     client/render.c
     client/render.h
     client/resources.c
     client/resources.h
-    client/client.c
-    client/client.h
+    client/text.h
     client/ui.h
     client/view.c
     client/view.h
