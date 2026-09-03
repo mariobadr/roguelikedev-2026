@@ -4,13 +4,12 @@
 #ifndef GINC_ROGUELIKE_PATHFINDING_H
 #define GINC_ROGUELIKE_PATHFINDING_H
 
-#include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_stdinc.h>
 
 #include "container/grid.h"
 
-// forward declarations
-struct rl_tile_map;
+#include "tile_map.h"
 
 #define RL_INFINITE_DISTANCE SDL_MAX_SINT32
 
@@ -24,7 +23,7 @@ static SDL_Point const RL_PATH_DIRS[] = { { 1, 0 },
 
 bool
 rl_build_dijkstra_map(grid(int) * distances,
-                      struct rl_tile_map const* map,
+                      grid(rl_tile) const* map,
                       SDL_Point target);
 
 #endif // GINC_ROGUELIKE_PATHFINDING_H

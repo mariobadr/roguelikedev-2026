@@ -3,6 +3,7 @@
 #include <SDL3/SDL_render.h>
 
 #include "game/game_state.h"
+#include "game/tile_map.h"
 
 #include "client/client.h"
 #include "client/graphics.h"
@@ -15,21 +16,21 @@
 static void
 draw_map(SDL_Renderer* renderer,
          SDL_Texture* font,
-         struct rl_tile_map const* map,
+         grid(rl_tile) const* map,
          struct rl_fov const* fov)
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-  for (int y = 0; y < rl_map_height(map); y++) {
-    for (int x = 0; x < rl_map_width(map); x++) {
-      size_t const index = rl_map_index_of(map, x, y);
+  for (int y = 0; y < grid_height(map); y++) {
+    for (int x = 0; x < grid_width(map); x++) {
+      size_t const index = grid_index_of(map, x, y);
 
       if (!fov->explored.data[index]) {
         // don't draw anything for unexplored tiles
         continue;
       }
 
-      enum rl_tile const tile = rl_get_tile(map, x, y);
+      enum rl_tile const tile = *grid_at(map, x, y);
       struct rl_gfx_tile gfx = rl_get_tile_gfx(tile);
 
       if (!fov->visible.data[index]) {
@@ -44,7 +45,7 @@ draw_map(SDL_Renderer* renderer,
 
 static void
 draw_light(SDL_Renderer* renderer,
-           struct rl_tile_map const* map,
+           grid(rl_tile) const* map,
            struct rl_fov const* fov)
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
@@ -52,9 +53,9 @@ draw_light(SDL_Renderer* renderer,
   // the colour of the light source - make this an argument?
   SDL_FColor const light = RL_COLOUR_GRAY[6];
 
-  for (int y = 0; y < rl_map_height(map); y++) {
-    for (int x = 0; x < rl_map_width(map); x++) {
-      size_t const index = rl_map_index_of(map, x, y);
+  for (int y = 0; y < grid_height(map); y++) {
+    for (int x = 0; x < grid_width(map); x++) {
+      size_t const index = grid_index_of(map, x, y);
 
       if (!fov->visible.data[index]) {
         // not visible, so there's no "glow" to add
@@ -100,7 +101,7 @@ draw_actors(SDL_Renderer* renderer,
     }
 
     size_t const index =
-      rl_map_index_of(&world->map, actor->pos.x, actor->pos.y);
+      grid_index_of(&world->map, actor->pos.x, actor->pos.y);
 
     if (fov->visible.data[index]) {
       draw_actor(renderer, font, actor);

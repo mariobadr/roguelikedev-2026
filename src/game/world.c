@@ -1,5 +1,6 @@
 #include "world.h"
 
+#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
@@ -10,7 +11,7 @@
 #include "pathfinding.h"
 
 static void
-carve_map(struct rl_tile_map* map, struct rl_layout const* layout)
+carve_map(grid(rl_tile) * map, struct rl_layout const* layout)
 {
   enum rl_tile tile = RL_TILE_FLOOR;
 
@@ -100,8 +101,7 @@ spawn_actors(struct rl_world* world, struct rand_state* rng)
   for (int i = 0; i < array_len(&world->layout.rooms); i++) {
     SDL_Rect const* room_rect = array_at(&world->layout.rooms, i);
 
-    int const count =
-      (int)rand_next_up_to(rng, max_actors_for_room(room_rect));
+    int const count = (int)rand_next_up_to(rng, max_actors_for_room(room_rect));
     for (int j = 0; j < count; j++) {
       struct rl_actor* actor = add_actor(world, RL_ACTOR_RAT);
       assign_spawn_point(world, room_rect, rng, &actor->pos);
@@ -121,7 +121,7 @@ steer_actor(SDL_Point* direction,
     next.x = actor->pos.x + RL_PATH_DIRS[i].x;
     next.y = actor->pos.y + RL_PATH_DIRS[i].y;
 
-    if (!rl_map_contains(&world->map, next.x, next.y)) {
+    if (!grid_contains(&world->map, next.x, next.y)) {
       continue;
     }
 
@@ -208,7 +208,9 @@ try_attack(struct rl_actor* attacker,
 static bool
 try_move(struct rl_actor* actor, struct rl_world const* world, SDL_Point dst)
 {
-  if (rl_is_walkable(rl_get_tile(&world->map, dst.x, dst.y))) {
+  SDL_assert(grid_contains(&world->map, dst.x, dst.y));
+
+  if (rl_is_walkable(*grid_at(&world->map, dst.x, dst.y))) {
     actor->pos = dst;
     return true;
   }
@@ -251,7 +253,8 @@ rl_init_world(struct rl_world* world,
   }
 
   // allocate space for the tile map
-  if (!rl_init_map(&world->map, width, height)) {
+  if (!grid_alloc(&world->map, width, height)) {
+    SDL_Log("grid_alloc failed: %s", SDL_GetError());
     rl_free_world(world);
     return false;
   }
@@ -297,7 +300,7 @@ rl_free_world(struct rl_world* world)
   grid_free(&world->distances);
   alist_free(&world->actors);
   rl_free_layout(&world->layout);
-  rl_free_map(&world->map);
+  grid_free(&world->map);
 }
 
 bool
@@ -330,9 +333,9 @@ rl_apply_command(struct rl_world* world,
 
 void
 rl_update_actors(struct rl_world* world,
-                  struct rl_fov const* fov,
-                  alist(rl_event) * events,
-                  struct rand_state* rng)
+                 struct rl_fov const* fov,
+                 alist(rl_event) * events,
+                 struct rand_state* rng)
 {
   struct rl_actor const* rogue = rl_get_actor(world, RL_ROGUE_ID);
   if (!rl_actor_is_alive(rogue)) {

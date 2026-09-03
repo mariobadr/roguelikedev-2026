@@ -11,7 +11,7 @@
  */
 struct fov_context
 {
-  struct rl_tile_map const* map;
+  grid(rl_tile) const* map;
   SDL_Point origin;
   int radius;
 };
@@ -109,14 +109,14 @@ scan_octant(struct fov_context const* context,
       }
 
       SDL_Point tile_pos = transform(context, octant, dx, dy);
-      bool in_bounds = rl_map_contains(context->map, tile_pos.x, tile_pos.y);
+      bool in_bounds = grid_contains(context->map, tile_pos.x, tile_pos.y);
 
       enum rl_tile tile = RL_TILE_WALL;
       if (in_bounds) {
-        tile = rl_get_tile(context->map, tile_pos.x, tile_pos.y);
+        tile = *grid_at(context->map, tile_pos.x, tile_pos.y);
 
         if (is_within_radius(dx, dy, context->radius)) {
-          size_t index = rl_map_index_of(context->map, tile_pos.x, tile_pos.y);
+          size_t index = grid_index_of(context->map, tile_pos.x, tile_pos.y);
           visible[index] = true;
         }
       }
@@ -159,7 +159,7 @@ scan_octant(struct fov_context const* context,
  * @param out       The visibility of the tiles in map
  */
 static void
-compute_fov(struct rl_tile_map const* map,
+compute_fov(grid(rl_tile) const* map,
             SDL_Point origin,
             int radius,
             grid(boolean) * out)
@@ -168,7 +168,7 @@ compute_fov(struct rl_tile_map const* map,
   SDL_memset(out->data, 0, grid_count(out) * sizeof(*out->data));
 
   // but, of course, the origin is visible
-  size_t index = rl_map_index_of(map, origin.x, origin.y);
+  size_t index = grid_index_of(map, origin.x, origin.y);
   *grid_at_index(out, index) = true;
 
   // things that don't change when calling scan_octant
@@ -185,12 +185,12 @@ compute_fov(struct rl_tile_map const* map,
 bool
 rl_init_fov(struct rl_fov* fov, int width, int height, int radius)
 {
-  if(!grid_alloc(&fov->visible, width, height)) {
+  if (!grid_alloc(&fov->visible, width, height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());
     return false;
   }
 
-  if(!grid_alloc(&fov->explored, width, height)) {
+  if (!grid_alloc(&fov->explored, width, height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());
     rl_free_fov(fov);
     return false;
@@ -235,12 +235,10 @@ rl_clear_fov(struct rl_fov* fov)
 }
 
 void
-rl_update_fov(struct rl_fov* fov,
-              struct rl_tile_map const* map,
-              SDL_Point origin)
+rl_update_fov(struct rl_fov* fov, grid(rl_tile) const* map, SDL_Point origin)
 {
-  SDL_assert(grid_same_shape(&fov->visible, &map->tiles));
-  SDL_assert(grid_same_shape(&fov->explored, &map->tiles));
+  SDL_assert(grid_same_shape(&fov->visible, map));
+  SDL_assert(grid_same_shape(&fov->explored, map));
 
   if (fov->origin.x == origin.x && fov->origin.y == origin.y) {
     return;

@@ -4,8 +4,8 @@
 #ifndef GINC_ROGUELIKE_WORLD_H
 #define GINC_ROGUELIKE_WORLD_H
 
-#include "container/array.h"
 #include "container/alist.h"
+#include "container/array.h"
 #include "container/grid.h"
 #include "procgen/layout.h"
 
@@ -36,7 +36,7 @@ struct rl_world
   /** The layout of the level (currently only one level). */
   struct rl_layout layout;
   /** A map of the current level. */
-  struct rl_tile_map map;
+  grid(rl_tile) map;
   /** Next available actor identifier. */
   int next_actor_id;
   /** All other actors */
@@ -62,9 +62,9 @@ rl_apply_command(struct rl_world* world,
 
 void
 rl_update_actors(struct rl_world* world,
-                  struct rl_fov const* fov,
-                  alist(rl_event) * events,
-                  struct rand_state* rng);
+                 struct rl_fov const* fov,
+                 alist(rl_event) * events,
+                 struct rand_state* rng);
 
 struct rl_actor*
 rl_get_actor(struct rl_world const* world, int id);

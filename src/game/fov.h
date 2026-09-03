@@ -8,8 +8,7 @@
 
 #include "container/grid.h"
 
-// forward declarations
-struct rl_tile_map;
+#include "tile_map.h"
 
 /**
  * The field-of-view for an actor.
@@ -23,7 +22,8 @@ struct rl_fov
   /** Cells the actor can see */
   grid(boolean) visible;
   /** Cells the actor has seen before */
-  grid(boolean) explored; // TODO: this shouldn't be here when we have multiple levels
+  grid(boolean) explored;
+  // TODO: this shouldn't be here when we have multiple levels
 };
 
 bool
@@ -36,8 +36,6 @@ void
 rl_clear_fov(struct rl_fov* fov);
 
 void
-rl_update_fov(struct rl_fov* fov,
-              struct rl_tile_map const* map,
-              SDL_Point origin);
+rl_update_fov(struct rl_fov* fov, grid(rl_tile) const* map, SDL_Point origin);
 
 #endif // GINC_ROGUELIKE_FOV_H
