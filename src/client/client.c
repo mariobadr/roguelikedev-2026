@@ -46,8 +46,8 @@ rl_free_client(struct rl_client* client)
 void
 rl_update_client(struct rl_client* client, float dt)
 {
-  struct rl_entity const* rogue =
-    rl_get_entity(&client->game_state.world, RL_ROGUE_ID);
+  struct rl_actor const* rogue =
+    rl_get_actor(&client->game_state.world, RL_ROGUE_ID);
   enum rl_action const action =
     rl_translate_input(&client->istate, rogue->pos);
   rl_update_game_state(&client->game_state, action, dt);

@@ -72,38 +72,38 @@ draw_light(SDL_Renderer* renderer,
 }
 
 static void
-draw_entity(SDL_Renderer* renderer,
-            SDL_Texture* font,
-            struct rl_entity const* entity)
+draw_actor(SDL_Renderer* renderer,
+           SDL_Texture* font,
+           struct rl_actor const* actor)
 {
-  struct rl_gfx_tile const tile = rl_get_entity_gfx(entity);
+  struct rl_gfx_tile const tile = rl_get_actor_gfx(actor);
   rl_draw_tile(renderer,
                font,
                &tile,
-               RL_UI_MAP_X + entity->pos.x,
-               RL_UI_MAP_Y + entity->pos.y);
+               RL_UI_MAP_X + actor->pos.x,
+               RL_UI_MAP_Y + actor->pos.y);
 }
 
 static void
-draw_entities(SDL_Renderer* renderer,
-              SDL_Texture* font,
-              struct rl_world const* world,
-              struct rl_fov const* fov)
+draw_actors(SDL_Renderer* renderer,
+            SDL_Texture* font,
+            struct rl_world const* world,
+            struct rl_fov const* fov)
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-  for (int i = 0; i < alist_len(&world->entities); i++) {
-    struct rl_entity const* entity = alist_at(&world->entities, i);
+  for (int i = 0; i < alist_len(&world->actors); i++) {
+    struct rl_actor const* actor = alist_at(&world->actors, i);
 
-    if (!rl_entity_is_alive(entity)) {
+    if (!rl_actor_is_alive(actor)) {
       continue;
     }
 
     size_t const index =
-      rl_map_index_of(&world->map, entity->pos.x, entity->pos.y);
+      rl_map_index_of(&world->map, actor->pos.x, actor->pos.y);
 
     if (fov->visible.data[index]) {
-      draw_entity(renderer, font, entity);
+      draw_actor(renderer, font, actor);
     }
   }
 }
@@ -131,8 +131,8 @@ draw_side_panel(SDL_Renderer* renderer,
                 SDL_Texture* font,
                 struct rl_game_state const* game_state)
 {
-  struct rl_entity const* rogue =
-    rl_get_entity(&game_state->world, RL_ROGUE_ID);
+  struct rl_actor const* rogue =
+    rl_get_actor(&game_state->world, RL_ROGUE_ID);
 
   char text[16];
   SDL_snprintf(text, sizeof(text), "HP: %d / %d", rogue->hp, rogue->max_hp);
@@ -186,10 +186,10 @@ rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
            client->resources.font,
            &client->game_state.world.map,
            &client->game_state.fov);
-  draw_entities(renderer,
-                client->resources.font,
-                &client->game_state.world,
-                &client->game_state.fov);
+  draw_actors(renderer,
+              client->resources.font,
+              &client->game_state.world,
+              &client->game_state.fov);
   draw_light(renderer, &client->game_state.world.map, &client->game_state.fov);
   draw_ui(renderer, client->resources.font, client);
 }

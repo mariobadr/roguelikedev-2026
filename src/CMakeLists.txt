@@ -27,10 +27,10 @@ set(GAME_SOURCES
     container/alist.h
     container/array.h
     game/action.h
+    game/actor.c
+    game/actor.h
     game/command.c
     game/command.h
-    game/entity.c
-    game/entity.h
     game/event.h
     game/fov.c
     game/fov.h

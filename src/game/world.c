@@ -26,22 +26,22 @@ carve_map(struct rl_tile_map* map, struct rl_layout const* layout)
   }
 }
 
-static struct rl_entity*
-add_entity(struct rl_world* world, enum rl_entity_type type)
+static struct rl_actor*
+add_actor(struct rl_world* world, enum rl_actor_type type)
 {
-  struct rl_entity new_entity = rl_create_entity(type, world->next_entity_id);
-  *alist_push(&world->entities) = new_entity;
+  struct rl_actor new_actor = rl_create_actor(type, world->next_actor_id);
+  *alist_push(&world->actors) = new_actor;
 
-  return alist_at(&world->entities, world->next_entity_id++);
+  return alist_at(&world->actors, world->next_actor_id++);
 }
 
-static struct rl_entity*
-find_entity(struct rl_world const* world, SDL_Point position)
+static struct rl_actor*
+find_actor(struct rl_world const* world, SDL_Point position)
 {
-  for (int i = 0; i < alist_len(&world->entities); i++) {
-    struct rl_entity* entity = alist_at(&world->entities, i);
-    if (entity->pos.x == position.x && entity->pos.y == position.y) {
-      return entity;
+  for (int i = 0; i < alist_len(&world->actors); i++) {
+    struct rl_actor* actor = alist_at(&world->actors, i);
+    if (actor->pos.x == position.x && actor->pos.y == position.y) {
+      return actor;
     }
   }
 
@@ -51,13 +51,13 @@ find_entity(struct rl_world const* world, SDL_Point position)
 static bool
 is_occupied(struct rl_world const* world, SDL_Point position)
 {
-  struct rl_entity* entity = find_entity(world, position);
+  struct rl_actor* actor = find_actor(world, position);
 
-  if (entity == NULL) {
+  if (actor == NULL) {
     return false;
   }
 
-  return rl_entity_is_alive(entity);
+  return rl_actor_is_alive(actor);
 }
 
 static bool
@@ -83,7 +83,7 @@ assign_spawn_point(struct rl_world const* world,
 }
 
 static int
-max_entities_for_room(SDL_Rect const* room)
+max_actors_for_room(SDL_Rect const* room)
 {
   int const area = room->w * room->h;
 
@@ -95,31 +95,31 @@ max_entities_for_room(SDL_Rect const* room)
 }
 
 static void
-spawn_entities(struct rl_world* world, struct rand_state* rng)
+spawn_actors(struct rl_world* world, struct rand_state* rng)
 {
   for (int i = 0; i < array_len(&world->layout.rooms); i++) {
     SDL_Rect const* room_rect = array_at(&world->layout.rooms, i);
 
     int const count =
-      (int)rand_next_up_to(rng, max_entities_for_room(room_rect));
+      (int)rand_next_up_to(rng, max_actors_for_room(room_rect));
     for (int j = 0; j < count; j++) {
-      struct rl_entity* entity = add_entity(world, RL_ENTITY_RAT);
-      assign_spawn_point(world, room_rect, rng, &entity->pos);
+      struct rl_actor* actor = add_actor(world, RL_ACTOR_RAT);
+      assign_spawn_point(world, room_rect, rng, &actor->pos);
     }
   }
 }
 
 static bool
-steer_entity(SDL_Point* direction,
-             struct rl_entity const* entity,
-             struct rl_world const* world)
+steer_actor(SDL_Point* direction,
+            struct rl_actor const* actor,
+            struct rl_world const* world)
 {
   int best_distance = RL_INFINITE_DISTANCE;
 
   for (size_t i = 0; i < SDL_arraysize(RL_PATH_DIRS); i++) {
     SDL_Point next = { 0 };
-    next.x = entity->pos.x + RL_PATH_DIRS[i].x;
-    next.y = entity->pos.y + RL_PATH_DIRS[i].y;
+    next.x = actor->pos.x + RL_PATH_DIRS[i].x;
+    next.y = actor->pos.y + RL_PATH_DIRS[i].y;
 
     if (!rl_map_contains(&world->map, next.x, next.y)) {
       continue;
@@ -132,10 +132,10 @@ steer_entity(SDL_Point* direction,
       continue;
     }
 
-    struct rl_entity const* occupant = find_entity(world, next);
-    if (occupant != NULL && rl_entity_is_alive(occupant) &&
+    struct rl_actor const* occupant = find_actor(world, next);
+    if (occupant != NULL && rl_actor_is_alive(occupant) &&
         occupant->id != RL_ROGUE_ID) {
-      // the tile is occupied by a non-rogue entity
+      // the tile is occupied by a non-rogue actor
       continue;
     }
 
@@ -151,45 +151,45 @@ steer_entity(SDL_Point* direction,
 }
 
 static bool
-try_wake(struct rl_entity* entity,
+try_wake(struct rl_actor* actor,
          struct rl_tile_map const* map,
          struct rl_fov const* fov,
          alist(rl_event) * events)
 {
-  if (entity->awake) {
+  if (actor->awake) {
     // already awake
     return true;
   }
 
-  size_t const map_index = rl_map_index_of(map, entity->pos.x, entity->pos.y);
+  size_t const map_index = rl_map_index_of(map, actor->pos.x, actor->pos.y);
   if (!*array_at(&fov->visible, map_index)) {
-    // entity hasn't seen player yet
+    // actor hasn't seen player yet
     return false;
   }
 
-  entity->awake = true;
+  actor->awake = true;
 
   struct rl_event event = { 0 };
   event.type = RL_EVENT_AWAKEN;
-  event.as.awaken.entity = entity->id;
+  event.as.awaken.actor = actor->id;
   *alist_push(events) = event;
 
   return true;
 }
 
 static bool
-try_attack(struct rl_entity* attacker,
+try_attack(struct rl_actor* attacker,
            struct rl_world const* world,
            SDL_Point dst,
            alist(rl_event) * events,
            struct rand_state* rng)
 {
-  struct rl_entity* defender = find_entity(world, dst);
-  if (defender == NULL || !rl_entity_is_alive(defender)) {
+  struct rl_actor* defender = find_actor(world, dst);
+  if (defender == NULL || !rl_actor_is_alive(defender)) {
     return false;
   }
 
-  int const damage = rl_attack_entity(attacker, defender, rng);
+  int const damage = rl_attack_actor(attacker, defender, rng);
 
   struct rl_event event = { 0 };
   event.type = RL_EVENT_ATTACK;
@@ -200,7 +200,7 @@ try_attack(struct rl_entity* attacker,
 
   if (defender->hp <= 0) {
     event.type = RL_EVENT_DEATH;
-    event.as.death.entity = defender->id;
+    event.as.death.actor = defender->id;
     event.as.death.killer = attacker->id;
     *alist_push(events) = event;
   }
@@ -209,10 +209,10 @@ try_attack(struct rl_entity* attacker,
 }
 
 static bool
-try_move(struct rl_entity* entity, struct rl_world const* world, SDL_Point dst)
+try_move(struct rl_actor* actor, struct rl_world const* world, SDL_Point dst)
 {
   if (rl_is_walkable(rl_get_tile(&world->map, dst.x, dst.y))) {
-    entity->pos = dst;
+    actor->pos = dst;
     return true;
   }
 
@@ -220,21 +220,21 @@ try_move(struct rl_entity* entity, struct rl_world const* world, SDL_Point dst)
 }
 
 static bool
-do_move(struct rl_entity* entity,
+do_move(struct rl_actor* actor,
         struct rl_world const* world,
         SDL_Point direction,
         alist(rl_event) * events,
         struct rand_state* rng)
 {
   SDL_Point dst = { 0 };
-  dst.x = entity->pos.x + direction.x;
-  dst.y = entity->pos.y + direction.y;
+  dst.x = actor->pos.x + direction.x;
+  dst.y = actor->pos.y + direction.y;
 
-  if (try_attack(entity, world, dst, events, rng)) {
+  if (try_attack(actor, world, dst, events, rng)) {
     return true;
   }
 
-  if (try_move(entity, world, dst)) {
+  if (try_move(actor, world, dst)) {
     return true;
   }
 
@@ -259,14 +259,14 @@ rl_init_world(struct rl_world* world,
     return false;
   }
 
-  // allocate space for the entities
-  if (!alist_alloc(&world->entities, 16)) {
+  // allocate space for the actors
+  if (!alist_alloc(&world->actors, 16)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
     rl_free_world(world);
     return false;
   }
 
-  // allocate space for the entities
+  // allocate space for the actors
   if (!array_alloc(&world->distances, width * height)) {
     SDL_Log("array_alloc failed: %s", SDL_GetError());
     rl_free_world(world);
@@ -280,15 +280,15 @@ rl_init_world(struct rl_world* world,
   carve_map(&world->map, &world->layout);
 
   // the main character
-  struct rl_entity* rogue = add_entity(world, RL_ENTITY_ROGUE);
+  struct rl_actor* rogue = add_actor(world, RL_ACTOR_ROGUE);
   // just put the rogue at the centre of the first room
   SDL_Rect const* room = array_at(&world->layout.rooms, 0);
   rogue->pos.x = room->x + room->w / 2;
   rogue->pos.y = room->y + room->h / 2;
 
-  // spawn the other entities
-  spawn_entities(world, rng);
-  SDL_Log("Number of spawned entities: %zu", alist_len(&world->entities));
+  // spawn the other actors
+  spawn_actors(world, rng);
+  SDL_Log("Number of spawned actors: %zu", alist_len(&world->actors));
 
   return true;
 }
@@ -301,7 +301,7 @@ rl_free_world(struct rl_world* world)
   }
 
   array_free(&world->distances);
-  alist_free(&world->entities);
+  alist_free(&world->actors);
   rl_free_layout(&world->layout);
   rl_free_map(&world->map);
 }
@@ -316,8 +316,8 @@ rl_apply_command(struct rl_world* world,
     return false;
   }
 
-  struct rl_entity* rogue = rl_get_entity(world, RL_ROGUE_ID);
-  if (!rl_entity_is_alive(rogue)) {
+  struct rl_actor* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  if (!rl_actor_is_alive(rogue)) {
     // the rogue is dead
     return false;
   }
@@ -335,13 +335,13 @@ rl_apply_command(struct rl_world* world,
 }
 
 void
-rl_update_entities(struct rl_world* world,
-                   struct rl_fov const* fov,
-                   alist(rl_event) * events,
-                   struct rand_state* rng)
+rl_update_actors(struct rl_world* world,
+                  struct rl_fov const* fov,
+                  alist(rl_event) * events,
+                  struct rand_state* rng)
 {
-  struct rl_entity const* rogue = rl_get_entity(world, RL_ROGUE_ID);
-  if (!rl_entity_is_alive(rogue)) {
+  struct rl_actor const* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  if (!rl_actor_is_alive(rogue)) {
     // the player is dead
     return;
   }
@@ -351,40 +351,40 @@ rl_update_entities(struct rl_world* world,
     return;
   }
 
-  // wake up entities in the player's field-of-view and/or
-  // move entities closer to the player
-  for (int i = 1; i < alist_len(&world->entities); i++) {
-    struct rl_entity* entity = alist_at(&world->entities, i);
+  // wake up actors in the player's field-of-view and/or
+  // move actors closer to the player
+  for (int i = 1; i < alist_len(&world->actors); i++) {
+    struct rl_actor* actor = alist_at(&world->actors, i);
 
-    if (!rl_entity_is_alive(entity)) {
-      // entity is dead
+    if (!rl_actor_is_alive(actor)) {
+      // actor is dead
       continue;
     }
 
-    if (!try_wake(entity, &world->map, fov, events)) {
-      // entity is asleep
+    if (!try_wake(actor, &world->map, fov, events)) {
+      // actor is asleep
       continue;
     }
 
-    // move the entity toward the player
+    // move the actor toward the player
     SDL_Point direction;
-    if (steer_entity(&direction, entity, world)) {
-      do_move(entity, world, direction, events, rng);
+    if (steer_actor(&direction, actor, world)) {
+      do_move(actor, world, direction, events, rng);
     }
 
-    if (!rl_entity_is_alive(rogue)) {
+    if (!rl_actor_is_alive(rogue)) {
       // the player is dead
       return;
     }
   }
 }
 
-struct rl_entity*
-rl_get_entity(struct rl_world const* world, int id)
+struct rl_actor*
+rl_get_actor(struct rl_world const* world, int id)
 {
-  if (id >= alist_len(&world->entities)) {
+  if (id >= alist_len(&world->actors)) {
     return NULL;
   }
 
-  return alist_at(&world->entities, id);
+  return alist_at(&world->actors, id);
 }

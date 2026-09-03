@@ -16,13 +16,13 @@ enum rl_tile
 };
 
 /**
- * @return whether an entity can walk on this tile
+ * @return whether an actor can walk on this tile
  */
 bool
 rl_is_walkable(enum rl_tile tile);
 
 /**
- * @return whether an entity can see through this tile
+ * @return whether an actor can see through this tile
  */
 bool
 rl_is_transparent(enum rl_tile tile);

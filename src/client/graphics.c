@@ -1,6 +1,6 @@
 #include "graphics.h"
 
-#include "game/entity.h"
+#include "game/actor.h"
 #include "palette.h"
 
 struct tile_gfx_desc
@@ -50,14 +50,14 @@ rl_get_tile_gfx(enum rl_tile tile)
   return gfx;
 }
 
-static struct tile_gfx_desc const entity_gfx_table[] = {
-  [RL_ENTITY_ROGUE] = {
+static struct tile_gfx_desc const actor_gfx_table[] = {
+  [RL_ACTOR_ROGUE] = {
     .glyph = '@',
     .fg_colour = RL_COLOUR_GRAY,
     .fg_index = 0,
     .bg_colour = NULL,
   },
-  [RL_ENTITY_RAT] = {
+  [RL_ACTOR_RAT] = {
     .glyph = 'r',
     .fg_colour = RL_COLOUR_ORANGE,
     .fg_index = 9,
@@ -66,9 +66,9 @@ static struct tile_gfx_desc const entity_gfx_table[] = {
 };
 
 struct rl_gfx_tile
-rl_get_entity_gfx(struct rl_entity const* entity)
+rl_get_actor_gfx(struct rl_actor const* actor)
 {
-  struct tile_gfx_desc const* desc = &entity_gfx_table[entity->type];
+  struct tile_gfx_desc const* desc = &actor_gfx_table[actor->type];
 
   struct rl_gfx_tile gfx = { 0 };
   gfx.glyph = desc->glyph;

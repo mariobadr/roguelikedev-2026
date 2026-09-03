@@ -12,17 +12,17 @@
 struct rl_tile_map;
 
 /**
- * The field-of-view for an entity.
+ * The field-of-view for an actor.
  */
 struct rl_fov
 {
   /** The centre of the field (circle). */
   SDL_Point origin;
-  /** The farthest out the entity can see. */
+  /** The farthest out the actor can see. */
   int radius;
-  /** Cells the entity can see */
+  /** Cells the actor can see */
   array(boolean) visible;
-  /** Cells the entity has seen before */
+  /** Cells the actor has seen before */
   array(boolean) explored; // TODO: this shouldn't be here when we have multiple levels
 };
 

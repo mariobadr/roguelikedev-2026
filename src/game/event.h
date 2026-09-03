@@ -19,36 +19,36 @@ enum rl_event_type
 };
 
 /**
- * An entity attacks.
+ * An actor attacks.
  */
 struct rl_event_attack
 {
-  /** Identifier of the attacking entity. */
+  /** Identifier of the attacking actor. */
   int attacker;
-  /** Identifier of the defending entity. */
+  /** Identifier of the defending actor. */
   int defender;
   /** Amount of damage done; -1 is a miss. */
   int damage;
 };
 
 /**
- * An entity dies.
+ * An actor dies.
  */
 struct rl_event_death
 {
-  /** Identifier of the dying entity. */
-  int entity;
-  /** Identifier of the killing entity. */
+  /** Identifier of the dying actor. */
+  int actor;
+  /** Identifier of the killing actor. */
   int killer;
 };
 
 /**
- * An entity awakens.
+ * An actor awakens.
  */
 struct rl_event_awaken
 {
-  /** Identifier of the now awake entity. */
-  int entity;
+  /** Identifier of the now awake actor. */
+  int actor;
 };
 
 /**

@@ -19,9 +19,9 @@ push_run(struct rl_text* message, char const* text, enum rl_text_style style)
 }
 
 static enum rl_text_style
-entity_style(struct rl_entity const* entity)
+actor_style(struct rl_actor const* actor)
 {
-  if (entity->type == RL_ENTITY_ROGUE) {
+  if (actor->type == RL_ACTOR_ROGUE) {
     return RL_TEXT_PLAYER;
   }
 
@@ -32,16 +32,16 @@ static struct rl_text
 build_attack_log(struct rl_world const* world,
                  struct rl_event_attack const* event)
 {
-  struct rl_entity const* attacker = rl_get_entity(world, event->attacker);
-  struct rl_entity const* defender = rl_get_entity(world, event->defender);
+  struct rl_actor const* attacker = rl_get_actor(world, event->attacker);
+  struct rl_actor const* defender = rl_get_actor(world, event->defender);
 
   // build up the message piece by piece
   struct rl_text msg = { 0 };
 
   // <attacker> <hits or misses> <defender>
-  push_run(&msg, attacker->name, entity_style(attacker));
+  push_run(&msg, attacker->name, actor_style(attacker));
   push_run(&msg, event->damage < 0 ? " misses " : " hits ", RL_TEXT_NORMAL);
-  push_run(&msg, defender->name, entity_style(defender));
+  push_run(&msg, defender->name, actor_style(defender));
 
   if (event->damage >= 0) {
     // if we didn't miss, append how much damage was done
@@ -58,16 +58,16 @@ static struct rl_text
 build_death_log(struct rl_world const* world,
                 struct rl_event_death const* event)
 {
-  struct rl_entity const* entity = rl_get_entity(world, event->entity);
-  struct rl_entity const* killer = rl_get_entity(world, event->killer);
+  struct rl_actor const* actor = rl_get_actor(world, event->actor);
+  struct rl_actor const* killer = rl_get_actor(world, event->killer);
 
   // build up the message piece by piece
   struct rl_text msg = { 0 };
 
-  // <killer> killed <entity>
-  push_run(&msg, killer->name, entity_style(killer));
+  // <killer> killed <actor>
+  push_run(&msg, killer->name, actor_style(killer));
   push_run(&msg, " killed ", RL_TEXT_NORMAL);
-  push_run(&msg, entity->name, entity_style(entity));
+  push_run(&msg, actor->name, actor_style(actor));
 
   push_run(&msg, ".", RL_TEXT_NORMAL);
   return msg;
@@ -77,13 +77,13 @@ static struct rl_text
 build_awaken_log(struct rl_world const* world,
                  struct rl_event_awaken const* event)
 {
-  struct rl_entity const* entity = rl_get_entity(world, event->entity);
+  struct rl_actor const* actor = rl_get_actor(world, event->actor);
 
   // build up the message piece by piece
   struct rl_text msg = { 0 };
 
   push_run(&msg, "A ", RL_TEXT_NORMAL);
-  push_run(&msg, entity->name, entity_style(entity));
+  push_run(&msg, actor->name, actor_style(actor));
   push_run(&msg, " woke up!", RL_TEXT_NORMAL);
 
   return msg;

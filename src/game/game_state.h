@@ -9,7 +9,7 @@
 #include "container/alist.h"
 
 #include "action.h"
-#include "entity.h"
+#include "actor.h"
 #include "event.h"
 #include "fov.h"
 #include "procgen/rand.h"

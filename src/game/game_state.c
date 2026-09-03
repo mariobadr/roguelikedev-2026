@@ -27,8 +27,8 @@ regenerate_map(struct rl_game_state* game_state)
 
   rl_clear_fov(&game_state->fov);
 
-  struct rl_entity const* rogue =
-    rl_get_entity(&game_state->world, RL_ROGUE_ID);
+  struct rl_actor const* rogue =
+    rl_get_actor(&game_state->world, RL_ROGUE_ID);
   rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
 
   return true;
@@ -58,8 +58,8 @@ rl_init_game_state(struct rl_game_state* game_state,
   }
 
   // make sure the rogue has an initial field-of-view
-  struct rl_entity const* rogue =
-    rl_get_entity(&game_state->world, RL_ROGUE_ID);
+  struct rl_actor const* rogue =
+    rl_get_actor(&game_state->world, RL_ROGUE_ID);
   rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
 
   game_state->map_width = map_width;
@@ -115,12 +115,12 @@ rl_update_game_state(struct rl_game_state* game_state,
   if (turn_taken) {
     game_state->action_cooldown = ACTION_GLOBAL_COOLDOWN;
 
-    struct rl_entity const* rogue =
-      rl_get_entity(&game_state->world, RL_ROGUE_ID);
+    struct rl_actor const* rogue =
+      rl_get_actor(&game_state->world, RL_ROGUE_ID);
     rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
-    rl_update_entities(&game_state->world,
-                       &game_state->fov,
-                       &game_state->events,
-                       &game_state->rng);
+    rl_update_actors(&game_state->world,
+                      &game_state->fov,
+                      &game_state->events,
+                      &game_state->rng);
   }
 }

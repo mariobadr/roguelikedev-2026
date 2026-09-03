@@ -8,8 +8,8 @@
 #include "container/alist.h"
 #include "procgen/layout.h"
 
+#include "actor.h"
 #include "command.h"
-#include "entity.h"
 #include "event.h"
 #include "tile_map.h"
 
@@ -23,9 +23,9 @@ struct rl_fov;
 #define RL_ROGUE_ID 0
 
 /**
- * An growable array of entities.
+ * An growable array of actors.
  */
-alist_define_as(struct rl_entity, rl_entity);
+alist_define_as(struct rl_actor, rl_actor);
 
 /**
  * The game world.
@@ -36,10 +36,10 @@ struct rl_world
   struct rl_layout layout;
   /** A map of the current level. */
   struct rl_tile_map map;
-  /** Next available entity identifier. */
-  int next_entity_id;
-  /** All other entities */
-  alist(rl_entity) entities;
+  /** Next available actor identifier. */
+  int next_actor_id;
+  /** All other actors */
+  alist(rl_actor) actors;
   /** A map of distances to reach the player. */
   array(int) distances;
 };
@@ -60,12 +60,12 @@ rl_apply_command(struct rl_world* world,
                  struct rand_state* rng);
 
 void
-rl_update_entities(struct rl_world* world,
-                   struct rl_fov const* fov,
-                   alist(rl_event) * events,
-                   struct rand_state* rng);
+rl_update_actors(struct rl_world* world,
+                  struct rl_fov const* fov,
+                  alist(rl_event) * events,
+                  struct rand_state* rng);
 
-struct rl_entity*
-rl_get_entity(struct rl_world const* world, int id);
+struct rl_actor*
+rl_get_actor(struct rl_world const* world, int id);
 
 #endif // GINC_ROGUELIKE_WORLD_H
