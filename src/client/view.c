@@ -14,18 +14,20 @@
 #include "client/ui.h"
 
 static void
-draw_map(SDL_Renderer* renderer,
-         SDL_Texture* font,
-         grid(rl_tile) const* map,
-         struct rl_fov const* fov)
+draw_level(SDL_Renderer* renderer,
+           SDL_Texture* font,
+           struct rl_level const* level,
+           struct rl_fov const* fov)
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  grid(rl_tile) const* map = &level->map;
 
   for (int y = 0; y < grid_height(map); y++) {
     for (int x = 0; x < grid_width(map); x++) {
       size_t const index = grid_index_of(map, x, y);
 
-      if (!fov->explored.data[index]) {
+      if (!level->explored.data[index]) {
         // don't draw anything for unexplored tiles
         continue;
       }
@@ -101,7 +103,7 @@ draw_actors(SDL_Renderer* renderer,
     }
 
     size_t const index =
-      grid_index_of(&world->map, actor->pos.x, actor->pos.y);
+      grid_index_of(&world->level.map, actor->pos.x, actor->pos.y);
 
     if (fov->visible.data[index]) {
       draw_actor(renderer, font, actor);
@@ -183,14 +185,15 @@ rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
                               RL_COLOUR_GRAY[9].a);
   SDL_RenderClear(renderer);
 
-  draw_map(renderer,
-           client->resources.font,
-           &client->game_state.world.map,
-           &client->game_state.fov);
+  draw_level(renderer,
+             client->resources.font,
+             &client->game_state.world.level,
+             &client->game_state.fov);
   draw_actors(renderer,
               client->resources.font,
               &client->game_state.world,
               &client->game_state.fov);
-  draw_light(renderer, &client->game_state.world.map, &client->game_state.fov);
+  draw_light(
+    renderer, &client->game_state.world.level.map, &client->game_state.fov);
   draw_ui(renderer, client->resources.font, client);
 }

@@ -7,6 +7,16 @@
 
 #define FOV_RADIUS 8
 
+static void
+update_explored(struct rl_level* level, struct rl_fov const* fov)
+{
+  for (size_t i = 0; i < grid_count(&fov->visible); i++) {
+    if (*grid_at_index(&fov->visible, i)) {
+      *grid_at_index(&level->explored, i) = true;
+    }
+  }
+}
+
 /**
  * TODO: fix all the duplication between here and rl_init_game_state
  */
@@ -29,7 +39,8 @@ regenerate_map(struct rl_game_state* game_state)
 
   struct rl_actor const* rogue =
     rl_get_actor(&game_state->world, RL_ROGUE_ID);
-  rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
+  rl_update_fov(&game_state->fov, &game_state->world.level.map, rogue->pos);
+  update_explored(&game_state->world.level, &game_state->fov);
 
   return true;
 }
@@ -60,7 +71,8 @@ rl_init_game_state(struct rl_game_state* game_state,
   // make sure the rogue has an initial field-of-view
   struct rl_actor const* rogue =
     rl_get_actor(&game_state->world, RL_ROGUE_ID);
-  rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
+  rl_update_fov(&game_state->fov, &game_state->world.level.map, rogue->pos);
+  update_explored(&game_state->world.level, &game_state->fov);
 
   game_state->map_width = map_width;
   game_state->map_height = map_height;
@@ -117,7 +129,8 @@ rl_update_game_state(struct rl_game_state* game_state,
 
     struct rl_actor const* rogue =
       rl_get_actor(&game_state->world, RL_ROGUE_ID);
-    rl_update_fov(&game_state->fov, &game_state->world.map, rogue->pos);
+    rl_update_fov(&game_state->fov, &game_state->world.level.map, rogue->pos);
+    update_explored(&game_state->world.level, &game_state->fov);
     rl_update_actors(&game_state->world,
                       &game_state->fov,
                       &game_state->events,

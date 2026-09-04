@@ -7,13 +7,12 @@
 #include "container/alist.h"
 #include "container/array.h"
 #include "container/grid.h"
-#include "procgen/layout.h"
 
 #include "game/actor.h"
 #include "game/command.h"
 #include "game/event.h"
 #include "game/item.h"
-#include "game/tile_map.h"
+#include "game/level.h"
 
 // forward declarations
 struct rand_state;
@@ -39,12 +38,8 @@ alist_define_as(struct rl_item, rl_item);
  */
 struct rl_world
 {
-  /** The layout of the level (currently only one level). */
-  struct rl_layout layout;
-  /** A map of the current level. */
-  grid(rl_tile) map;
-  /** Next available actor identifier. */
-  int next_actor_id;
+  /** The current level (currently only one level). */
+  struct rl_level level;
   /** All actors, including the rogue. */
   alist(rl_actor) actors;
   /** All items. */
@@ -69,12 +64,6 @@ struct rl_actor*
 rl_get_actor(struct rl_world const* world, int id);
 
 /**
- * @return the item corresponding to the given ID (NULL if not found)
- */
-struct rl_item*
-rl_get_item(struct rl_world const* world, int id);
-
-/**
  * @return the (alive) actor at position, or NULL if no actor was found.
  */
 struct rl_actor*
@@ -85,6 +74,12 @@ rl_find_actor(struct rl_world const* world, SDL_Point position);
  */
 struct rl_actor*
 rl_add_actor(struct rl_world* world, enum rl_actor_type type);
+
+/**
+ * @return the item corresponding to the given ID (NULL if not found)
+ */
+struct rl_item*
+rl_get_item(struct rl_world const* world, int id);
 
 bool
 rl_apply_command(struct rl_world* world,
@@ -97,8 +92,5 @@ rl_update_actors(struct rl_world* world,
                  struct rl_fov const* fov,
                  alist(rl_event) * events,
                  struct rand_state* rng);
-
-struct rl_actor*
-rl_get_actor(struct rl_world const* world, int id);
 
 #endif // GINC_ROGUELIKE_WORLD_H

@@ -39,6 +39,8 @@ set(GAME_SOURCES
     game/game_state.h
     game/item.c
     game/item.h
+    game/level.c
+    game/level.h
     game/pathfinding.c
     game/pathfinding.h
     game/spawn.c

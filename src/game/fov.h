@@ -21,9 +21,6 @@ struct rl_fov
   int radius;
   /** Cells the actor can see */
   grid(boolean) visible;
-  /** Cells the actor has seen before */
-  grid(boolean) explored;
-  // TODO: this shouldn't be here when we have multiple levels
 };
 
 bool

@@ -10,23 +10,6 @@
 #include "fov.h"
 #include "pathfinding.h"
 
-static void
-carve_map(grid(rl_tile) * map, struct rl_layout const* layout)
-{
-  enum rl_tile tile = RL_TILE_FLOOR;
-
-  for (int i = 0; i < array_len(&layout->rooms); i++) {
-    rl_fill_rect(map, array_at(&layout->rooms, i), tile);
-  }
-
-  for (int i = 0; i < array_len(&layout->corridors); i++) {
-    struct rl_corridor const* corridor = array_at(&layout->corridors, i);
-    for (int j = 0; j < corridor->segment_count; j++) {
-      rl_fill_rect(map, &corridor->segments[j], tile);
-    }
-  }
-}
-
 static bool
 assign_spawn_point(struct rl_world const* world,
                    SDL_Rect const* room,
@@ -64,8 +47,8 @@ max_actors_for_room(SDL_Rect const* room)
 static void
 spawn_actors(struct rl_world* world, struct rand_state* rng)
 {
-  for (int i = 0; i < array_len(&world->layout.rooms); i++) {
-    SDL_Rect const* room_rect = array_at(&world->layout.rooms, i);
+  for (int i = 0; i < array_len(&world->level.layout.rooms); i++) {
+    SDL_Rect const* room_rect = array_at(&world->level.layout.rooms, i);
 
     int const count = (int)rand_next_up_to(rng, max_actors_for_room(room_rect));
     for (int j = 0; j < count; j++) {
@@ -87,7 +70,7 @@ steer_actor(SDL_Point* direction,
     next.x = actor->pos.x + RL_PATH_DIRS[i].x;
     next.y = actor->pos.y + RL_PATH_DIRS[i].y;
 
-    if (!grid_contains(&world->map, next.x, next.y)) {
+    if (!grid_contains(&world->level.map, next.x, next.y)) {
       continue;
     }
 
@@ -173,9 +156,9 @@ try_attack(struct rl_actor* attacker,
 static bool
 try_move(struct rl_actor* actor, struct rl_world const* world, SDL_Point dst)
 {
-  SDL_assert(grid_contains(&world->map, dst.x, dst.y));
+  SDL_assert(grid_contains(&world->level.map, dst.x, dst.y));
 
-  if (rl_is_walkable(*grid_at(&world->map, dst.x, dst.y))) {
+  if (rl_is_walkable(*grid_at(&world->level.map, dst.x, dst.y))) {
     actor->pos = dst;
     return true;
   }
@@ -212,14 +195,8 @@ rl_init_world(struct rl_world* world,
               struct rand_state* rng)
 
 {
-  // randomly generate the dungeon layout
-  if (!rl_init_layout(&world->layout, width, height, rng)) {
-    return false;
-  }
-
-  // allocate space for the tile map
-  if (!grid_alloc(&world->map, width, height)) {
-    SDL_Log("grid_alloc failed: %s", SDL_GetError());
+  // allocate space for the level (map + explored grids)
+  if (!rl_alloc_level(&world->level, width, height)) {
     rl_free_world(world);
     return false;
   }
@@ -238,13 +215,16 @@ rl_init_world(struct rl_world* world,
     return false;
   }
 
-  // update the tiles in the map based on the layout
-  carve_map(&world->map, &world->layout);
+  // randomly generate the dungeon layout and carve it into the map
+  if (!rl_gen_level(&world->level, rng)) {
+    rl_free_world(world);
+    return false;
+  }
 
   // the main character
   struct rl_actor* rogue = rl_add_actor(world, RL_ACTOR_ROGUE);
   // just put the rogue at the centre of the first room
-  SDL_Rect const* room = array_at(&world->layout.rooms, 0);
+  SDL_Rect const* room = array_at(&world->level.layout.rooms, 0);
   rogue->pos.x = room->x + room->w / 2;
   rogue->pos.y = room->y + room->h / 2;
 
@@ -264,8 +244,7 @@ rl_free_world(struct rl_world* world)
 
   grid_free(&world->distances);
   alist_free(&world->actors);
-  rl_free_layout(&world->layout);
-  grid_free(&world->map);
+  rl_free_level(&world->level);
 }
 
 struct rl_actor*
@@ -309,10 +288,11 @@ rl_find_actor(struct rl_world const* world, SDL_Point position)
 struct rl_actor*
 rl_add_actor(struct rl_world* world, enum rl_actor_type type)
 {
-  struct rl_actor new_actor = rl_create_actor(type, world->next_actor_id);
+  int const id = (int)alist_len(&world->actors);
+  struct rl_actor new_actor = rl_create_actor(type, id);
   *alist_push(&world->actors) = new_actor;
 
-  return alist_at(&world->actors, world->next_actor_id++);
+  return alist_at(&world->actors, id);
 }
 
 bool
@@ -356,7 +336,7 @@ rl_update_actors(struct rl_world* world,
   }
 
   // build the distance map where the target is the player
-  if (!rl_build_dijkstra_map(&world->distances, &world->map, rogue->pos)) {
+  if (!rl_build_dijkstra_map(&world->distances, &world->level.map, rogue->pos)) {
     return;
   }
 

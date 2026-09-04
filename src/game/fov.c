@@ -190,12 +190,6 @@ rl_init_fov(struct rl_fov* fov, int width, int height, int radius)
     return false;
   }
 
-  if (!grid_alloc(&fov->explored, width, height)) {
-    SDL_Log("grid_alloc failed: %s", SDL_GetError());
-    rl_free_fov(fov);
-    return false;
-  }
-
   fov->origin.x = -1;
   fov->origin.y = -1;
   fov->radius = radius;
@@ -211,7 +205,6 @@ rl_free_fov(struct rl_fov* fov)
   }
 
   grid_free(&fov->visible);
-  grid_free(&fov->explored);
 
   fov->radius = 0;
 }
@@ -227,18 +220,12 @@ rl_clear_fov(struct rl_fov* fov)
   SDL_memset(fov->visible.data,
              0,
              grid_count(&fov->visible) * sizeof(*fov->visible.data));
-
-  // make everything unexplored
-  SDL_memset(fov->explored.data,
-             0,
-             grid_count(&fov->explored) * sizeof(*fov->explored.data));
 }
 
 void
 rl_update_fov(struct rl_fov* fov, grid(rl_tile) const* map, SDL_Point origin)
 {
   SDL_assert(grid_same_shape(&fov->visible, map));
-  SDL_assert(grid_same_shape(&fov->explored, map));
 
   if (fov->origin.x == origin.x && fov->origin.y == origin.y) {
     return;
@@ -246,10 +233,4 @@ rl_update_fov(struct rl_fov* fov, grid(rl_tile) const* map, SDL_Point origin)
 
   fov->origin = origin;
   compute_fov(map, origin, fov->radius, &fov->visible);
-
-  for (size_t i = 0; i < grid_count(&fov->visible); i++) {
-    if (*grid_at_index(&fov->visible, i)) {
-      *grid_at_index(&fov->explored, i) = true;
-    }
-  }
 }
