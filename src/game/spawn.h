@@ -11,6 +11,7 @@
 
 // forward declarations
 struct rand_state;
+struct rl_level;
 
 /**
  * @return how many actors should populate a level at depth.
@@ -35,5 +36,11 @@ rl_gen_total_items(struct rand_state* rng);
  */
 enum rl_item_type
 rl_gen_item_type(int depth, struct rand_state* rng);
+
+bool
+rl_spawn_actors(struct rl_level const* level,
+                alist(rl_actor) * actors,
+                int reserved_room,
+                struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_SPAWN_H

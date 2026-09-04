@@ -6,57 +6,11 @@
 
 #include "procgen/rand.h"
 
+#include "combat.h"
 #include "event.h"
 #include "fov.h"
 #include "pathfinding.h"
-
-static bool
-assign_spawn_point(struct rl_world const* world,
-                   SDL_Rect const* room,
-                   struct rand_state* rng,
-                   SDL_Point* out)
-{
-  int const max_attempts = 10; // hack; temporary?
-
-  for (int attempt = 0; attempt < max_attempts; attempt++) {
-    SDL_Point pos;
-    pos.x = (int)rand_next_between(rng, room->x, room->x + room->w - 1);
-    pos.y = (int)rand_next_between(rng, room->y, room->y + room->h - 1);
-
-    if (rl_find_actor(world, pos) == NULL) {
-      *out = pos;
-      return true;
-    }
-  }
-
-  return false; // uh oh
-}
-
-static int
-max_actors_for_room(SDL_Rect const* room)
-{
-  int const area = room->w * room->h;
-
-  // scale area down linearly. So, if a rooms area is less than the denominator,
-  // scaled becomes 0 (i.e., no enemies in small rooms).
-  int const scaled = area / 25;
-
-  return SDL_min(scaled, 4);
-}
-
-static void
-spawn_actors(struct rl_world* world, struct rand_state* rng)
-{
-  for (int i = 0; i < array_len(&world->level.layout.rooms); i++) {
-    SDL_Rect const* room_rect = array_at(&world->level.layout.rooms, i);
-
-    int const count = (int)rand_next_up_to(rng, max_actors_for_room(room_rect));
-    for (int j = 0; j < count; j++) {
-      struct rl_actor* actor = rl_add_actor(world, RL_ACTOR_RAT);
-      assign_spawn_point(world, room_rect, rng, &actor->pos);
-    }
-  }
-}
+#include "spawn.h"
 
 static bool
 steer_actor(SDL_Point* direction,
@@ -196,7 +150,7 @@ rl_init_world(struct rl_world* world,
 
 {
   // allocate space for the level (map + explored grids)
-  if (!rl_alloc_level(&world->level, width, height)) {
+  if (!rl_alloc_level(&world->level, 1, width, height)) {
     rl_free_world(world);
     return false;
   }
@@ -224,12 +178,16 @@ rl_init_world(struct rl_world* world,
   // the main character
   world->rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
   // just put the rogue at the centre of the first room
-  SDL_Rect const* room = array_at(&world->level.layout.rooms, 0);
+  int const rogue_room = 0;
+  SDL_Rect const* room = array_at(&world->level.layout.rooms, rogue_room);
   world->rogue.pos.x = room->x + room->w / 2;
   world->rogue.pos.y = room->y + room->h / 2;
 
   // spawn the other actors
-  spawn_actors(world, rng);
+  if (!rl_spawn_actors(&world->level, &world->actors, rogue_room, rng)) {
+    rl_free_world(world);
+    return false;
+  }
   SDL_Log("Number of spawned actors: %d", rl_actor_count(world));
 
   return true;
@@ -294,19 +252,6 @@ rl_find_actor(struct rl_world const* world, SDL_Point position)
   }
 
   return NULL;
-}
-
-struct rl_actor*
-rl_add_actor(struct rl_world* world, enum rl_actor_type type)
-{
-  SDL_assert(type != RL_ACTOR_ROGUE);
-
-  int const index = (int)alist_len(&world->actors);
-  int const id = index + 1;
-  struct rl_actor new_actor = rl_create_actor(type, id);
-  *alist_push(&world->actors) = new_actor;
-
-  return alist_at(&world->actors, index);
 }
 
 bool

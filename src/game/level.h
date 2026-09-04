@@ -12,6 +12,8 @@
 
 struct rl_level
 {
+  /** How deep this level is in the overall dungeon. */
+  int depth;
   /** The layout of the level (currently only one level). */
   struct rl_layout layout;
   /** A map of the current level. */
@@ -21,7 +23,7 @@ struct rl_level
 };
 
 bool
-rl_alloc_level(struct rl_level* level, int width, int height);
+rl_alloc_level(struct rl_level* level, int depth, int width, int height);
 
 void
 rl_free_level(struct rl_level* level);

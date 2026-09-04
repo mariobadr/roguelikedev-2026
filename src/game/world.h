@@ -24,12 +24,7 @@ struct rl_fov;
 #define RL_ROGUE_ID 0
 
 /**
- * An growable array of actors.
- */
-alist_define_as(struct rl_actor, rl_actor);
-
-/**
- * An growable array of items.
+ * A growable array of items.
  */
 alist_define_as(struct rl_item, rl_item);
 
@@ -76,12 +71,6 @@ rl_actor_count(struct rl_world const* world);
  */
 struct rl_actor*
 rl_find_actor(struct rl_world const* world, SDL_Point position);
-
-/**
- * @return the newly added actor of the given type.
- */
-struct rl_actor*
-rl_add_actor(struct rl_world* world, enum rl_actor_type type);
 
 /**
  * @return the item corresponding to the given ID (NULL if not found)

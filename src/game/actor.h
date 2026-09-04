@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "container/alist.h"
+
 // forward declarations
 struct rand_state;
 
@@ -15,8 +17,8 @@ struct rand_state;
  */
 enum rl_actor_type
 {
-  RL_ACTOR_ROGUE,
-  RL_ACTOR_RAT
+  RL_ACTOR_ROGUE, //< the player
+  RL_ACTOR_RAT    //< a dangerous mouse
 };
 
 /**
@@ -47,18 +49,15 @@ struct rl_actor
 };
 
 /**
+ * A growable array of actors.
+ */
+alist_define_as(struct rl_actor, rl_actor);
+
+/**
  * Create a new actor.
  */
 struct rl_actor
 rl_create_actor(enum rl_actor_type type, int id);
-
-/**
- * @return how much damage was done (or -1 for a miss).
- */
-int
-rl_attack_actor(struct rl_actor const* attacker,
-                struct rl_actor* defender,
-                struct rand_state* rng);
 
 /**
  * @return whether actor is alive.

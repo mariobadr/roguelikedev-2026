@@ -21,7 +21,7 @@ carve_map(grid(rl_tile) * map, struct rl_layout const* layout)
 }
 
 bool
-rl_alloc_level(struct rl_level* level, int width, int height)
+rl_alloc_level(struct rl_level* level, int depth, int width, int height)
 {
   if (!grid_alloc(&level->map, width, height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());
@@ -34,6 +34,8 @@ rl_alloc_level(struct rl_level* level, int width, int height)
     rl_free_level(level);
     return false;
   }
+
+  level->depth = depth;
 
   return true;
 }
