@@ -95,8 +95,8 @@ draw_actors(SDL_Renderer* renderer,
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-  for (int i = 0; i < alist_len(&world->actors); i++) {
-    struct rl_actor const* actor = alist_at(&world->actors, i);
+  for (int id = 0; id < rl_actor_count(world); id++) {
+    struct rl_actor const* actor = rl_get_actor(world, id);
 
     if (!rl_actor_is_alive(actor)) {
       continue;

@@ -222,15 +222,15 @@ rl_init_world(struct rl_world* world,
   }
 
   // the main character
-  struct rl_actor* rogue = rl_add_actor(world, RL_ACTOR_ROGUE);
+  world->rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
   // just put the rogue at the centre of the first room
   SDL_Rect const* room = array_at(&world->level.layout.rooms, 0);
-  rogue->pos.x = room->x + room->w / 2;
-  rogue->pos.y = room->y + room->h / 2;
+  world->rogue.pos.x = room->x + room->w / 2;
+  world->rogue.pos.y = room->y + room->h / 2;
 
   // spawn the other actors
   spawn_actors(world, rng);
-  SDL_Log("Number of spawned actors: %zu", alist_len(&world->actors));
+  SDL_Log("Number of spawned actors: %d", rl_actor_count(world));
 
   return true;
 }
@@ -250,11 +250,22 @@ rl_free_world(struct rl_world* world)
 struct rl_actor*
 rl_get_actor(struct rl_world const* world, int id)
 {
-  if (id >= alist_len(&world->actors)) {
+  if (id == RL_ROGUE_ID) {
+    return (struct rl_actor*)&world->rogue;
+  }
+
+  int const index = id - 1;
+  if (index < 0 || index >= alist_len(&world->actors)) {
     return NULL;
   }
 
-  return alist_at(&world->actors, id);
+  return alist_at(&world->actors, index);
+}
+
+int
+rl_actor_count(struct rl_world const* world)
+{
+  return 1 + (int)alist_len(&world->actors);
 }
 
 struct rl_item*
@@ -270,8 +281,8 @@ rl_get_item(struct rl_world const* world, int id)
 struct rl_actor*
 rl_find_actor(struct rl_world const* world, SDL_Point position)
 {
-  for (int i = 0; i < alist_len(&world->actors); i++) {
-    struct rl_actor* actor = alist_at(&world->actors, i);
+  for (int id = 0; id < rl_actor_count(world); id++) {
+    struct rl_actor* actor = rl_get_actor(world, id);
     if (!rl_actor_is_alive(actor)) {
       // ignore dead actors
       continue;
@@ -288,11 +299,14 @@ rl_find_actor(struct rl_world const* world, SDL_Point position)
 struct rl_actor*
 rl_add_actor(struct rl_world* world, enum rl_actor_type type)
 {
-  int const id = (int)alist_len(&world->actors);
+  SDL_assert(type != RL_ACTOR_ROGUE);
+
+  int const index = (int)alist_len(&world->actors);
+  int const id = index + 1;
   struct rl_actor new_actor = rl_create_actor(type, id);
   *alist_push(&world->actors) = new_actor;
 
-  return alist_at(&world->actors, id);
+  return alist_at(&world->actors, index);
 }
 
 bool
@@ -305,7 +319,7 @@ rl_apply_command(struct rl_world* world,
     return false;
   }
 
-  struct rl_actor* rogue = alist_at(&world->actors, RL_ROGUE_ID);
+  struct rl_actor* rogue = &world->rogue;
   if (!rl_actor_is_alive(rogue)) {
     // the rogue is dead
     return false;
@@ -342,7 +356,7 @@ rl_update_actors(struct rl_world* world,
 
   // wake up actors in the player's field-of-view and/or
   // move actors closer to the player
-  for (int i = 1; i < alist_len(&world->actors); i++) {
+  for (int i = 0; i < alist_len(&world->actors); i++) {
     struct rl_actor* actor = alist_at(&world->actors, i);
 
     if (!rl_actor_is_alive(actor)) {

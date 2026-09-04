@@ -40,7 +40,9 @@ struct rl_world
 {
   /** The current level (currently only one level). */
   struct rl_level level;
-  /** All actors, including the rogue. */
+  /** The player. */
+  struct rl_actor rogue;
+  /** All actors except the rogue. */
   alist(rl_actor) actors;
   /** All items. */
   alist(rl_item) items;
@@ -62,6 +64,12 @@ rl_free_world(struct rl_world* world);
  */
 struct rl_actor*
 rl_get_actor(struct rl_world const* world, int id);
+
+/**
+ * @return the total number of actors in the world, including the rogue.
+ */
+int
+rl_actor_count(struct rl_world const* world);
 
 /**
  * @return the (alive) actor at position, or NULL if no actor was found.
