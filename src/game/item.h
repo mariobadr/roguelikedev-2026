@@ -6,6 +6,8 @@
 
 #include <SDL3/SDL_rect.h>
 
+#include "container/alist.h"
+
 /** Item categories. */
 enum rl_item_class
 {
@@ -59,6 +61,11 @@ struct rl_item
     int actor;
   } on;
 };
+
+/**
+ * A growable array of items.
+ */
+alist_define_as(struct rl_item, rl_item);
 
 /**
  * @return the item definition that corresponds to type.

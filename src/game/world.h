@@ -24,11 +24,6 @@ struct rl_fov;
 #define RL_ROGUE_ID 0
 
 /**
- * A growable array of items.
- */
-alist_define_as(struct rl_item, rl_item);
-
-/**
  * The game world.
  */
 struct rl_world

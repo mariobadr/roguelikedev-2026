@@ -31,7 +31,7 @@ rl_gen_actor_type(int depth, struct rand_state* rng)
 int
 rl_gen_total_items(struct rand_state* rng)
 {
-  return (int)rand_next_between(rng, 4, 10);
+  return (int)rand_next_between(rng, 5, 12);
 }
 
 enum rl_item_type
@@ -163,5 +163,48 @@ rl_spawn_actors(struct rl_level const* level,
   }
 
   array_free(&eligible);
+  return ok;
+}
+
+static bool
+add_item(alist(rl_item) * items, enum rl_item_type type, SDL_Point pos)
+{
+  struct rl_item* new_item = alist_push(items);
+  if (new_item == NULL) {
+    return false;
+  }
+
+  new_item->itype = type;
+  new_item->ltype = RL_ITEM_LOCATION_MAP;
+  new_item->on.map = pos;
+  new_item->id = (int)alist_len(items) - 1;
+
+  return true;
+}
+
+bool
+rl_spawn_items(struct rl_level const* level,
+               alist(rl_item) * items,
+               struct rand_state* rng)
+{
+  int const room_count = (int)array_len(&level->layout.rooms);
+  int const total = rl_gen_total_items(rng);
+
+  bool ok = true;
+  for (int i = 0; i < total; i++) {
+    int const room_index = (int)rand_next_up_to(rng, room_count);
+    SDL_Rect const* room = array_at(&level->layout.rooms, room_index);
+
+    SDL_Point pos;
+    pos.x = (int)rand_next_between(rng, room->x, room->x + room->w - 1);
+    pos.y = (int)rand_next_between(rng, room->y, room->y + room->h - 1);
+
+    enum rl_item_type const type = rl_gen_item_type(level->depth, rng);
+    if (!add_item(items, type, pos)) {
+      ok = false;
+      break;
+    }
+  }
+
   return ok;
 }

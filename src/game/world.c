@@ -162,6 +162,13 @@ rl_init_world(struct rl_world* world,
     return false;
   }
 
+  // allocate space for the items
+  if (!alist_alloc(&world->items, 8)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
+    rl_free_world(world);
+    return false;
+  }
+
   // allocate space for the distance map
   if (!grid_alloc(&world->distances, width, height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());
@@ -190,6 +197,13 @@ rl_init_world(struct rl_world* world,
   }
   SDL_Log("Number of spawned actors: %d", rl_actor_count(world));
 
+  // spawn items
+  if (!rl_spawn_items(&world->level, &world->items, rng)) {
+    rl_free_world(world);
+    return false;
+  }
+  SDL_Log("Number of spawned items: %d", (int)alist_len(&world->items));
+
   return true;
 }
 
@@ -201,6 +215,7 @@ rl_free_world(struct rl_world* world)
   }
 
   grid_free(&world->distances);
+  alist_free(&world->items);
   alist_free(&world->actors);
   rl_free_level(&world->level);
 }

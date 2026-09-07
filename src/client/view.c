@@ -75,6 +75,41 @@ draw_light(SDL_Renderer* renderer,
 }
 
 static void
+draw_item(SDL_Renderer* renderer, SDL_Texture* font, struct rl_item const* item)
+{
+  struct rl_gfx_tile const tile = rl_get_item_gfx(item);
+  rl_draw_tile(renderer,
+               font,
+               &tile,
+               RL_UI_MAP_X + item->on.map.x,
+               RL_UI_MAP_Y + item->on.map.y);
+}
+
+static void
+draw_items(SDL_Renderer* renderer,
+           SDL_Texture* font,
+           struct rl_world const* world,
+           struct rl_fov const* fov)
+{
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  for (int id = 0; id < alist_len(&world->items); id++) {
+    struct rl_item const* item = rl_get_item(world, id);
+
+    if (item->ltype != RL_ITEM_LOCATION_MAP) {
+      continue;
+    }
+
+    size_t const index =
+      grid_index_of(&world->level.map, item->on.map.x, item->on.map.y);
+
+    if (fov->visible.data[index]) {
+      draw_item(renderer, font, item);
+    }
+  }
+}
+
+static void
 draw_actor(SDL_Renderer* renderer,
            SDL_Texture* font,
            struct rl_actor const* actor)
@@ -134,8 +169,7 @@ draw_side_panel(SDL_Renderer* renderer,
                 SDL_Texture* font,
                 struct rl_game_state const* game_state)
 {
-  struct rl_actor const* rogue =
-    rl_get_actor(&game_state->world, RL_ROGUE_ID);
+  struct rl_actor const* rogue = rl_get_actor(&game_state->world, RL_ROGUE_ID);
 
   char text[16];
   SDL_snprintf(text, sizeof(text), "HP: %d / %d", rogue->hp, rogue->max_hp);
@@ -188,6 +222,10 @@ rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
   draw_level(renderer,
              client->resources.font,
              &client->game_state.world.level,
+             &client->game_state.fov);
+  draw_items(renderer,
+             client->resources.font,
+             &client->game_state.world,
              &client->game_state.fov);
   draw_actors(renderer,
               client->resources.font,

@@ -43,4 +43,9 @@ rl_spawn_actors(struct rl_level const* level,
                 int reserved_room,
                 struct rand_state* rng);
 
+bool
+rl_spawn_items(struct rl_level const* level,
+               alist(rl_item) * items,
+               struct rand_state* rng);
+
 #endif // GINC_ROGUELIKE_SPAWN_H

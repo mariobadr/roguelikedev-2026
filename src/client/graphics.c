@@ -1,6 +1,8 @@
 #include "graphics.h"
 
 #include "game/actor.h"
+#include "game/item.h"
+
 #include "palette.h"
 
 struct tile_gfx_desc
@@ -11,6 +13,29 @@ struct tile_gfx_desc
   SDL_FColor const* bg_colour;
   Uint8 bg_index;
 };
+
+static struct rl_gfx_tile
+lookup_gfx_tile(struct tile_gfx_desc const* table, int index)
+{
+  struct tile_gfx_desc const* desc = &table[index];
+
+  struct rl_gfx_tile gfx = { 0 };
+  gfx.glyph = desc->glyph;
+
+  if (desc->fg_colour == NULL) {
+    gfx.fg = RL_COLOUR_BLACK;
+  } else {
+    gfx.fg = desc->fg_colour[desc->fg_index];
+  }
+
+  if (desc->bg_colour == NULL) {
+    gfx.bg = RL_COLOUR_BLACK;
+  } else {
+    gfx.bg = desc->bg_colour[desc->bg_index];
+  }
+
+  return gfx;
+}
 
 static struct tile_gfx_desc const tile_gfx_table[] = {
   [RL_TILE_WALL] = {
@@ -30,24 +55,22 @@ static struct tile_gfx_desc const tile_gfx_table[] = {
 struct rl_gfx_tile
 rl_get_tile_gfx(enum rl_tile tile)
 {
-  struct tile_gfx_desc const* desc = &tile_gfx_table[tile];
+  return lookup_gfx_tile(tile_gfx_table, tile);
+}
 
-  struct rl_gfx_tile gfx = { 0 };
-  gfx.glyph = desc->glyph;
+static struct tile_gfx_desc const item_gfx_table[] = {
+  [RL_ITEM_POTION_HEALTH_MINOR] = {
+    .glyph = '!',
+    .fg_colour = RL_COLOUR_YELLOW,
+    .fg_index = 2,
+    .bg_colour = NULL,
+  },
+};
 
-  if (desc->fg_colour == NULL) {
-    gfx.fg = RL_COLOUR_BLACK;
-  } else {
-    gfx.fg = desc->fg_colour[desc->fg_index];
-  }
-
-  if (desc->bg_colour == NULL) {
-    gfx.bg = RL_COLOUR_BLACK;
-  } else {
-    gfx.bg = desc->bg_colour[desc->bg_index];
-  }
-
-  return gfx;
+struct rl_gfx_tile
+rl_get_item_gfx(struct rl_item const *item)
+{
+  return lookup_gfx_tile(item_gfx_table, item->itype);
 }
 
 static struct tile_gfx_desc const actor_gfx_table[] = {
@@ -68,26 +91,8 @@ static struct tile_gfx_desc const actor_gfx_table[] = {
 struct rl_gfx_tile
 rl_get_actor_gfx(struct rl_actor const* actor)
 {
-  struct tile_gfx_desc const* desc = &actor_gfx_table[actor->type];
-
-  struct rl_gfx_tile gfx = { 0 };
-  gfx.glyph = desc->glyph;
-
-  if (desc->fg_colour == NULL) {
-    gfx.fg = RL_COLOUR_BLACK;
-  } else {
-    gfx.fg = desc->fg_colour[desc->fg_index];
-  }
-
-  if (desc->bg_colour == NULL) {
-    gfx.bg = RL_COLOUR_BLACK;
-  } else {
-    gfx.bg = desc->bg_colour[desc->bg_index];
-  }
-
-  return gfx;
+  return lookup_gfx_tile(actor_gfx_table, actor->type);
 }
-
 
 struct rl_gfx_tile
 rl_get_text_gfx(enum rl_text_style style)
