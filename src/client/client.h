@@ -10,7 +10,7 @@
 #include "game/game_state.h"
 
 #include "client/game_log.h"
-#include "client/input.h"
+#include "input/input.h"
 #include "client/resources.h"
 
 // external forward declarations

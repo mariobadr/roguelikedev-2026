@@ -10,7 +10,8 @@
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 
-#include "client/input.h"
+#include "input/input.h"
+#include "input/input_event.h"
 #include "client/client.h"
 #include "client/ui.h"
 
@@ -144,80 +145,6 @@ create_application(void)
   return app;
 }
 
-/**
- * Update a keyboard key in istate based on event.
- *
- * @param istate the input state to update
- * @param event  the keyboard event to process
- */
-static void
-handle_key_event(struct inpt_state* istate, SDL_KeyboardEvent* event)
-{
-  inpt_set_button(&istate->keys[event->scancode], event->down);
-}
-
-/**
- * Update the mouse's position in istate based on event.
- *
- * @param istate the input state to update
- * @param event  the mouse motion event to process
- */
-static void
-handle_mouse_motion_event(struct inpt_state* istate,
-                          SDL_MouseMotionEvent* event)
-{
-  istate->mouse.position.x = event->x;
-  istate->mouse.position.y = event->y;
-}
-
-/**
- * Update a mouse button in istate based on event.
- *
- * @param istate the input state to update
- * @param event  the mouse button event to process
- */
-static void
-handle_mouse_button_event(struct inpt_state* istate,
-                          SDL_MouseButtonEvent* event)
-{
-  inpt_set_button(&istate->mouse.buttons[event->button], event->down);
-}
-
-/**
- * Update istate when event corresponds to user input.
- *
- * @param istate the input state to update
- * @param event the event to process
- *
- * @return whether istate was updated
- */
-static bool
-handle_input_event(struct inpt_state* istate, SDL_Event* event)
-{
-  SDL_assert(istate != NULL && event != NULL);
-
-  switch (event->type) {
-    case SDL_EVENT_MOUSE_MOTION:
-      handle_mouse_motion_event(istate, &event->motion);
-      return true;
-
-    case SDL_EVENT_MOUSE_BUTTON_DOWN:
-    case SDL_EVENT_MOUSE_BUTTON_UP:
-      handle_mouse_button_event(istate, &event->button);
-      return true;
-
-    case SDL_EVENT_KEY_DOWN:
-    case SDL_EVENT_KEY_UP:
-      handle_key_event(istate, &event->key);
-      return true;
-
-    default:
-      break;
-  }
-
-  return false;
-}
-
 SDL_AppResult
 SDL_AppInit(void** appstate, int argc, char* argv[])
 {
@@ -258,7 +185,7 @@ SDL_AppEvent(void* appstate, SDL_Event* event)
   }
 
   SDL_ConvertEventToRenderCoordinates(app->renderer, event);
-  handle_input_event(&app->client.istate, event);
+  inpt_handle_event(&app->client.istate, event);
 
   return SDL_APP_CONTINUE;
 }

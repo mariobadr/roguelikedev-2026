@@ -10,8 +10,6 @@ set(GAME_SOURCES
     client/game_log.h
     client/graphics.c
     client/graphics.h
-    client/input.c
-    client/input.h
     client/lighting.c
     client/lighting.h
     client/palette.h
@@ -53,6 +51,10 @@ set(GAME_SOURCES
     game/tile.h
     game/world.c
     game/world.h
+    input/input.c
+    input/input.h
+    input/input_event.c
+    input/input_event.h
     procgen/bsp.c
     procgen/bsp.h
     procgen/layout.c

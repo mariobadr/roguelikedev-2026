@@ -1,6 +1,6 @@
 #include "controls.h"
 
-#include "input.h"
+#include "input/input.h"
 #include "render.h"
 #include "ui.h"
 
