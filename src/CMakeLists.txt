@@ -28,6 +28,8 @@ set(GAME_SOURCES
     game/action.h
     game/actor.c
     game/actor.h
+    game/ai.c
+    game/ai.h
     game/combat.c
     game/combat.h
     game/command.c

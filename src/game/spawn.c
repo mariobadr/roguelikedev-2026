@@ -9,7 +9,10 @@
 #include "level.h"
 #include "tile.h"
 
-int
+/**
+ * @return how many actors should populate a level at depth.
+ */
+static int
 rl_gen_total_actors(int depth, struct rand_state* rng)
 {
   int const min = 7 + depth;
@@ -18,7 +21,10 @@ rl_gen_total_actors(int depth, struct rand_state* rng)
   return (int)rand_next_between(rng, min, max);
 }
 
-enum rl_actor_type
+/**
+ * @return an actor type appropriate for depth.
+ */
+static enum rl_actor_type
 rl_gen_actor_type(int depth, struct rand_state* rng)
 {
   (void)depth;
@@ -28,13 +34,19 @@ rl_gen_actor_type(int depth, struct rand_state* rng)
   return RL_ACTOR_RAT;
 }
 
-int
+/**
+ * @return how many items should populate a level.
+ */
+static int
 rl_gen_total_items(struct rand_state* rng)
 {
   return (int)rand_next_between(rng, 5, 12);
 }
 
-enum rl_item_type
+/**
+ * @return an item type appropriate for depth.
+ */
+static enum rl_item_type
 rl_gen_item_type(int depth, struct rand_state* rng)
 {
   (void)depth;

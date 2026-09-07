@@ -7,6 +7,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "container/alist.h"
+#include "container/grid.h"
 
 #include "action.h"
 #include "actor.h"
@@ -30,6 +31,8 @@ struct rl_game_state
   float action_cooldown;
   /** One map (for now) */
   struct rl_world world;
+  /** A map of distances to reach the player. */
+  grid(int) distances;
   /** Player's field-of-view */
   struct rl_fov fov;
   /** Events triggered during updates. */

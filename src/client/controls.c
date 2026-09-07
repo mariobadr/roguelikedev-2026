@@ -19,6 +19,7 @@ sign(int number)
 static enum rl_action
 handle_keyboard_input(struct inpt_state const* istate)
 {
+  // "is down" actions
   if (inpt_is_down(istate->keys[SDL_SCANCODE_W])) {
     return RL_ACTION_MOVE_UP;
   }
@@ -33,6 +34,11 @@ handle_keyboard_input(struct inpt_state const* istate)
 
   if (inpt_is_down(istate->keys[SDL_SCANCODE_D])) {
     return RL_ACTION_MOVE_RIGHT;
+  }
+
+  // "was pressed" actions
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_E])) {
+    return RL_ACTION_INTERACT;
   }
 
   if (inpt_was_pressed(istate->keys[SDL_SCANCODE_R])) {

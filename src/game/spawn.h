@@ -13,30 +13,6 @@
 struct rand_state;
 struct rl_level;
 
-/**
- * @return how many actors should populate a level at depth.
- */
-int
-rl_gen_total_actors(int depth, struct rand_state* rng);
-
-/**
- * @return an actor type appropriate for depth.
- */
-enum rl_actor_type
-rl_gen_actor_type(int depth, struct rand_state* rng);
-
-/**
- * @return how many items should populate a level.
- */
-int
-rl_gen_total_items(struct rand_state* rng);
-
-/**
- * @return an item type appropriate for depth.
- */
-enum rl_item_type
-rl_gen_item_type(int depth, struct rand_state* rng);
-
 bool
 rl_spawn_actors(struct rl_level const* level,
                 alist(rl_actor) * actors,

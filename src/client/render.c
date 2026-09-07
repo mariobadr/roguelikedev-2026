@@ -13,7 +13,7 @@
  *
  * @return the location of the glyph in the font texture.
  */
-SDL_FRect
+static SDL_FRect
 calculate_source(Uint8 glyph)
 {
   SDL_FRect src = { 0 };

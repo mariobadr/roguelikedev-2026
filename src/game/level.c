@@ -47,6 +47,8 @@ rl_free_level(struct rl_level* level)
     return;
   }
 
+  rl_free_layout(&level->layout);
+
   grid_free(&level->explored);
   grid_free(&level->map);
 }

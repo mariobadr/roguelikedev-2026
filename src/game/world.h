@@ -5,18 +5,13 @@
 #define GINC_ROGUELIKE_WORLD_H
 
 #include "container/alist.h"
-#include "container/array.h"
-#include "container/grid.h"
 
 #include "game/actor.h"
-#include "game/command.h"
-#include "game/event.h"
 #include "game/item.h"
 #include "game/level.h"
 
 // forward declarations
 struct rand_state;
-struct rl_fov;
 
 /**
  * The identifier for the rogue player in any world.
@@ -36,8 +31,6 @@ struct rl_world
   alist(rl_actor) actors;
   /** All items. */
   alist(rl_item) items;
-  /** A map of distances to reach the player. */
-  grid(int) distances;
 };
 
 bool
@@ -52,8 +45,14 @@ rl_free_world(struct rl_world* world);
 /**
  * @return the actor corresponding to the given ID (NULL if not found)
  */
-struct rl_actor*
+struct rl_actor const*
 rl_get_actor(struct rl_world const* world, int id);
+
+/**
+ * @return the actor for modification (NULL if not found).
+ */
+struct rl_actor*
+rl_edit_actor(struct rl_world* world, int id);
 
 /**
  * @return the total number of actors in the world, including the rogue.
@@ -64,25 +63,13 @@ rl_actor_count(struct rl_world const* world);
 /**
  * @return the (alive) actor at position, or NULL if no actor was found.
  */
-struct rl_actor*
+struct rl_actor const*
 rl_find_actor(struct rl_world const* world, SDL_Point position);
 
 /**
  * @return the item corresponding to the given ID (NULL if not found)
  */
-struct rl_item*
+struct rl_item const*
 rl_get_item(struct rl_world const* world, int id);
-
-bool
-rl_apply_command(struct rl_world* world,
-                 struct rl_command const* player_command,
-                 alist(rl_event) * events,
-                 struct rand_state* rng);
-
-void
-rl_update_actors(struct rl_world* world,
-                 struct rl_fov const* fov,
-                 alist(rl_event) * events,
-                 struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_WORLD_H
