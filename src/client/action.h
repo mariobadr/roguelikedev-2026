@@ -4,6 +4,8 @@
 #ifndef GINC_ROGUELIKE_ACTION_H
 #define GINC_ROGUELIKE_ACTION_H
 
+#include "game/command.h"
+
 /**
  * How long between subsequent actions.
  */
@@ -19,8 +21,15 @@ enum rl_action
   RL_ACTION_MOVE_DOWN,
   RL_ACTION_MOVE_LEFT,
   RL_ACTION_MOVE_RIGHT,
-  RL_ACTION_INTERACT,
-  RL_ACTION_DEBUG_GENMAP
+  RL_ACTION_INTERACT
 };
+
+/**
+ * @return a command that corresponds to the given action.
+ */
+struct rl_command
+rl_build_command(int actor_id,
+                 enum rl_action action,
+                 struct rl_world const* world);
 
 #endif // GINC_ROGUELIKE_ACTION_H

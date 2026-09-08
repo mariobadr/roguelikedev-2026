@@ -67,16 +67,13 @@ rl_next_ai_command(struct rl_actor const* actor,
                    struct rl_world const* world,
                    grid(int) const* distances)
 {
-  struct rl_command cmd = {
-    .type = RL_COMMAND_NONE,
-    .actor = actor->id,
-  };
-
-  SDL_Point direction;
-  if (pick_direction(&direction, actor, world, distances)) {
-    cmd.type = RL_COMMAND_MOVE;
-    cmd.direction = direction;
+  SDL_Point dir;
+  if (pick_direction(&dir, actor, world, distances)) {
+    return rl_new_bump_command(actor->id, dir, world);
   }
 
-  return cmd;
+  return (struct rl_command){
+    .actor = actor->id,
+    .type = RL_COMMAND_NONE,
+  };
 }

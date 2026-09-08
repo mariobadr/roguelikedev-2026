@@ -3,6 +3,7 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
+#include "action.h"
 #include "controls.h"
 #include "ui.h"
 #include "view.h"
@@ -16,6 +17,7 @@ rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
   }
 
   inpt_init_state(&client->istate);
+  client->action_cooldown = 0.0f;
 
   if (!rl_init_game_state(
         &client->game_state, RL_UI_MAP_WIDTH, RL_UI_MAP_HEIGHT)) {
@@ -46,12 +48,26 @@ rl_free_client(struct rl_client* client)
 void
 rl_update_client(struct rl_client* client, float dt)
 {
+  client->action_cooldown = SDL_max(0.0f, client->action_cooldown - dt);
+  if (client->action_cooldown > 0.0f) {
+    return;
+  }
+
   struct rl_actor const* rogue =
     rl_get_actor(&client->game_state.world, RL_ROGUE_ID);
   enum rl_action const action =
     rl_translate_input(&client->istate, rogue->pos);
-  rl_update_game_state(&client->game_state, action, dt);
+  if (action == RL_ACTION_NONE) {
+    return;
+  }
 
+  struct rl_command cmd =
+    rl_build_command(RL_ROGUE_ID, action, &client->game_state.world);
+  if (rl_update_game_state(&client->game_state, &cmd)) {
+    client->action_cooldown = ACTION_GLOBAL_COOLDOWN;
+  }
+
+  // Consume this update's events exactly once, after submitting a command.
   for (int i = 0; i < alist_len(&client->game_state.events); i++) {
     struct rl_event const* event = alist_at(&client->game_state.events, i);
     rl_game_log_on_event(&client->log, event, &client->game_state.world);

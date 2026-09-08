@@ -20,6 +20,8 @@ struct rl_client
 {
   /** Transient input state. */
   struct inpt_state istate;
+  /** Time before the next action fires. */
+  float action_cooldown;
   /** Client resources (like the font). */
   struct rl_resources resources;
   /** Game state. */

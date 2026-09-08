@@ -6,7 +6,6 @@
 
 #include <SDL3/SDL_rect.h>
 
-#include "game/action.h"
 #include "game/event.h"
 
 // forward declarations
@@ -18,8 +17,9 @@ struct rand_state;
  */
 enum rl_command_type
 {
-  RL_COMMAND_NONE, //< No action
-  RL_COMMAND_MOVE, //< Move the player
+  RL_COMMAND_NONE,   //< No action
+  RL_COMMAND_MOVE,   //< Move the actor
+  RL_COMMAND_ATTACK, //< Attack an actor
 };
 
 /**
@@ -34,15 +34,15 @@ struct rl_command
 
   union
   {
-    SDL_Point direction;
+    /** MOVE */
+    SDL_Point dst;
+    /** ATTACK */
+    int target;
   };
 };
 
-/**
- * @return a command that corresponds to the given action.
- */
 struct rl_command
-rl_build_command(int actor_id, enum rl_action action);
+rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world);
 
 /**
  * @return whether applying the command consumes a turn.

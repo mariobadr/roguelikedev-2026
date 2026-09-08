@@ -9,8 +9,8 @@
 #include "container/alist.h"
 #include "container/grid.h"
 
-#include "action.h"
 #include "actor.h"
+#include "command.h"
 #include "event.h"
 #include "fov.h"
 #include "procgen/rand.h"
@@ -23,12 +23,8 @@
  */
 struct rl_game_state
 {
-  int map_width;
-  int map_height;
   /** The random number generator */
   struct rand_state rng;
-  /** Time before the next action fires */
-  float action_cooldown;
   /** One map (for now) */
   struct rl_world world;
   /** A map of distances to reach the player. */
@@ -47,9 +43,11 @@ rl_init_game_state(struct rl_game_state* game_state,
 void
 rl_free_game_state(struct rl_game_state* game_state);
 
-void
+/**
+ * @return whether applying the command consumes a turn.
+ */
+bool
 rl_update_game_state(struct rl_game_state* game_state,
-                     enum rl_action action,
-                     float dt);
+                     struct rl_command const* cmd);
 
 #endif // GINC_ROGUELIKE_GAME_STATE_H

@@ -2,6 +2,8 @@
 # Source files
 ###############################################################################
 set(GAME_SOURCES
+    client/action.c
+    client/action.h
     client/client.c
     client/client.h
     client/controls.c
@@ -25,7 +27,6 @@ set(GAME_SOURCES
     container/alist.h
     container/array.h
     container/grid.h
-    game/action.h
     game/actor.c
     game/actor.h
     game/ai.c
