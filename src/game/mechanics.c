@@ -142,3 +142,38 @@ rl_attack_melee(struct rl_world* world,
 
   return true;
 }
+
+bool
+rl_pick_up_item(struct rl_world* world,
+                int actor_id,
+                SDL_Point dst,
+                alist(rl_event) * events)
+{
+  struct rl_actor* actor = get_living_actor(world, actor_id);
+  if (actor == NULL) {
+    return false;
+  }
+
+  if(actor->pos.x != dst.x || actor->pos.y != dst.y) {
+    // actor is not at dst
+    return false;
+  }
+
+  struct rl_item* item = rl_find_item(world, dst);
+  if(item == NULL) {
+    // no item at dst
+    return false;
+  }
+
+  item->ltype = RL_ITEM_LOCATION_HELD;
+  item->on.actor = actor_id;
+
+  struct rl_event event = { 0 };
+  event.type = RL_EVENT_PICKUP;
+  event.as.pickup.actor = actor_id;
+  event.as.pickup.item = item->id;
+  *alist_push(events) = event;
+
+  return true;
+}
+

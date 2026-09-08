@@ -85,7 +85,7 @@ rl_actor_count(struct rl_world const* world)
 struct rl_item const*
 rl_get_item(struct rl_world const* world, int id)
 {
-  if (id >= alist_len(&world->items)) {
+  if (id < 0 || id >= alist_len(&world->items)) {
     return NULL;
   }
 
@@ -93,7 +93,7 @@ rl_get_item(struct rl_world const* world, int id)
 }
 
 struct rl_actor const*
-rl_find_actor(struct rl_world const* world, SDL_Point position)
+rl_find_actor(struct rl_world const* world, SDL_Point pos)
 {
   for (int id = 0; id < rl_actor_count(world); id++) {
     struct rl_actor const* actor = rl_get_actor(world, id);
@@ -102,8 +102,26 @@ rl_find_actor(struct rl_world const* world, SDL_Point position)
       continue;
     }
 
-    if (actor->pos.x == position.x && actor->pos.y == position.y) {
+    if (actor->pos.x == pos.x && actor->pos.y == pos.y) {
       return actor;
+    }
+  }
+
+  return NULL;
+}
+
+struct rl_item*
+rl_find_item(struct rl_world* world, SDL_Point pos)
+{
+  for (int id = 0; id < alist_len(&world->items); id++) {
+    struct rl_item* item = alist_at(&world->items, id);
+    if (item->ltype != RL_ITEM_LOCATION_MAP) {
+      // ignore items not on the map
+      continue;
+    }
+
+    if (item->on.map.x == pos.x && item->on.map.y == pos.y) {
+      return item;
     }
   }
 

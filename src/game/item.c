@@ -3,7 +3,7 @@
 static struct rl_item_def const RL_ITEM_DEFS[] = {
   [RL_ITEM_POTION_HEALTH_MINOR] = {
     .class = RL_ITEM_CLASS_POTION,
-    .name = "Health Potion",
+    .name = "Minor Health Potion",
     .effect = RL_ITEM_EFFECT_HEAL,
     .power = 10, },
 };

@@ -23,7 +23,7 @@ rl_move(struct rl_world* world, int actor_id, SDL_Point dst);
 
 /**
  * Try a melee attack between two actors in world.
- * 
+ *
  * @return whether an attack was performed (still true on miss).
  */
 bool
@@ -32,5 +32,16 @@ rl_attack_melee(struct rl_world* world,
                 int defender_id,
                 alist(rl_event) * events,
                 struct rand_state* rng);
+
+/**
+ * Try to pick up an item found at dst.
+ * 
+ * @return whether an item was picked up.
+ */
+bool
+rl_pick_up_item(struct rl_world* world,
+                int actor_id,
+                SDL_Point dst,
+                alist(rl_event) * events);
 
 #endif // GINC_ROGUELIKE_MECHANICS_H

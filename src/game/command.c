@@ -59,6 +59,8 @@ rl_apply_command(struct rl_world* world,
       return rl_move(world, actor->id, cmd->dst);
     case RL_COMMAND_ATTACK:
       return rl_attack_melee(world, actor->id, cmd->target, events, rng);
+    case RL_COMMAND_PICK_UP:
+      return rl_pick_up_item(world, actor->id, cmd->dst, events);
     default:
       break;
   }

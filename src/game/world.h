@@ -76,6 +76,12 @@ struct rl_item const*
 rl_get_item(struct rl_world const* world, int id);
 
 /**
+ * @return the item at the position, or NULL if no item was found.
+ */
+struct rl_item*
+rl_find_item(struct rl_world* world, SDL_Point position);
+
+/**
  * @return the level the rogue is currently on.
  */
 struct rl_level const*

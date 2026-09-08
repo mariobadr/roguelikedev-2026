@@ -17,9 +17,10 @@ struct rand_state;
  */
 enum rl_command_type
 {
-  RL_COMMAND_NONE,   //< No action
-  RL_COMMAND_MOVE,   //< Move the actor
-  RL_COMMAND_ATTACK, //< Attack an actor
+  RL_COMMAND_NONE,    //< No action
+  RL_COMMAND_MOVE,    //< Move the actor
+  RL_COMMAND_ATTACK,  //< Attack an actor
+  RL_COMMAND_PICK_UP, //< Pick up an item
 };
 
 /**
@@ -34,13 +35,16 @@ struct rl_command
 
   union
   {
-    /** MOVE */
+    /** MOVE, PICK UP */
     SDL_Point dst;
     /** ATTACK */
     int target;
   };
 };
 
+/**
+ * @return a move or attack command.
+ */
 struct rl_command
 rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world);
 

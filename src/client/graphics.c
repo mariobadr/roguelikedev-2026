@@ -68,7 +68,7 @@ static struct tile_gfx_desc const item_gfx_table[] = {
 };
 
 struct rl_gfx_tile
-rl_get_item_gfx(struct rl_item const *item)
+rl_get_item_gfx(struct rl_item const* item)
 {
   return lookup_gfx_tile(item_gfx_table, item->itype);
 }
@@ -107,6 +107,9 @@ rl_get_text_gfx(enum rl_text_style style)
       break;
     case RL_TEXT_ENEMY:
       gfx.fg = RL_COLOUR_ORANGE[9];
+      break;
+    case RL_TEXT_ITEM:
+      gfx.fg = RL_COLOUR_YELLOW[2];
       break;
     case RL_TEXT_NORMAL:
     default:

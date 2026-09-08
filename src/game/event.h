@@ -16,6 +16,7 @@ enum rl_event_type
   RL_EVENT_ATTACK,
   RL_EVENT_DEATH,
   RL_EVENT_AWAKEN,
+  RL_EVENT_PICKUP,
 };
 
 /**
@@ -52,6 +53,17 @@ struct rl_event_awaken
 };
 
 /**
+ * An actor picks up an item.
+ */
+struct rl_event_pickup
+{
+  /** Identifier of the actor. */
+  int actor;
+  /** Identifier of the item. */
+  int item;
+};
+
+/**
  * An event.
  */
 struct rl_event
@@ -63,6 +75,7 @@ struct rl_event
     struct rl_event_attack attack;
     struct rl_event_death death;
     struct rl_event_awaken awaken;
+    struct rl_event_pickup pickup;
   } as;
 };
 

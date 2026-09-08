@@ -4,6 +4,7 @@
 #include <SDL3/SDL_log.h>
 
 #include "game/event.h"
+#include "game/item.h"
 #include "game/world.h"
 
 static void
@@ -89,6 +90,24 @@ build_awaken_log(struct rl_world const* world,
   return msg;
 }
 
+static struct rl_text
+build_pickup_log(struct rl_world const* world,
+                 struct rl_event_pickup const* event)
+{
+  struct rl_actor const* actor = rl_get_actor(world, event->actor);
+  struct rl_item const* item = rl_get_item(world, event->item);
+  struct rl_item_def const* idef = rl_get_item_def(item->itype);
+
+  // build up the message piece by piece
+  struct rl_text msg = { 0 };
+
+  push_run(&msg, actor->name, actor_style(actor));
+  push_run(&msg, " picked up a ", RL_TEXT_NORMAL);
+  push_run(&msg, idef->name, RL_TEXT_ITEM);
+
+  return msg;
+}
+
 bool
 rl_init_game_log(struct rl_game_log* log)
 {
@@ -123,6 +142,9 @@ rl_game_log_on_event(struct rl_game_log* log,
       break;
     case RL_EVENT_AWAKEN:
       msg = build_awaken_log(world, &event->as.awaken);
+      break;
+    case RL_EVENT_PICKUP:
+      msg = build_pickup_log(world, &event->as.pickup);
       break;
     default:
       return;

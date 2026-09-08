@@ -9,6 +9,7 @@ enum rl_text_style
   RL_TEXT_NORMAL,
   RL_TEXT_PLAYER,
   RL_TEXT_ENEMY,
+  RL_TEXT_ITEM,
 };
 
 struct rl_text_run
