@@ -76,6 +76,12 @@ struct rl_item const*
 rl_get_item(struct rl_world const* world, int id);
 
 /**
+ * @return the item for modification (NULL if not found).
+ */
+struct rl_item*
+rl_edit_item(struct rl_world* world, int id);
+
+/**
  * @return the item at the position, or NULL if no item was found.
  */
 struct rl_item*

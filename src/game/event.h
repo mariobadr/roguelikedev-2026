@@ -17,6 +17,7 @@ enum rl_event_type
   RL_EVENT_DEATH,
   RL_EVENT_AWAKEN,
   RL_EVENT_PICKUP,
+  RL_EVENT_HEAL,
 };
 
 /**
@@ -64,6 +65,19 @@ struct rl_event_pickup
 };
 
 /**
+ * An actor is healed.
+ */
+struct rl_event_heal
+{
+  /** Identifier of the actor being healed. */
+  int actor;
+  /** Maximum amount of healing. */
+  int total;
+  /** Actual amount of healing. */
+  int effective;
+};
+
+/**
  * An event.
  */
 struct rl_event
@@ -76,6 +90,7 @@ struct rl_event
     struct rl_event_death death;
     struct rl_event_awaken awaken;
     struct rl_event_pickup pickup;
+    struct rl_event_heal heal;
   } as;
 };
 

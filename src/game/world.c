@@ -92,6 +92,16 @@ rl_get_item(struct rl_world const* world, int id)
   return alist_at(&world->items, id);
 }
 
+struct rl_item*
+rl_edit_item(struct rl_world* world, int id)
+{
+  if (id < 0 || id >= alist_len(&world->items)) {
+    return NULL;
+  }
+
+  return alist_at(&world->items, id);
+}
+
 struct rl_actor const*
 rl_find_actor(struct rl_world const* world, SDL_Point pos)
 {

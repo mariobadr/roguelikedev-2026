@@ -60,6 +60,14 @@ struct rl_actor
 rl_create_actor(enum rl_actor_type type, int id);
 
 /**
+ * Heal an actor's hit points by up to amount.
+ * 
+ * @return the amount hp actually increased by.
+ */
+int
+rl_heal_actor(struct rl_actor *actor, int amount);
+
+/**
  * @return whether actor is alive.
  */
 static inline bool

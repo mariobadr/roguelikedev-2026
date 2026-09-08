@@ -19,6 +19,18 @@ push_run(struct rl_text* message, char const* text, enum rl_text_style style)
   SDL_snprintf(run->text, sizeof run->text, "%s", text);
 }
 
+static void
+push_number(struct rl_text* message, int value, enum rl_text_style style)
+{
+  if (message->run_count >= SDL_arraysize(message->runs)) {
+    return;
+  }
+
+  struct rl_text_run* run = &message->runs[message->run_count++];
+  run->style = style;
+  SDL_snprintf(run->text, sizeof run->text, "%d", value);
+}
+
 static enum rl_text_style
 actor_style(struct rl_actor const* actor)
 {
@@ -46,9 +58,8 @@ build_attack_log(struct rl_world const* world,
 
   if (event->damage >= 0) {
     // if we didn't miss, append how much damage was done
-    char damage[32];
-    SDL_snprintf(damage, sizeof damage, " for %d", event->damage);
-    push_run(&msg, damage, RL_TEXT_NORMAL);
+    push_run(&msg, " for ", RL_TEXT_NORMAL);
+    push_number(&msg, event->damage, RL_TEXT_NORMAL);
   }
 
   push_run(&msg, ".", RL_TEXT_NORMAL);
@@ -108,6 +119,24 @@ build_pickup_log(struct rl_world const* world,
   return msg;
 }
 
+static struct rl_text
+build_heal_log(struct rl_world const* world, struct rl_event_heal const* event)
+{
+  struct rl_actor const* actor = rl_get_actor(world, event->actor);
+
+  // build up the message piece by piece
+  struct rl_text msg = { 0 };
+
+  push_run(&msg, actor->name, actor_style(actor));
+  push_run(&msg, " gained ", RL_TEXT_NORMAL);
+  push_number(&msg, event->effective, RL_TEXT_NORMAL);
+  push_run(&msg, " of ", RL_TEXT_NORMAL);
+  push_number(&msg, event->total, RL_TEXT_NORMAL);
+  push_run(&msg, " HP.", RL_TEXT_NORMAL);
+
+  return msg;
+}
+
 bool
 rl_init_game_log(struct rl_game_log* log)
 {
@@ -145,6 +174,9 @@ rl_game_log_on_event(struct rl_game_log* log,
       break;
     case RL_EVENT_PICKUP:
       msg = build_pickup_log(world, &event->as.pickup);
+      break;
+    case RL_EVENT_HEAL:
+      msg = build_heal_log(world, &event->as.heal);
       break;
     default:
       return;

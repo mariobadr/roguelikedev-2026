@@ -76,6 +76,36 @@ attack_actor(struct rl_actor const* attacker,
   return damage;
 }
 
+static bool
+use_item_heal(struct rl_actor* actor,
+              struct rl_item* item,
+              int power,
+              alist(rl_event) * events,
+              struct rand_state* rng)
+{
+  if(actor->hp >= actor->max_hp) {
+    return false;
+  }
+
+  // TODO: make this more sophisticated?
+  int const amount = (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
+  // apply the effect
+  int const effective = rl_heal_actor(actor, amount);
+
+  // communicate the event
+  struct rl_event event = { 0 };
+  event.type = RL_EVENT_HEAL;
+  event.as.heal.actor = actor->id;
+  event.as.heal.total = amount;
+  event.as.heal.effective = effective;
+  *alist_push(events) = event;
+
+  // mark the item as consumed
+  item->ltype = RL_ITEM_LOCATION_NONE;
+
+  return true;
+}
+
 bool
 rl_move(struct rl_world* world, int actor_id, SDL_Point dst)
 {
@@ -154,13 +184,13 @@ rl_pick_up_item(struct rl_world* world,
     return false;
   }
 
-  if(actor->pos.x != dst.x || actor->pos.y != dst.y) {
+  if (actor->pos.x != dst.x || actor->pos.y != dst.y) {
     // actor is not at dst
     return false;
   }
 
   struct rl_item* item = rl_find_item(world, dst);
-  if(item == NULL) {
+  if (item == NULL) {
     // no item at dst
     return false;
   }
@@ -177,3 +207,34 @@ rl_pick_up_item(struct rl_world* world,
   return true;
 }
 
+bool
+rl_use_item(struct rl_world* world,
+            int actor_id,
+            int item_id,
+            alist(rl_event) * events,
+            struct rand_state* rng)
+{
+  struct rl_actor* actor = get_living_actor(world, actor_id);
+  if (actor == NULL) {
+    return false;
+  }
+
+  struct rl_item* item = rl_edit_item(world, item_id);
+  if (item == NULL) {
+    return false;
+  }
+
+  if (item->ltype != RL_ITEM_LOCATION_HELD || item->on.actor != actor_id) {
+    return false;
+  }
+
+  struct rl_item_def const* idef = rl_get_item_def(item->itype);
+  switch (idef->effect) {
+    case RL_ITEM_EFFECT_HEAL:
+      return use_item_heal(actor, item, idef->power, events, rng);
+    default:
+      break;
+  }
+
+  return false;
+}

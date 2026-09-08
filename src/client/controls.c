@@ -41,6 +41,10 @@ handle_keyboard_input(struct inpt_state const* istate)
     return RL_ACTION_INTERACT;
   }
 
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_U])) {
+    return RL_ACTION_DEBUG_USE_ITEM;
+  }
+
   return RL_ACTION_NONE;
 }
 

@@ -6,6 +6,25 @@
 #include "game/world.h"
 
 static struct rl_command
+build_debug_use_item(int actor_id, struct rl_world const* world)
+{
+  struct rl_command cmd = { 0 };
+  cmd.actor = actor_id;
+
+  for (int id = 0; id < alist_len(&world->items); id++) {
+    struct rl_item const* item = rl_get_item(world, id);
+
+    if (item->ltype == RL_ITEM_LOCATION_HELD && item->on.actor == actor_id) {
+      cmd.type = RL_COMMAND_USE_ITEM;
+      cmd.target = id;
+      break;
+    }
+  }
+
+  return cmd;
+}
+
+static struct rl_command
 build_pickup(int actor_id, struct rl_world const* world)
 {
   struct rl_command cmd = { 0 };
@@ -40,6 +59,8 @@ rl_build_command(int actor_id,
       return rl_new_bump_command(actor_id, (SDL_Point){ 1, 0 }, world);
     case RL_ACTION_INTERACT:
       return build_pickup(actor_id, world);
+    case RL_ACTION_DEBUG_USE_ITEM:
+      return build_debug_use_item(actor_id, world);
     default:
       break;
   }
