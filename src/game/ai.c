@@ -13,12 +13,13 @@ pick_direction(SDL_Point* direction,
 {
   int best_distance = RL_INFINITE_DISTANCE;
 
+  struct rl_level const* level = rl_get_current_level(world);
   for (size_t i = 0; i < SDL_arraysize(RL_PATH_DIRS); i++) {
     SDL_Point next = { 0 };
     next.x = actor->pos.x + RL_PATH_DIRS[i].x;
     next.y = actor->pos.y + RL_PATH_DIRS[i].y;
 
-    if (!grid_contains(&world->level.map, next.x, next.y)) {
+    if (!grid_contains(&level->map, next.x, next.y)) {
       continue;
     }
 

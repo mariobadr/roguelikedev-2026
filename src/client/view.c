@@ -100,10 +100,7 @@ draw_items(SDL_Renderer* renderer,
       continue;
     }
 
-    size_t const index =
-      grid_index_of(&world->level.map, item->on.map.x, item->on.map.y);
-
-    if (fov->visible.data[index]) {
+    if (*grid_at(&fov->visible, item->on.map.x, item->on.map.y)) {
       draw_item(renderer, font, item);
     }
   }
@@ -137,10 +134,7 @@ draw_actors(SDL_Renderer* renderer,
       continue;
     }
 
-    size_t const index =
-      grid_index_of(&world->level.map, actor->pos.x, actor->pos.y);
-
-    if (fov->visible.data[index]) {
+    if (*grid_at(&fov->visible, actor->pos.x, actor->pos.y)) {
       draw_actor(renderer, font, actor);
     }
   }
@@ -219,10 +213,10 @@ rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
                               RL_COLOUR_GRAY[9].a);
   SDL_RenderClear(renderer);
 
-  draw_level(renderer,
-             client->resources.font,
-             &client->game_state.world.level,
-             &client->game_state.fov);
+  struct rl_level const* level =
+    rl_get_current_level(&client->game_state.world);
+
+  draw_level(renderer, client->resources.font, level, &client->game_state.fov);
   draw_items(renderer,
              client->resources.font,
              &client->game_state.world,
@@ -231,7 +225,6 @@ rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
               client->resources.font,
               &client->game_state.world,
               &client->game_state.fov);
-  draw_light(
-    renderer, &client->game_state.world.level.map, &client->game_state.fov);
+  draw_light(renderer, &level->map, &client->game_state.fov);
   draw_ui(renderer, client->resources.font, client);
 }

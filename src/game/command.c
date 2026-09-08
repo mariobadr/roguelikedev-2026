@@ -22,7 +22,8 @@ rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world)
   dst.y = actor->pos.y + dir.y;
 
   // TODO: need to check other things?
-  if (!grid_contains(&world->level.map, dst.x, dst.y)) {
+  struct rl_level const* level = rl_get_current_level(world);
+  if (!grid_contains(&level->map, dst.x, dst.y)) {
     return cmd;
   }
 
@@ -30,7 +31,7 @@ rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world)
   if (target != NULL) {
     cmd.type = RL_COMMAND_ATTACK;
     cmd.target = target->id;
-  } else if (rl_is_walkable(*grid_at(&world->level.map, dst.x, dst.y))) {
+  } else if (rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
     cmd.type = RL_COMMAND_MOVE;
     cmd.dst = dst;
   }

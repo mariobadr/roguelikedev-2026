@@ -24,7 +24,8 @@ update_actors(struct rl_world* world,
   }
 
   // build the distance map where the target is the player
-  if (!rl_build_dijkstra_map(distances, &world->level.map, rogue->pos)) {
+  struct rl_level const* level = rl_get_current_level(world);
+  if (!rl_build_dijkstra_map(distances, &level->map, rogue->pos)) {
     return;
   }
 
@@ -101,15 +102,18 @@ rl_alloc_game_state(struct rl_game_state* game_state,
     return false;
   }
 
-  if (!rl_gen_level(&game_state->world, &game_state->world.level, &game_state->rng)) {
+  if (!rl_gen_level(
+        &game_state->world, &game_state->world.level, &game_state->rng)) {
     rl_free_game_state(game_state);
     return false;
   }
 
+  struct rl_level* level = rl_edit_current_level(&game_state->world);
+
   // make sure the rogue has an initial field-of-view
   struct rl_actor const* rogue = rl_get_actor(&game_state->world, RL_ROGUE_ID);
-  rl_update_fov(&game_state->fov, &game_state->world.level.map, rogue->pos);
-  update_explored(&game_state->world.level, &game_state->fov);
+  rl_update_fov(&game_state->fov, &level->map, rogue->pos);
+  update_explored(level, &game_state->fov);
 
   return true;
 }
@@ -140,8 +144,11 @@ rl_update_game_state(struct rl_game_state* game_state,
   if (turn_taken) {
     struct rl_actor const* rogue =
       rl_get_actor(&game_state->world, RL_ROGUE_ID);
-    rl_update_fov(&game_state->fov, &game_state->world.level.map, rogue->pos);
-    update_explored(&game_state->world.level, &game_state->fov);
+
+    struct rl_level* level = rl_edit_current_level(&game_state->world);
+    rl_update_fov(&game_state->fov, &level->map, rogue->pos);
+    update_explored(level, &game_state->fov);
+
     update_actors(&game_state->world,
                   &game_state->distances,
                   &game_state->fov,

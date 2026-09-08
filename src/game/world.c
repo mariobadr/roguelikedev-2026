@@ -109,3 +109,15 @@ rl_find_actor(struct rl_world const* world, SDL_Point position)
 
   return NULL;
 }
+
+struct rl_level const*
+rl_get_current_level(struct rl_world const* world)
+{
+  return &world->level;
+}
+
+struct rl_level*
+rl_edit_current_level(struct rl_world* world)
+{
+  return &world->level;
+}

@@ -35,11 +35,13 @@ get_living_actor(struct rl_world* world, int actor_id)
 static bool
 can_move(struct rl_world const* world, SDL_Point dst)
 {
-  if (!grid_contains(&world->level.map, dst.x, dst.y)) {
+  struct rl_level const* level = rl_get_current_level(world);
+
+  if (!grid_contains(&level->map, dst.x, dst.y)) {
     return false;
   }
 
-  if (!rl_is_walkable(*grid_at(&world->level.map, dst.x, dst.y))) {
+  if (!rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
     return false;
   }
 

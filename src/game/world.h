@@ -75,4 +75,16 @@ rl_find_actor(struct rl_world const* world, SDL_Point position);
 struct rl_item const*
 rl_get_item(struct rl_world const* world, int id);
 
+/**
+ * @return the level the rogue is currently on.
+ */
+struct rl_level const*
+rl_get_current_level(struct rl_world const* world);
+
+/**
+ * @return the level (for modification) the rogue is currently on.
+ */
+struct rl_level*
+rl_edit_current_level(struct rl_world* world);
+
 #endif // GINC_ROGUELIKE_WORLD_H
