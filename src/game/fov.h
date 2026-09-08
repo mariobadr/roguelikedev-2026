@@ -8,7 +8,7 @@
 
 #include "container/grid.h"
 
-#include "tile_map.h"
+#include "game/tile.h"
 
 /**
  * The field-of-view for an actor.
@@ -24,7 +24,7 @@ struct rl_fov
 };
 
 bool
-rl_init_fov(struct rl_fov* fov, int width, int height, int radius);
+rl_alloc_fov(struct rl_fov* fov, int width, int height, int radius);
 
 void
 rl_free_fov(struct rl_fov* fov);

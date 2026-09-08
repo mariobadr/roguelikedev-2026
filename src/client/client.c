@@ -19,7 +19,7 @@ rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
   inpt_init_state(&client->istate);
   client->action_cooldown = 0.0f;
 
-  if (!rl_init_game_state(
+  if (!rl_alloc_game_state(
         &client->game_state, RL_UI_MAP_WIDTH, RL_UI_MAP_HEIGHT)) {
     rl_free_client(client);
     return false;

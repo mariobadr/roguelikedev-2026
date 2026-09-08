@@ -3,7 +3,7 @@
 #include <SDL3/SDL_render.h>
 
 #include "game/game_state.h"
-#include "game/tile_map.h"
+#include "game/tile.h"
 
 #include "client/client.h"
 #include "client/graphics.h"

@@ -5,6 +5,7 @@
 
 #include "ai.h"
 #include "command.h"
+#include "generate.h"
 #include "pathfinding.h"
 
 #define FOV_RADIUS 8
@@ -72,9 +73,9 @@ update_explored(struct rl_level* level, struct rl_fov const* fov)
 }
 
 bool
-rl_init_game_state(struct rl_game_state* game_state,
-                   int map_width,
-                   int map_height)
+rl_alloc_game_state(struct rl_game_state* game_state,
+                    int map_width,
+                    int map_height)
 {
   rand_seed(&game_state->rng, 1234);
 
@@ -83,8 +84,7 @@ rl_init_game_state(struct rl_game_state* game_state,
     return false;
   }
 
-  if (!rl_init_world(
-        &game_state->world, map_width, map_height, &game_state->rng)) {
+  if (!rl_alloc_world(&game_state->world, map_width, map_height)) {
     rl_free_game_state(game_state);
     return false;
   }
@@ -96,7 +96,12 @@ rl_init_game_state(struct rl_game_state* game_state,
     return false;
   }
 
-  if (!rl_init_fov(&game_state->fov, map_width, map_height, FOV_RADIUS)) {
+  if (!rl_alloc_fov(&game_state->fov, map_width, map_height, FOV_RADIUS)) {
+    rl_free_game_state(game_state);
+    return false;
+  }
+
+  if (!rl_gen_level(&game_state->world, &game_state->world.level, &game_state->rng)) {
     rl_free_game_state(game_state);
     return false;
   }

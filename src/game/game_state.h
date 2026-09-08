@@ -36,9 +36,9 @@ struct rl_game_state
 };
 
 bool
-rl_init_game_state(struct rl_game_state* game_state,
-                   int map_width,
-                   int map_height);
+rl_alloc_game_state(struct rl_game_state* game_state,
+                    int map_width,
+                    int map_height);
 
 void
 rl_free_game_state(struct rl_game_state* game_state);

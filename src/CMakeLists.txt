@@ -38,6 +38,8 @@ set(GAME_SOURCES
     game/fov.h
     game/game_state.c
     game/game_state.h
+    game/generate.c
+    game/generate.h
     game/item.c
     game/item.h
     game/level.c
@@ -48,8 +50,6 @@ set(GAME_SOURCES
     game/pathfinding.h
     game/spawn.c
     game/spawn.h
-    game/tile_map.c
-    game/tile_map.h
     game/tile.c
     game/tile.h
     game/world.c

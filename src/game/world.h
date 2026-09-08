@@ -33,12 +33,15 @@ struct rl_world
   alist(rl_item) items;
 };
 
+/**
+ * Allocate a new world.
+ */
 bool
-rl_init_world(struct rl_world* world,
-              int width,
-              int height,
-              struct rand_state* rng);
+rl_alloc_world(struct rl_world* world, int width, int height);
 
+/**
+ * Free the resources used by world.
+ */
 void
 rl_free_world(struct rl_world* world);
 

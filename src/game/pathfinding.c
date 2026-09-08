@@ -4,8 +4,6 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
-#include "tile_map.h"
-
 bool
 rl_build_dijkstra_map(grid(int) * distances,
                       grid(rl_tile) const* map,

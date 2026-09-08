@@ -6,13 +6,9 @@
 #include "spawn.h"
 
 bool
-rl_init_world(struct rl_world* world,
-              int width,
-              int height,
-              struct rand_state* rng)
-
+rl_alloc_world(struct rl_world* world, int width, int height)
 {
-  // allocate space for the level (map + explored grids)
+  // TODO: need an alist of levels
   if (!rl_alloc_level(&world->level, 1, width, height)) {
     rl_free_world(world);
     return false;
@@ -32,33 +28,8 @@ rl_init_world(struct rl_world* world,
     return false;
   }
 
-  // randomly generate the dungeon layout and carve it into the map
-  if (!rl_gen_level(&world->level, rng)) {
-    rl_free_world(world);
-    return false;
-  }
-
   // the main character
   world->rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
-  // just put the rogue at the centre of the first room
-  int const rogue_room = 0;
-  SDL_Rect const* room = array_at(&world->level.layout.rooms, rogue_room);
-  world->rogue.pos.x = room->x + room->w / 2;
-  world->rogue.pos.y = room->y + room->h / 2;
-
-  // spawn the other actors
-  if (!rl_spawn_actors(&world->level, &world->actors, rogue_room, rng)) {
-    rl_free_world(world);
-    return false;
-  }
-  SDL_Log("Number of spawned actors: %d", rl_actor_count(world));
-
-  // spawn items
-  if (!rl_spawn_items(&world->level, &world->items, rng)) {
-    rl_free_world(world);
-    return false;
-  }
-  SDL_Log("Number of spawned items: %d", (int)alist_len(&world->items));
 
   return true;
 }

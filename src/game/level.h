@@ -8,7 +8,7 @@
 
 #include "procgen/layout.h"
 
-#include "game/tile_map.h"
+#include "game/tile.h"
 
 struct rl_level
 {
@@ -27,8 +27,5 @@ rl_alloc_level(struct rl_level* level, int depth, int width, int height);
 
 void
 rl_free_level(struct rl_level* level);
-
-bool
-rl_gen_level(struct rl_level* level, struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_LEVEL_H

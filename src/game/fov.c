@@ -4,8 +4,6 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
-#include "tile_map.h"
-
 /**
  * State shared by every scan.
  */
@@ -183,7 +181,7 @@ compute_fov(grid(rl_tile) const* map,
 }
 
 bool
-rl_init_fov(struct rl_fov* fov, int width, int height, int radius)
+rl_alloc_fov(struct rl_fov* fov, int width, int height, int radius)
 {
   if (!grid_alloc(&fov->visible, width, height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());

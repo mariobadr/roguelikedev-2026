@@ -6,6 +6,8 @@
 
 #include <SDL3/SDL_stdinc.h>
 
+#include "container/grid.h"
+
 /**
  * The different tile types.
  */
@@ -26,5 +28,10 @@ rl_is_walkable(enum rl_tile tile);
  */
 bool
 rl_is_transparent(enum rl_tile tile);
+
+/**
+ * A tile map as a 2D grid of tiles.
+ */
+grid_define_as(enum rl_tile, rl_tile);
 
 #endif // GINC_ROGUELIKE_TILE_H

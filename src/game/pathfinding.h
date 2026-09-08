@@ -9,7 +9,7 @@
 
 #include "container/grid.h"
 
-#include "tile_map.h"
+#include "game/tile.h"
 
 #define RL_INFINITE_DISTANCE SDL_MAX_SINT32
 
