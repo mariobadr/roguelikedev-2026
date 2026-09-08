@@ -31,8 +31,6 @@ set(GAME_SOURCES
     game/actor.h
     game/ai.c
     game/ai.h
-    game/combat.c
-    game/combat.h
     game/command.c
     game/command.h
     game/event.h
@@ -44,6 +42,8 @@ set(GAME_SOURCES
     game/item.h
     game/level.c
     game/level.h
+    game/mechanics.c
+    game/mechanics.h
     game/pathfinding.c
     game/pathfinding.h
     game/spawn.c
