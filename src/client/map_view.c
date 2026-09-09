@@ -1,12 +1,12 @@
 #include "map_view.h"
 
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_stdinc.h>
 
 #include "game/fov.h"
 #include "game/tile.h"
 #include "game/world.h"
 
-#include "client/cell.h"
 #include "client/font.h"
 #include "client/graphics.h"
 #include "client/lighting.h"
@@ -14,10 +14,71 @@
 #include "client/render.h"
 #include "client/ui.h"
 
+/** @return the width of a map cell, in logical pixels. */
+static int
+cell_width(void)
+{
+  return 6;
+}
+
+/** @return the height of a map cell, in logical pixels. */
+static int
+cell_height(void)
+{
+  return 8;
+}
+
+/** @return the viewport origin snapped down to whole pixels. */
+static SDL_FPoint
+viewport_origin(SDL_FRect const* viewport)
+{
+  return (SDL_FPoint){ SDL_floorf(viewport->x), SDL_floorf(viewport->y) };
+}
+
+/** @return the top-left position of the given cell, in logical pixels. */
+static SDL_FPoint
+cell_to_pixels(SDL_FRect const* viewport, SDL_Point cell)
+{
+  SDL_FPoint const origin = viewport_origin(viewport);
+
+  SDL_FPoint pixels = { 0 };
+  pixels.x = origin.x + (float)(cell.x * cell_width());
+  pixels.y = origin.y + (float)(cell.y * cell_height());
+
+  return pixels;
+}
+
+SDL_Point
+rl_map_viewport_size(SDL_FRect const* viewport)
+{
+  SDL_Point size = { 0 };
+  size.x = (int)(viewport->w / (float)cell_width());
+  size.y = (int)(viewport->h / (float)cell_height());
+
+  return size;
+}
+
+bool
+rl_map_cell_from_pixels(SDL_FRect const* viewport,
+                        SDL_FPoint at,
+                        SDL_Point* cell)
+{
+  if (!SDL_PointInRectFloat(&at, viewport)) {
+    return false;
+  }
+
+  SDL_FPoint const origin = viewport_origin(viewport);
+
+  cell->x = (int)SDL_floorf((at.x - origin.x) / (float)cell_width());
+  cell->y = (int)SDL_floorf((at.y - origin.y) / (float)cell_height());
+
+  return true;
+}
+
 static void
 draw_level(SDL_Renderer* renderer,
            struct rl_font const* font,
-           SDL_FRect const* panel,
+           SDL_FRect const* viewport,
            struct rl_level const* level,
            struct rl_fov const* fov)
 {
@@ -42,7 +103,7 @@ draw_level(SDL_Renderer* renderer,
         gfx.fg = rl_lerp_colour(gfx.fg, RL_COLOUR_BLACK, 0.4f);
       }
 
-      SDL_FPoint const at = rl_panel_to_pixels(panel, (SDL_Point){ x, y });
+      SDL_FPoint const at = cell_to_pixels(viewport, (SDL_Point){ x, y });
       rl_draw_tile(renderer, font, &gfx, at);
     }
   }
@@ -50,7 +111,7 @@ draw_level(SDL_Renderer* renderer,
 
 static void
 draw_light(SDL_Renderer* renderer,
-           SDL_FRect const* panel,
+           SDL_FRect const* viewport,
            grid(rl_tile) const* map,
            struct rl_fov const* fov)
 {
@@ -73,9 +134,9 @@ draw_light(SDL_Renderer* renderer,
       float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
 
       SDL_FColor const colour = { light.r, light.g, light.b, alpha };
-      SDL_FPoint const at = rl_panel_to_pixels(panel, (SDL_Point){ x, y });
+      SDL_FPoint const at = cell_to_pixels(viewport, (SDL_Point){ x, y });
       SDL_FRect const area = {
-        at.x, at.y, (float)rl_cell_width(), (float)rl_cell_height()
+        at.x, at.y, (float)cell_width(), (float)cell_height()
       };
 
       SDL_SetRenderDrawColorFloat(
@@ -88,18 +149,18 @@ draw_light(SDL_Renderer* renderer,
 static void
 draw_item(SDL_Renderer* renderer,
           struct rl_font const* font,
-          SDL_FRect const* panel,
+          SDL_FRect const* viewport,
           struct rl_item const* item)
 {
   struct rl_gfx_tile const tile = rl_get_item_gfx(item);
-  SDL_FPoint const at = rl_panel_to_pixels(panel, item->on.map);
+  SDL_FPoint const at = cell_to_pixels(viewport, item->on.map);
   rl_draw_tile(renderer, font, &tile, at);
 }
 
 static void
 draw_items(SDL_Renderer* renderer,
            struct rl_font const* font,
-           SDL_FRect const* panel,
+           SDL_FRect const* viewport,
            struct rl_world const* world,
            struct rl_fov const* fov)
 {
@@ -113,7 +174,7 @@ draw_items(SDL_Renderer* renderer,
     }
 
     if (*grid_at(&fov->visible, item->on.map.x, item->on.map.y)) {
-      draw_item(renderer, font, panel, item);
+      draw_item(renderer, font, viewport, item);
     }
   }
 }
@@ -121,18 +182,18 @@ draw_items(SDL_Renderer* renderer,
 static void
 draw_actor(SDL_Renderer* renderer,
            struct rl_font const* font,
-           SDL_FRect const* panel,
+           SDL_FRect const* viewport,
            struct rl_actor const* actor)
 {
   struct rl_gfx_tile const tile = rl_get_actor_gfx(actor);
-  SDL_FPoint const at = rl_panel_to_pixels(panel, actor->pos);
+  SDL_FPoint const at = cell_to_pixels(viewport, actor->pos);
   rl_draw_tile(renderer, font, &tile, at);
 }
 
 static void
 draw_actors(SDL_Renderer* renderer,
             struct rl_font const* font,
-            SDL_FRect const* panel,
+            SDL_FRect const* viewport,
             struct rl_world const* world,
             struct rl_fov const* fov)
 {
@@ -146,7 +207,7 @@ draw_actors(SDL_Renderer* renderer,
     }
 
     if (*grid_at(&fov->visible, actor->pos.x, actor->pos.y)) {
-      draw_actor(renderer, font, panel, actor);
+      draw_actor(renderer, font, viewport, actor);
     }
   }
 }
@@ -154,19 +215,19 @@ draw_actors(SDL_Renderer* renderer,
 void
 rl_draw_map(SDL_Renderer* renderer,
             struct rl_font const* font,
-            SDL_FRect const* panel,
+            SDL_FRect const* viewport,
             struct rl_world const* world,
             struct rl_fov const* fov)
 {
   struct rl_level const* level = rl_get_current_level(world);
 
-  SDL_Rect const clip = rl_panel_clip_rect(panel);
+  SDL_Rect const clip = rl_panel_clip_rect(viewport);
   SDL_SetRenderClipRect(renderer, &clip);
 
-  draw_level(renderer, font, panel, level, fov);
-  draw_items(renderer, font, panel, world, fov);
-  draw_actors(renderer, font, panel, world, fov);
-  draw_light(renderer, panel, &level->map, fov);
+  draw_level(renderer, font, viewport, level, fov);
+  draw_items(renderer, font, viewport, world, fov);
+  draw_actors(renderer, font, viewport, world, fov);
+  draw_light(renderer, viewport, &level->map, fov);
 
   SDL_SetRenderClipRect(renderer, NULL);
 }

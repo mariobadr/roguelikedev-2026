@@ -5,7 +5,6 @@
 #include "game/game_state.h"
 
 #include "action.h"
-#include "cell.h"
 #include "controls.h"
 #include "game_log.h"
 #include "map_view.h"
@@ -29,10 +28,9 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
 {
   rl_init_ui_layout(&s->layout);
 
-  // TODO: this is temporary
-  int const main_width = (int)(s->layout.main_panel.w / rl_cell_width());
-  int const main_height = (int)(s->layout.main_panel.h / rl_cell_height());
-  if (!rl_alloc_game_state(&s->game_state, main_width, main_height)) {
+  // TODO: add a camera at some point?
+  SDL_Point const size = rl_map_viewport_size(&s->layout.main_panel);
+  if (!rl_alloc_game_state(&s->game_state, size.x, size.y)) {
     return false;
   }
 

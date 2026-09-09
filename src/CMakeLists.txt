@@ -4,8 +4,6 @@
 set(GAME_SOURCES
     client/action.c
     client/action.h
-    client/cell.c
-    client/cell.h
     client/client.c
     client/client.h
     client/controls.c
