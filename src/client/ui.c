@@ -1,5 +1,7 @@
 #include "ui.h"
 
+#include "cell.h"
+
 /** The margin (in tiles) between UI panels. */
 #define RL_UI_MARGIN 1
 
@@ -38,7 +40,7 @@ rl_init_ui_layout(struct rl_ui_layout* layout)
 }
 
 SDL_Point
-rl_panel_to_screen(SDL_Rect const* panel, SDL_Point local)
+rl_panel_to_cell(SDL_Rect const* panel, SDL_Point local)
 {
   SDL_Point point = { 0 };
   point.x = panel->x + local.x;
@@ -47,8 +49,15 @@ rl_panel_to_screen(SDL_Rect const* panel, SDL_Point local)
   return point;
 }
 
+SDL_FPoint
+rl_panel_to_pixels(SDL_Rect const* panel, SDL_Point local)
+{
+  SDL_Point const screen = rl_panel_to_cell(panel, local);
+  return rl_cell_point_to_pixels(&screen);
+}
+
 bool
-rl_screen_to_panel(SDL_Rect const* panel,
+rl_cell_to_panel(SDL_Rect const* panel,
                             SDL_Point at,
                             SDL_Point* local)
 {

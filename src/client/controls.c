@@ -63,7 +63,7 @@ handle_mouse_input(struct inpt_state const* istate,
   SDL_Point const at = rl_cell_point_from_pixels(&istate->mouse.position);
 
   SDL_Point target = { 0 };
-  if (!rl_screen_to_panel(main_panel, at, &target)) {
+  if (!rl_cell_to_panel(main_panel, at, &target)) {
     return RL_ACTION_NONE;
   }
 

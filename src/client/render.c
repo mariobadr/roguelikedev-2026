@@ -3,19 +3,10 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 
-#include "cell.h"
 #include "font.h"
 #include "graphics.h"
 #include "text.h"
 
-/**
- * Calculate the source rectangle of a glyph in the font.
- *
- * @param font  the font to look up the glyph in
- * @param glyph the glyph from the font
- *
- * @return the location of the glyph in the font texture.
- */
 static SDL_FRect
 calculate_source(struct rl_font const* font, Uint8 glyph)
 {
@@ -28,52 +19,30 @@ calculate_source(struct rl_font const* font, Uint8 glyph)
   return src;
 }
 
-/**
- * Calculate the destination rectangle of a cell on screen.
- *
- * @param col the column of the cell
- * @param row the row of the cell
- *
- * @return the area the cell occupies in logical pixels.
- */
 static SDL_FRect
-calculate_destination(int col, int row)
+calculate_destination(struct rl_font const* font, SDL_FPoint at)
 {
-  SDL_Point cell = { 0 };
-  cell.x = col;
-  cell.y = row;
-
-  SDL_FPoint const pixels = rl_cell_point_to_pixels(&cell);
-
   SDL_FRect dst = { 0 };
-  dst.x = pixels.x;
-  dst.y = pixels.y;
-  dst.w = (float)rl_cell_width();
-  dst.h = (float)rl_cell_height();
+  dst.x = at.x;
+  dst.y = at.y;
+  dst.w = (float)font->glyph_width;
+  dst.h = (float)font->glyph_height;
 
   return dst;
-}
-
-void
-rl_fill_tile(SDL_Renderer* renderer, SDL_FColor colour, int col, int row)
-{
-  SDL_FRect const dst = calculate_destination(col, row);
-
-  SDL_SetRenderDrawColorFloat(renderer, colour.r, colour.g, colour.b, colour.a);
-  SDL_RenderFillRect(renderer, &dst);
 }
 
 void
 rl_draw_tile(SDL_Renderer* renderer,
              struct rl_font const* font,
              struct rl_gfx_tile const* tile,
-             int col,
-             int row)
+             SDL_FPoint at)
 {
-  SDL_FRect const dst = calculate_destination(col, row);
+  SDL_FRect const dst = calculate_destination(font, at);
 
   if (tile->bg.a > 0.0f) {
-    rl_fill_tile(renderer, tile->bg, col, row);
+    SDL_SetRenderDrawColorFloat(
+      renderer, tile->bg.r, tile->bg.g, tile->bg.b, tile->bg.a);
+    SDL_RenderFillRect(renderer, &dst);
   }
 
   // tint the glyph (foreground)
@@ -92,8 +61,7 @@ rl_draw_string(SDL_Renderer* renderer,
                char const* text,
                SDL_FColor fg,
                SDL_FColor bg,
-               int col,
-               int row)
+               SDL_FPoint at)
 {
   struct rl_gfx_tile tile = { 0 };
   tile.fg = fg;
@@ -102,7 +70,8 @@ rl_draw_string(SDL_Renderer* renderer,
   size_t const length = SDL_strlen(text);
   for (size_t i = 0; i < length; i++) {
     tile.glyph = text[i];
-    rl_draw_tile(renderer, font, &tile, col + (int)i, row);
+    rl_draw_tile(renderer, font, &tile, at);
+    at.x += (float)font->glyph_width;
   }
 }
 
@@ -110,20 +79,16 @@ void
 rl_draw_text(SDL_Renderer* renderer,
              struct rl_font const* font,
              struct rl_text const* text,
-             int col,
-             int row)
+             SDL_FPoint at)
 {
-  int k = 0;
-
   for (int i = 0; i < text->run_count; i++) {
     struct rl_text_run const* run = &text->runs[i];
     struct rl_gfx_tile gfx = rl_get_text_gfx(run->style);
 
     for (int j = 0; run->text[j] != '\0'; j++) {
       gfx.glyph = run->text[j];
-      rl_draw_tile(renderer, font, &gfx, col + k, row);
-
-      k++;
+      rl_draw_tile(renderer, font, &gfx, at);
+      at.x += (float)font->glyph_width;
     }
   }
 }

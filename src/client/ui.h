@@ -36,9 +36,12 @@ void
 rl_init_ui_layout(struct rl_ui_layout* layout);
 
 SDL_Point
-rl_panel_to_screen(SDL_Rect const* panel, SDL_Point local);
+rl_panel_to_cell(SDL_Rect const* panel, SDL_Point local);
+
+SDL_FPoint
+rl_panel_to_pixels(SDL_Rect const* panel, SDL_Point local);
 
 bool
-rl_screen_to_panel(SDL_Rect const* panel, SDL_Point at, SDL_Point* local);
+rl_cell_to_panel(SDL_Rect const* panel, SDL_Point at, SDL_Point* local);
 
 #endif // GINC_ROGUELIKE_UI_H

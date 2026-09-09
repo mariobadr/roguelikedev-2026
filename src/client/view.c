@@ -50,8 +50,8 @@ draw_level(SDL_Renderer* renderer,
         gfx.fg = rl_lerp_colour(gfx.fg, RL_COLOUR_BLACK, 0.4f);
       }
 
-      SDL_Point const at = rl_panel_to_screen(panel, (SDL_Point){ x, y });
-      rl_draw_tile(renderer, font, &gfx, at.x, at.y);
+      SDL_FPoint const at = rl_panel_to_pixels(panel, (SDL_Point){ x, y });
+      rl_draw_tile(renderer, font, &gfx, at);
     }
   }
 }
@@ -81,8 +81,14 @@ draw_light(SDL_Renderer* renderer,
       float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
 
       SDL_FColor const colour = { light.r, light.g, light.b, alpha };
-      SDL_Point const at = rl_panel_to_screen(panel, (SDL_Point){ x, y });
-      rl_fill_tile(renderer, colour, at.x, at.y);
+      SDL_FPoint const at = rl_panel_to_pixels(panel, (SDL_Point){ x, y });
+      SDL_FRect const area = {
+        at.x, at.y, (float)rl_cell_width(), (float)rl_cell_height()
+      };
+
+      SDL_SetRenderDrawColorFloat(
+        renderer, colour.r, colour.g, colour.b, colour.a);
+      SDL_RenderFillRect(renderer, &area);
     }
   }
 }
@@ -94,8 +100,8 @@ draw_item(SDL_Renderer* renderer,
           struct rl_item const* item)
 {
   struct rl_gfx_tile const tile = rl_get_item_gfx(item);
-  SDL_Point const at = rl_panel_to_screen(panel, item->on.map);
-  rl_draw_tile(renderer, font, &tile, at.x, at.y);
+  SDL_FPoint const at = rl_panel_to_pixels(panel, item->on.map);
+  rl_draw_tile(renderer, font, &tile, at);
 }
 
 static void
@@ -127,8 +133,8 @@ draw_actor(SDL_Renderer* renderer,
            struct rl_actor const* actor)
 {
   struct rl_gfx_tile const tile = rl_get_actor_gfx(actor);
-  SDL_Point const at = rl_panel_to_screen(panel, actor->pos);
-  rl_draw_tile(renderer, font, &tile, at.x, at.y);
+  SDL_FPoint const at = rl_panel_to_pixels(panel, actor->pos);
+  rl_draw_tile(renderer, font, &tile, at);
 }
 
 static void
@@ -192,8 +198,8 @@ rl_draw_log(SDL_Renderer* renderer,
 
   for (int i = start; i < len; i++) {
     struct rl_text const* message = alist_at(&log->messages, i);
-    SDL_Point const at = rl_panel_to_screen(panel, (SDL_Point){ 0, row });
-    rl_draw_text(renderer, font, message, at.x, at.y);
+    SDL_FPoint const at = rl_panel_to_pixels(panel, (SDL_Point){ 0, row });
+    rl_draw_text(renderer, font, message, at);
     row += 1;
   }
 
@@ -214,9 +220,9 @@ rl_draw_status(SDL_Renderer* renderer,
   char text[16];
   SDL_snprintf(text, sizeof(text), "HP: %d / %d", rogue->hp, rogue->max_hp);
 
-  SDL_Point const at = rl_panel_to_screen(panel, (SDL_Point){ 0, 0 });
+  SDL_FPoint const at = rl_panel_to_pixels(panel, (SDL_Point){ 0, 0 });
   rl_draw_string(
-    renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at.x, at.y);
+    renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
 
   SDL_SetRenderClipRect(renderer, NULL);
 }
@@ -233,9 +239,9 @@ rl_draw_controls(SDL_Renderer* renderer,
 
   char const* text = "\x18 W | \x1B A | \x19 S | \x1A D";
 
-  SDL_Point const at = rl_panel_to_screen(panel, (SDL_Point){ 0, 0 });
+  SDL_FPoint const at = rl_panel_to_pixels(panel, (SDL_Point){ 0, 0 });
   rl_draw_string(
-    renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at.x, at.y);
+    renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
 
   SDL_SetRenderClipRect(renderer, NULL);
 }

@@ -5,6 +5,7 @@
 #define GINC_ROGUELIKE_RENDER_H
 
 #include <SDL3/SDL_pixels.h>
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
 // external forward declarations
@@ -16,14 +17,10 @@ struct rl_gfx_tile;
 struct rl_text;
 
 void
-rl_fill_tile(SDL_Renderer* renderer, SDL_FColor colour, int col, int row);
-
-void
 rl_draw_tile(SDL_Renderer* renderer,
              struct rl_font const* font,
              struct rl_gfx_tile const* tile,
-             int col,
-             int row);
+             SDL_FPoint at);
 
 void
 rl_draw_string(SDL_Renderer* renderer,
@@ -31,14 +28,12 @@ rl_draw_string(SDL_Renderer* renderer,
                char const* text,
                SDL_FColor fg,
                SDL_FColor bg,
-               int col,
-               int row);
+               SDL_FPoint at);
 
 void
 rl_draw_text(SDL_Renderer* renderer,
              struct rl_font const* font,
              struct rl_text const* text,
-             int col,
-             int row);
+             SDL_FPoint at);
 
 #endif // GINC_ROGUELIKE_RENDER_H
