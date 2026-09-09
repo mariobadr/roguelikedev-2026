@@ -11,6 +11,21 @@
 #include "ui.h"
 #include "ui_view.h"
 
+#include "ui/rectcut.h"
+
+/** The horizontal margin between UI panels, in logical pixels. */
+#define RL_UI_MARGIN_X 4.0f
+/** The vertical margin between UI panels, in logical pixels. */
+#define RL_UI_MARGIN_Y 4.0f
+
+struct rl_ui_layout
+{
+  SDL_FRect map_panel;
+  SDL_FRect top_panel;
+  SDL_FRect bottom_panel;
+  SDL_FRect right_panel;
+};
+
 struct screen_state
 {
   struct rl_font const* font;
@@ -23,13 +38,48 @@ struct screen_state
   struct rl_ui_layout layout;
 };
 
+/**
+ * Roughly:
+ *
+ * ┌──────────────────────────────┬───────────────┐
+ * │          top panel           │               │
+ * ├──────────────────────────────┤               │
+ * │                              │  right panel  │
+ * │            main              │               │
+ * │                              │               │
+ * ├──────────────────────────────┤               │
+ * │         bottom panel         │               │
+ * └──────────────────────────────┴───────────────┘
+ */
+static struct rl_ui_layout
+create_layout(void)
+{
+  struct rl_ui_layout layout = { 0 };
+  SDL_FRect screen = { 0.0f, 0.0f, (float)RL_UI_WIDTH, (float)RL_UI_HEIGHT };
+
+  ui_cut_left(&screen, RL_UI_MARGIN_X);
+  SDL_FRect left = ui_cut_left(&screen, 384.0f);
+  ui_cut_left(&screen, RL_UI_MARGIN_X);
+  layout.right_panel = screen;
+
+  // One line of text.
+  layout.top_panel = ui_cut_top(&left, 8.0f);
+  ui_cut_top(&left, RL_UI_MARGIN_Y);
+  // Must stay a whole number of cells (see rl_draw_map).
+  layout.map_panel = ui_cut_top(&left, 288.0f);
+  ui_cut_top(&left, RL_UI_MARGIN_Y);
+  layout.bottom_panel = left;
+
+  return layout;
+}
+
 static bool
 alloc_screen(struct screen_state* s, struct rl_font const* font)
 {
-  rl_init_ui_layout(&s->layout);
+  s->layout = create_layout();
 
   // TODO: add a camera at some point?
-  SDL_Point const size = rl_map_viewport_size(&s->layout.main_panel);
+  SDL_Point const size = rl_map_viewport_size(&s->layout.map_panel);
   if (!rl_alloc_game_state(&s->game_state, size.x, size.y)) {
     return false;
   }
@@ -84,7 +134,7 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   struct rl_actor const* rogue =
     rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
   enum rl_action const action =
-    rl_translate_input(istate, rogue->pos, &s->layout.main_panel);
+    rl_translate_input(istate, rogue->pos, &s->layout.map_panel);
   if (action == RL_ACTION_NONE) {
     return transition;
   }
@@ -115,7 +165,7 @@ render_screen(void const* data, SDL_Renderer* renderer)
 
   rl_draw_map(renderer,
               s->font,
-              &s->layout.main_panel,
+              &s->layout.map_panel,
               &s->game_state.world,
               &s->game_state.fov);
   rl_draw_log(renderer, s->font, &s->layout.bottom_panel, &s->log);

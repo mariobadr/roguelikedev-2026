@@ -1,17 +1,5 @@
 /**
  * @file ui.h
- *
- * Roughly:
- *
- * ┌──────────────────────────────┬───────────────┐
- * │          top panel           │               │
- * ├──────────────────────────────┤               │
- * │                              │  right panel  │
- * │            main              │               │
- * │                              │               │
- * ├──────────────────────────────┤               │
- * │         bottom panel         │               │
- * └──────────────────────────────┴───────────────┘
  */
 #ifndef GINC_ROGUELIKE_UI_H
 #define GINC_ROGUELIKE_UI_H
@@ -22,17 +10,6 @@
 #define RL_UI_WIDTH 480
 /** The height of the entire UI, in logical pixels. */
 #define RL_UI_HEIGHT 360
-
-struct rl_ui_layout
-{
-  SDL_FRect main_panel;
-  SDL_FRect top_panel;
-  SDL_FRect bottom_panel;
-  SDL_FRect right_panel;
-};
-
-void
-rl_init_ui_layout(struct rl_ui_layout* layout);
 
 SDL_Rect
 rl_panel_clip_rect(SDL_FRect const* panel);
