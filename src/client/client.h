@@ -9,9 +9,9 @@
 #include "container/alist.h"
 #include "game/game_state.h"
 
+#include "client/font.h"
 #include "client/game_log.h"
 #include "input/input.h"
-#include "client/resources.h"
 
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
@@ -22,23 +22,23 @@ struct rl_client
   struct inpt_state istate;
   /** Time before the next action fires. */
   float action_cooldown;
-  /** Client resources (like the font). */
-  struct rl_resources resources;
+  /** Bitmap font used to draw everything. */
+  struct rl_font font;
   /** Game state. */
   struct rl_game_state game_state;
   struct rl_game_log log;
 };
 
 bool
-rl_init_client(struct rl_client *client, SDL_Renderer* renderer);
+rl_init_client(struct rl_client* client, SDL_Renderer* renderer);
 
 void
-rl_free_client(struct rl_client *client);
+rl_free_client(struct rl_client* client);
 
 void
-rl_update_client(struct rl_client *client, float dt);
+rl_update_client(struct rl_client* client, float dt);
 
 void
-rl_render_client(struct rl_client *client, SDL_Renderer* renderer);
+rl_render_client(struct rl_client* client, SDL_Renderer* renderer);
 
 #endif // GINC_ROGUELIKE_CLIENT_H

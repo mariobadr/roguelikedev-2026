@@ -1,4 +1,4 @@
-#include "resources.h"
+#include "font.h"
 
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
@@ -6,6 +6,11 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
+
+/** The glyph grid of the DINOBYTE font. */
+#define DBYTE_GLYPH_WIDTH (6)
+#define DBYTE_GLYPH_HEIGHT (8)
+#define DBYTE_COLS (16)
 
 /**
  * Convert all pixels in the DINOBYTE font to pure white.
@@ -72,7 +77,7 @@ load_dbyte_font(char const* base_path, SDL_Renderer* renderer)
 }
 
 bool
-rl_load_resources(struct rl_resources* resources, SDL_Renderer* renderer)
+rl_load_font(struct rl_font* font, SDL_Renderer* renderer)
 {
   char const* base_path = SDL_GetBasePath();
   if (base_path == NULL) {
@@ -80,20 +85,24 @@ rl_load_resources(struct rl_resources* resources, SDL_Renderer* renderer)
     return false;
   }
 
-  resources->font = load_dbyte_font(base_path, renderer);
-  if (resources->font == NULL) {
+  font->texture = load_dbyte_font(base_path, renderer);
+  if (font->texture == NULL) {
     return false;
   }
+
+  font->glyph_width = DBYTE_GLYPH_WIDTH;
+  font->glyph_height = DBYTE_GLYPH_HEIGHT;
+  font->columns = DBYTE_COLS;
 
   return true;
 }
 
 void
-rl_destroy_resources(struct rl_resources* resources)
+rl_unload_font(struct rl_font* font)
 {
-  if (resources == NULL) {
+  if (font == NULL) {
     return;
   }
 
-  SDL_DestroyTexture(resources->font);
+  SDL_DestroyTexture(font->texture);
 }

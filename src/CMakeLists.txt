@@ -4,10 +4,14 @@
 set(GAME_SOURCES
     client/action.c
     client/action.h
+    client/cell.c
+    client/cell.h
     client/client.c
     client/client.h
     client/controls.c
     client/controls.h
+    client/font.c
+    client/font.h
     client/game_log.c
     client/game_log.h
     client/graphics.c
@@ -17,8 +21,6 @@ set(GAME_SOURCES
     client/palette.h
     client/render.c
     client/render.h
-    client/resources.c
-    client/resources.h
     client/text.h
     client/ui.h
     client/view.c

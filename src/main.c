@@ -12,6 +12,7 @@
 
 #include "input/input.h"
 #include "input/input_event.h"
+#include "client/cell.h"
 #include "client/client.h"
 #include "client/ui.h"
 
@@ -91,8 +92,8 @@ create_renderer(SDL_Window* window)
 
   if (!SDL_SetRenderLogicalPresentation(
         renderer,
-        (RL_UI_WIDTH) * 6,
-        (RL_UI_HEIGHT) * 8,
+        (RL_UI_WIDTH) * rl_cell_width(),
+        (RL_UI_HEIGHT) * rl_cell_height(),
         SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)) {
     SDL_Log("SDL_SetRenderLogicalPresentation failed: %s", SDL_GetError());
     SDL_DestroyRenderer(renderer);

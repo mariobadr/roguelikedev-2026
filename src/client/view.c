@@ -6,16 +6,16 @@
 #include "game/tile.h"
 
 #include "client/client.h"
+#include "client/font.h"
 #include "client/graphics.h"
 #include "client/lighting.h"
 #include "client/palette.h"
 #include "client/render.h"
-#include "client/resources.h"
 #include "client/ui.h"
 
 static void
 draw_level(SDL_Renderer* renderer,
-           SDL_Texture* font,
+           struct rl_font const* font,
            struct rl_level const* level,
            struct rl_fov const* fov)
 {
@@ -75,7 +75,9 @@ draw_light(SDL_Renderer* renderer,
 }
 
 static void
-draw_item(SDL_Renderer* renderer, SDL_Texture* font, struct rl_item const* item)
+draw_item(SDL_Renderer* renderer,
+          struct rl_font const* font,
+          struct rl_item const* item)
 {
   struct rl_gfx_tile const tile = rl_get_item_gfx(item);
   rl_draw_tile(renderer,
@@ -87,7 +89,7 @@ draw_item(SDL_Renderer* renderer, SDL_Texture* font, struct rl_item const* item)
 
 static void
 draw_items(SDL_Renderer* renderer,
-           SDL_Texture* font,
+           struct rl_font const* font,
            struct rl_world const* world,
            struct rl_fov const* fov)
 {
@@ -108,7 +110,7 @@ draw_items(SDL_Renderer* renderer,
 
 static void
 draw_actor(SDL_Renderer* renderer,
-           SDL_Texture* font,
+           struct rl_font const* font,
            struct rl_actor const* actor)
 {
   struct rl_gfx_tile const tile = rl_get_actor_gfx(actor);
@@ -121,7 +123,7 @@ draw_actor(SDL_Renderer* renderer,
 
 static void
 draw_actors(SDL_Renderer* renderer,
-            SDL_Texture* font,
+            struct rl_font const* font,
             struct rl_world const* world,
             struct rl_fov const* fov)
 {
@@ -142,7 +144,7 @@ draw_actors(SDL_Renderer* renderer,
 
 static void
 draw_game_log(SDL_Renderer* renderer,
-              SDL_Texture* font,
+              struct rl_font const* font,
               struct rl_game_log const* log)
 {
   int row = RL_UI_BPANEL_Y;
@@ -160,7 +162,7 @@ draw_game_log(SDL_Renderer* renderer,
 
 static void
 draw_side_panel(SDL_Renderer* renderer,
-                SDL_Texture* font,
+                struct rl_font const* font,
                 struct rl_game_state const* game_state)
 {
   struct rl_actor const* rogue = rl_get_actor(&game_state->world, RL_ROGUE_ID);
@@ -178,7 +180,7 @@ draw_side_panel(SDL_Renderer* renderer,
 }
 
 static void
-draw_top_panel(SDL_Renderer* renderer, SDL_Texture* font)
+draw_top_panel(SDL_Renderer* renderer, struct rl_font const* font)
 {
   char const* text = "\x18 W | \x1B A | \x19 S | \x1A D";
 
@@ -193,7 +195,7 @@ draw_top_panel(SDL_Renderer* renderer, SDL_Texture* font)
 
 static void
 draw_ui(SDL_Renderer* renderer,
-        SDL_Texture* font,
+        struct rl_font const* font,
         struct rl_client const* client)
 {
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -216,15 +218,15 @@ rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
   struct rl_level const* level =
     rl_get_current_level(&client->game_state.world);
 
-  draw_level(renderer, client->resources.font, level, &client->game_state.fov);
+  draw_level(renderer, &client->font, level, &client->game_state.fov);
   draw_items(renderer,
-             client->resources.font,
+             &client->font,
              &client->game_state.world,
              &client->game_state.fov);
   draw_actors(renderer,
-              client->resources.font,
+              &client->font,
               &client->game_state.world,
               &client->game_state.fov);
   draw_light(renderer, &level->map, &client->game_state.fov);
-  draw_ui(renderer, client->resources.font, client);
+  draw_ui(renderer, &client->font, client);
 }

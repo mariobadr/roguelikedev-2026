@@ -11,7 +11,7 @@
 bool
 rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
 {
-  if (!rl_load_resources(&client->resources, renderer)) {
+  if (!rl_load_font(&client->font, renderer)) {
     rl_free_client(client);
     return false;
   }
@@ -42,7 +42,7 @@ rl_free_client(struct rl_client* client)
 
   rl_free_game_log(&client->log);
   rl_free_game_state(&client->game_state);
-  rl_destroy_resources(&client->resources);
+  rl_unload_font(&client->font);
 }
 
 void

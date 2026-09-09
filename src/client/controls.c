@@ -1,7 +1,7 @@
 #include "controls.h"
 
+#include "cell.h"
 #include "input/input.h"
-#include "render.h"
 #include "ui.h"
 
 /**
@@ -58,10 +58,11 @@ handle_mouse_input(struct inpt_state const* istate, SDL_Point rogue)
     return RL_ACTION_NONE;
   }
 
-  int const target_x =
-    (int)SDL_floorf(istate->mouse.position.x / GLYPH_WIDTH) - RL_UI_MAP_X;
-  int const target_y =
-    (int)SDL_floorf(istate->mouse.position.y / GLYPH_HEIGHT) - RL_UI_MAP_Y;
+  int const col = (int)SDL_floorf(istate->mouse.position.x / rl_cell_width());
+  int const row = (int)SDL_floorf(istate->mouse.position.y / rl_cell_height());
+
+  int const target_x = col - RL_UI_MAP_X;
+  int const target_y = row - RL_UI_MAP_Y;
 
   int const delta_x = target_x - rogue.x;
   int const delta_y = target_y - rogue.y;
