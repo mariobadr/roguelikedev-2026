@@ -54,18 +54,18 @@ handle_keyboard_input(struct inpt_state const* istate)
 static enum rl_action
 handle_mouse_input(struct inpt_state const* istate,
                     SDL_Point rogue,
-                    SDL_Rect const* main_panel)
+                    SDL_FRect const* main_panel)
 {
   if (!inpt_is_down(istate->mouse.buttons[SDL_BUTTON_LEFT])) {
     return RL_ACTION_NONE;
   }
 
-  SDL_Point const at = rl_cell_point_from_pixels(&istate->mouse.position);
-
-  SDL_Point target = { 0 };
-  if (!rl_cell_to_panel(main_panel, at, &target)) {
+  SDL_FPoint local = { 0 };
+  if (!rl_pixels_to_panel(main_panel, istate->mouse.position, &local)) {
     return RL_ACTION_NONE;
   }
+
+  SDL_Point const target = rl_cell_point_from_pixels(&local);
 
   int const delta_x = target.x - rogue.x;
   int const delta_y = target.y - rogue.y;
@@ -92,7 +92,7 @@ handle_mouse_input(struct inpt_state const* istate,
 enum rl_action
 rl_translate_input(struct inpt_state const* istate,
                     SDL_Point rogue_position,
-                    SDL_Rect const* main_panel)
+                    SDL_FRect const* main_panel)
 {
   // prioritize keyboard input over mouse input (?)
   enum rl_action const action = handle_keyboard_input(istate);

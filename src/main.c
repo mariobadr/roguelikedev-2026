@@ -10,7 +10,6 @@
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 
-#include "client/cell.h"
 #include "client/client.h"
 #include "client/ui.h"
 #include "input/input.h"
@@ -95,8 +94,8 @@ create_renderer(SDL_Window* window)
 
   if (!SDL_SetRenderLogicalPresentation(
         renderer,
-        (RL_UI_WIDTH)*rl_cell_width(),
-        (RL_UI_HEIGHT)*rl_cell_height(),
+        RL_UI_WIDTH,
+        RL_UI_HEIGHT,
         SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)) {
     SDL_Log("SDL_SetRenderLogicalPresentation failed: %s", SDL_GetError());
     SDL_DestroyRenderer(renderer);

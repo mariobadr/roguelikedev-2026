@@ -17,7 +17,7 @@
 static void
 draw_level(SDL_Renderer* renderer,
            struct rl_font const* font,
-           SDL_Rect const* panel,
+           SDL_FRect const* panel,
            struct rl_level const* level,
            struct rl_fov const* fov)
 {
@@ -50,7 +50,7 @@ draw_level(SDL_Renderer* renderer,
 
 static void
 draw_light(SDL_Renderer* renderer,
-           SDL_Rect const* panel,
+           SDL_FRect const* panel,
            grid(rl_tile) const* map,
            struct rl_fov const* fov)
 {
@@ -88,7 +88,7 @@ draw_light(SDL_Renderer* renderer,
 static void
 draw_item(SDL_Renderer* renderer,
           struct rl_font const* font,
-          SDL_Rect const* panel,
+          SDL_FRect const* panel,
           struct rl_item const* item)
 {
   struct rl_gfx_tile const tile = rl_get_item_gfx(item);
@@ -99,7 +99,7 @@ draw_item(SDL_Renderer* renderer,
 static void
 draw_items(SDL_Renderer* renderer,
            struct rl_font const* font,
-           SDL_Rect const* panel,
+           SDL_FRect const* panel,
            struct rl_world const* world,
            struct rl_fov const* fov)
 {
@@ -121,7 +121,7 @@ draw_items(SDL_Renderer* renderer,
 static void
 draw_actor(SDL_Renderer* renderer,
            struct rl_font const* font,
-           SDL_Rect const* panel,
+           SDL_FRect const* panel,
            struct rl_actor const* actor)
 {
   struct rl_gfx_tile const tile = rl_get_actor_gfx(actor);
@@ -132,7 +132,7 @@ draw_actor(SDL_Renderer* renderer,
 static void
 draw_actors(SDL_Renderer* renderer,
             struct rl_font const* font,
-            SDL_Rect const* panel,
+            SDL_FRect const* panel,
             struct rl_world const* world,
             struct rl_fov const* fov)
 {
@@ -154,7 +154,7 @@ draw_actors(SDL_Renderer* renderer,
 void
 rl_draw_map(SDL_Renderer* renderer,
             struct rl_font const* font,
-            SDL_Rect const* panel,
+            SDL_FRect const* panel,
             struct rl_world const* world,
             struct rl_fov const* fov)
 {

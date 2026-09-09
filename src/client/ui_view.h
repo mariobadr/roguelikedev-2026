@@ -17,18 +17,18 @@ struct rl_game_log;
 void
 rl_draw_log(SDL_Renderer* renderer,
             struct rl_font const* font,
-            SDL_Rect const* panel,
+            SDL_FRect const* panel,
             struct rl_game_log const* log);
 
 void
 rl_draw_status(SDL_Renderer* renderer,
                struct rl_font const* font,
-               SDL_Rect const* panel,
+               SDL_FRect const* panel,
                struct rl_actor const* rogue);
 
 void
 rl_draw_controls(SDL_Renderer* renderer,
                  struct rl_font const* font,
-                 SDL_Rect const* panel);
+                 SDL_FRect const* panel);
 
 #endif // GINC_ROGUELIKE_UI_VIEW_H

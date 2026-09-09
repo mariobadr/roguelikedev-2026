@@ -17,6 +17,6 @@ struct inpt_state;
 enum rl_action
 rl_translate_input(struct inpt_state const* istate,
                     SDL_Point rogue_position,
-                    SDL_Rect const* main_panel);
+                    SDL_FRect const* main_panel);
 
 #endif // GINC_ROGUELIKE_CONTROLS_H

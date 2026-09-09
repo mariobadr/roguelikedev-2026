@@ -18,33 +18,30 @@
 
 #include <SDL3/SDL_rect.h>
 
-/** The width of the entire UI. */
-#define RL_UI_WIDTH 80
-/** The height of the entire UI. */
-#define RL_UI_HEIGHT 45
+/** The width of the entire UI, in logical pixels. */
+#define RL_UI_WIDTH 480
+/** The height of the entire UI, in logical pixels. */
+#define RL_UI_HEIGHT 360
 
 struct rl_ui_layout
 {
-  SDL_Rect main_panel;
-  SDL_Rect top_panel;
-  SDL_Rect bottom_panel;
-  SDL_Rect right_panel;
-  SDL_Rect left_panel;
+  SDL_FRect main_panel;
+  SDL_FRect top_panel;
+  SDL_FRect bottom_panel;
+  SDL_FRect right_panel;
+  SDL_FRect left_panel;
 };
 
 void
 rl_init_ui_layout(struct rl_ui_layout* layout);
 
-SDL_Point
-rl_panel_to_cell(SDL_Rect const* panel, SDL_Point local);
-
 SDL_FPoint
-rl_panel_to_pixels(SDL_Rect const* panel, SDL_Point local);
+rl_panel_to_pixels(SDL_FRect const* panel, SDL_Point cell);
 
 bool
-rl_cell_to_panel(SDL_Rect const* panel, SDL_Point at, SDL_Point* local);
+rl_pixels_to_panel(SDL_FRect const* panel, SDL_FPoint at, SDL_FPoint* local);
 
 SDL_Rect
-rl_panel_clip_rect(SDL_Rect const* panel);
+rl_panel_clip_rect(SDL_FRect const* panel);
 
 #endif // GINC_ROGUELIKE_UI_H

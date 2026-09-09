@@ -17,7 +17,7 @@ struct rl_world;
 void
 rl_draw_map(SDL_Renderer* renderer,
             struct rl_font const* font,
-            SDL_Rect const* panel,
+            SDL_FRect const* panel,
             struct rl_world const* world,
             struct rl_fov const* fov);
 

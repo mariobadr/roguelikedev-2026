@@ -2,64 +2,63 @@
 
 #include "cell.h"
 
-/** The margin (in tiles) between UI panels. */
-#define RL_UI_MARGIN 1
+/** The horizontal margin between UI panels, in logical pixels. */
+#define RL_UI_MARGIN_X 6.0f
+/** The vertical margin between UI panels, in logical pixels. */
+#define RL_UI_MARGIN_Y 8.0f
 
 void
 rl_init_ui_layout(struct rl_ui_layout* layout)
 {
-  int const width = RL_UI_WIDTH;
-  int const height = RL_UI_HEIGHT;
-  int const margin = RL_UI_MARGIN;
+  float const width = (float)RL_UI_WIDTH;
+  float const height = (float)RL_UI_HEIGHT;
+  float const margin_x = RL_UI_MARGIN_X;
+  float const margin_y = RL_UI_MARGIN_Y;
 
-  layout->main_panel.x = margin;
-  layout->main_panel.y = 1 + margin;
-  layout->main_panel.w = 64;
-  layout->main_panel.h = 36;
+  layout->main_panel.x = margin_x;
+  layout->main_panel.y = margin_y * 2.0f;
+  // Must stay a whole number of cells while the map view is cell-based.
+  layout->main_panel.w = 384.0f;
+  layout->main_panel.h = 288.0f;
 
   layout->top_panel.x = layout->main_panel.x;
-  layout->top_panel.y = 0;
+  layout->top_panel.y = 0.0f;
   layout->top_panel.w = layout->main_panel.w;
-  layout->top_panel.h = layout->main_panel.y - layout->top_panel.y - margin;
+  layout->top_panel.h = layout->main_panel.y - layout->top_panel.y - margin_y;
 
   layout->bottom_panel.x = layout->main_panel.x;
-  layout->bottom_panel.y = layout->main_panel.y + layout->main_panel.h + margin;
+  layout->bottom_panel.y = layout->main_panel.y + layout->main_panel.h + margin_y;
   layout->bottom_panel.w = layout->main_panel.w;
   layout->bottom_panel.h = height - layout->bottom_panel.y;
 
-  layout->right_panel.x = layout->main_panel.x + layout->main_panel.w + margin;
-  layout->right_panel.y = 0;
+  layout->right_panel.x = layout->main_panel.x + layout->main_panel.w + margin_x;
+  layout->right_panel.y = 0.0f;
   layout->right_panel.h = height;
   layout->right_panel.w = width - layout->right_panel.x;
 
   // The current layout has no left panel.
-  layout->left_panel.x = 0;
-  layout->left_panel.y = 0;
-  layout->left_panel.w = 0;
-  layout->left_panel.h = 0;
-}
-
-SDL_Point
-rl_panel_to_cell(SDL_Rect const* panel, SDL_Point local)
-{
-  SDL_Point point = { 0 };
-  point.x = panel->x + local.x;
-  point.y = panel->y + local.y;
-
-  return point;
+  layout->left_panel.x = 0.0f;
+  layout->left_panel.y = 0.0f;
+  layout->left_panel.w = 0.0f;
+  layout->left_panel.h = 0.0f;
 }
 
 SDL_FPoint
-rl_panel_to_pixels(SDL_Rect const* panel, SDL_Point local)
+rl_panel_to_pixels(SDL_FRect const* panel, SDL_Point cell)
 {
-  SDL_Point const screen = rl_panel_to_cell(panel, local);
-  return rl_cell_point_to_pixels(&screen);
+  SDL_FPoint const offset = rl_cell_point_to_pixels(&cell);
+
+  SDL_FPoint pixels = { 0 };
+  pixels.x = panel->x + offset.x;
+  pixels.y = panel->y + offset.y;
+
+  return pixels;
 }
 
 bool
-rl_cell_to_panel(SDL_Rect const* panel, SDL_Point at, SDL_Point* local)
+rl_pixels_to_panel(SDL_FRect const* panel, SDL_FPoint at, SDL_FPoint* local)
 {
-  if (!SDL_PointInRect(&at, panel)) {
+  if (!SDL_PointInRectFloat(&at, panel)) {
     return false;
   }
 
@@ -70,8 +69,7 @@ rl_cell_to_panel(SDL_Rect const* panel, SDL_Point at, SDL_Point* local)
 }
 
 SDL_Rect
-rl_panel_clip_rect(SDL_Rect const* panel)
+rl_panel_clip_rect(SDL_FRect const* panel)
 {
-  SDL_FRect const px = rl_cell_rect_to_pixels(panel);
-  return (SDL_Rect){ (int)px.x, (int)px.y, (int)px.w, (int)px.h };
+  return (SDL_Rect){ (int)panel->x, (int)panel->y, (int)panel->w, (int)panel->h };
 }
