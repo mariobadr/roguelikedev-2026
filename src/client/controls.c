@@ -2,7 +2,6 @@
 
 #include "cell.h"
 #include "input/input.h"
-#include "ui.h"
 
 /**
  * @return -1 for negative, 1 for positive, and 0 for zero
@@ -52,7 +51,9 @@ handle_keyboard_input(struct inpt_state const* istate)
  * @return the action based on mouse state
  */
 static enum rl_action
-handle_mouse_input(struct inpt_state const* istate, SDL_Point rogue)
+handle_mouse_input(struct inpt_state const* istate,
+                    SDL_Point rogue,
+                    SDL_Rect const* main_panel)
 {
   if (!inpt_is_down(istate->mouse.buttons[SDL_BUTTON_LEFT])) {
     return RL_ACTION_NONE;
@@ -61,8 +62,12 @@ handle_mouse_input(struct inpt_state const* istate, SDL_Point rogue)
   int const col = (int)SDL_floorf(istate->mouse.position.x / rl_cell_width());
   int const row = (int)SDL_floorf(istate->mouse.position.y / rl_cell_height());
 
-  int const target_x = col - RL_UI_MAP_X;
-  int const target_y = row - RL_UI_MAP_Y;
+  if (!SDL_PointInRect(&(SDL_Point){ col, row }, main_panel)) {
+    return RL_ACTION_NONE;
+  }
+
+  int const target_x = col - main_panel->x;
+  int const target_y = row - main_panel->y;
 
   int const delta_x = target_x - rogue.x;
   int const delta_y = target_y - rogue.y;
@@ -87,7 +92,9 @@ handle_mouse_input(struct inpt_state const* istate, SDL_Point rogue)
 }
 
 enum rl_action
-rl_translate_input(struct inpt_state const* istate, SDL_Point rogue_position)
+rl_translate_input(struct inpt_state const* istate,
+                    SDL_Point rogue_position,
+                    SDL_Rect const* main_panel)
 {
   // prioritize keyboard input over mouse input (?)
   enum rl_action const action = handle_keyboard_input(istate);
@@ -95,5 +102,5 @@ rl_translate_input(struct inpt_state const* istate, SDL_Point rogue_position)
     return action;
   }
 
-  return handle_mouse_input(istate, rogue_position);
+  return handle_mouse_input(istate, rogue_position, main_panel);
 }

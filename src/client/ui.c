@@ -1,0 +1,48 @@
+#include "ui.h"
+
+/** The margin (in tiles) between UI panels. */
+#define RL_UI_MARGIN 1
+
+void
+rl_init_ui_layout(struct rl_ui_layout* layout)
+{
+  int const width = RL_UI_WIDTH;
+  int const height = RL_UI_HEIGHT;
+  int const margin = RL_UI_MARGIN;
+
+  layout->main_panel.x = margin;
+  layout->main_panel.y = 1 + margin;
+  layout->main_panel.w = 64;
+  layout->main_panel.h = 36;
+
+  layout->top_panel.x = layout->main_panel.x;
+  layout->top_panel.y = 0;
+  layout->top_panel.w = layout->main_panel.w;
+  layout->top_panel.h = layout->main_panel.y - layout->top_panel.y - margin;
+
+  layout->bottom_panel.x = layout->main_panel.x;
+  layout->bottom_panel.y = layout->main_panel.y + layout->main_panel.h + margin;
+  layout->bottom_panel.w = layout->main_panel.w;
+  layout->bottom_panel.h = height - layout->bottom_panel.y;
+
+  layout->right_panel.x = layout->main_panel.x + layout->main_panel.w + margin;
+  layout->right_panel.y = 0;
+  layout->right_panel.h = height;
+  layout->right_panel.w = width - layout->right_panel.x;
+
+  // The current layout has no left panel.
+  layout->left_panel.x = 0;
+  layout->left_panel.y = 0;
+  layout->left_panel.w = 0;
+  layout->left_panel.h = 0;
+}
+
+SDL_Point
+rl_translate_ui_position(SDL_Rect const* panel, int col, int row)
+{
+  SDL_Point point = { 0 };
+  point.x = panel->x + col;
+  point.y = panel->y + row;
+
+  return point;
+}

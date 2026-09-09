@@ -19,8 +19,11 @@ rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
   inpt_init_state(&client->istate);
   client->action_cooldown = 0.0f;
 
-  if (!rl_alloc_game_state(
-        &client->game_state, RL_UI_MAP_WIDTH, RL_UI_MAP_HEIGHT)) {
+  rl_init_ui_layout(&client->layout);
+
+  if (!rl_alloc_game_state(&client->game_state,
+                            client->layout.main_panel.w,
+                            client->layout.main_panel.h)) {
     rl_free_client(client);
     return false;
   }
@@ -55,8 +58,8 @@ rl_update_client(struct rl_client* client, float dt)
 
   struct rl_actor const* rogue =
     rl_get_actor(&client->game_state.world, RL_ROGUE_ID);
-  enum rl_action const action =
-    rl_translate_input(&client->istate, rogue->pos);
+  enum rl_action const action = rl_translate_input(
+    &client->istate, rogue->pos, &client->layout.main_panel);
   if (action == RL_ACTION_NONE) {
     return;
   }

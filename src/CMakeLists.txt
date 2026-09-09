@@ -22,6 +22,7 @@ set(GAME_SOURCES
     client/render.c
     client/render.h
     client/text.h
+    client/ui.c
     client/ui.h
     client/view.c
     client/view.h

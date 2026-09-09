@@ -7,7 +7,7 @@
  * │          top panel           │               │
  * ├──────────────────────────────┤               │
  * │                              │  right panel  │
- * │             map              │               │
+ * │            main              │               │
  * │                              │               │
  * ├──────────────────────────────┤               │
  * │         bottom panel         │               │
@@ -16,47 +16,26 @@
 #ifndef GINC_ROGUELIKE_UI_H
 #define GINC_ROGUELIKE_UI_H
 
+#include <SDL3/SDL_rect.h>
+
 /** The width of the entire UI. */
 #define RL_UI_WIDTH 80
 /** The height of the entire UI. */
 #define RL_UI_HEIGHT 45
 
-/** The margin (in tiles) between UI panels. */
-#define RL_UI_MARGIN 1
+struct rl_ui_layout
+{
+  SDL_Rect main_panel;
+  SDL_Rect top_panel;
+  SDL_Rect bottom_panel;
+  SDL_Rect right_panel;
+  SDL_Rect left_panel;
+};
 
-/** The starting x-coordinate of the right panel. */
-#define RL_UI_RPANEL_X (RL_UI_MAP_X + RL_UI_MAP_WIDTH + RL_UI_MARGIN)
-/** The starting y-coordinate of the right panel. */
-#define RL_UI_RPANEL_Y 0
-/** The width of the right panel. */
-#define RL_UI_RPANEL_WIDTH 15
+void
+rl_init_ui_layout(struct rl_ui_layout* layout);
 
-/** The starting x-coordinate of the top panel. */
-#define RL_UI_TPANEL_X 0
-/** The starting y-coordinate of the top panel. */
-#define RL_UI_TPANEL_Y 0
-/** The width of the top panel. */
-#define RL_UI_TPANEL_WIDTH (RL_UI_MAP_WIDTH)
-/** The height of the top panel. */
-#define RL_UI_TPANEL_HEIGHT 1
-
-/** The starting x-coordinate of the bottom panel. */
-#define RL_UI_BPANEL_X 0
-/** The starting y-coordinate of the bottom panel. */
-#define RL_UI_BPANEL_Y (RL_UI_MAP_Y + RL_UI_MAP_HEIGHT + RL_UI_MARGIN)
-/** The width of the bottom panel. */
-#define RL_UI_BPANEL_WIDTH (RL_UI_MAP_WIDTH)
-/** The height of the bottom panel. */
-#define RL_UI_BPANEL_HEIGHT 7
-
-/** The starting x-coordinate of the map. */
-#define RL_UI_MAP_X 0
-/** The starting y-coordinate of the map. */
-#define RL_UI_MAP_Y (RL_UI_TPANEL_HEIGHT + RL_UI_MARGIN)
-/** The width of the map view. */
-#define RL_UI_MAP_WIDTH (RL_UI_WIDTH - RL_UI_RPANEL_WIDTH - RL_UI_MARGIN)
-/** The height of the map view. */
-#define RL_UI_MAP_HEIGHT                                                       \
-  (RL_UI_HEIGHT - RL_UI_TPANEL_HEIGHT - RL_UI_BPANEL_HEIGHT - 2 * RL_UI_MARGIN)
+SDL_Point
+rl_translate_ui_position(SDL_Rect const* panel, int col, int row);
 
 #endif // GINC_ROGUELIKE_UI_H

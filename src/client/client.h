@@ -11,6 +11,7 @@
 
 #include "client/font.h"
 #include "client/game_log.h"
+#include "client/ui.h"
 #include "input/input.h"
 
 // external forward declarations
@@ -27,6 +28,8 @@ struct rl_client
   /** Game state. */
   struct rl_game_state game_state;
   struct rl_game_log log;
+  /** The layout of the screen. */
+  struct rl_ui_layout layout;
 };
 
 bool
