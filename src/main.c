@@ -10,11 +10,11 @@
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 
-#include "input/input.h"
-#include "input/input_event.h"
 #include "client/cell.h"
 #include "client/client.h"
 #include "client/ui.h"
+#include "input/input.h"
+#include "input/input_event.h"
 
 struct application
 {
@@ -95,8 +95,8 @@ create_renderer(SDL_Window* window)
 
   if (!SDL_SetRenderLogicalPresentation(
         renderer,
-        (RL_UI_WIDTH) * rl_cell_width(),
-        (RL_UI_HEIGHT) * rl_cell_height(),
+        (RL_UI_WIDTH)*rl_cell_width(),
+        (RL_UI_HEIGHT)*rl_cell_height(),
         SDL_LOGICAL_PRESENTATION_INTEGER_SCALE)) {
     SDL_Log("SDL_SetRenderLogicalPresentation failed: %s", SDL_GetError());
     SDL_DestroyRenderer(renderer);
@@ -210,7 +210,10 @@ SDL_AppIterate(void* appstate)
   delta = SDL_min(delta, app->freq / 4);
   float const frame_dt = (float)delta / (float)app->freq;
 
-  rl_update_client(&app->client, &app->input, frame_dt);
+  if (!rl_update_client(&app->client, &app->input, frame_dt)) {
+    // the client is done, so the app is done
+    return SDL_APP_SUCCESS;
+  }
 
   rl_render_client(&app->client, app->renderer);
   SDL_RenderPresent(app->renderer);
