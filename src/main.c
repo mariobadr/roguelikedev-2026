@@ -26,6 +26,9 @@ struct application
   Uint64 freq;
   Uint64 last;
 
+  /* Input state */
+  struct inpt_state input;
+
   /* Client state */
   struct rl_client client;
 };
@@ -140,6 +143,8 @@ create_application(void)
     return NULL;
   }
 
+  inpt_init_state(&app->input);
+
   app->freq = SDL_GetPerformanceFrequency();
   app->last = SDL_GetPerformanceCounter();
 
@@ -186,7 +191,7 @@ SDL_AppEvent(void* appstate, SDL_Event* event)
   }
 
   SDL_ConvertEventToRenderCoordinates(app->renderer, event);
-  inpt_handle_event(&app->client.istate, event);
+  inpt_handle_event(&app->input, event);
 
   return SDL_APP_CONTINUE;
 }
@@ -205,13 +210,13 @@ SDL_AppIterate(void* appstate)
   delta = SDL_min(delta, app->freq / 4);
   float const frame_dt = (float)delta / (float)app->freq;
 
-  rl_update_client(&app->client, frame_dt);
+  rl_update_client(&app->client, &app->input, frame_dt);
 
   rl_render_client(&app->client, app->renderer);
   SDL_RenderPresent(app->renderer);
 
   // reset transient input for next frame
-  inpt_reset_state(&app->client.istate);
+  inpt_reset_state(&app->input);
 
   return SDL_APP_CONTINUE;
 }

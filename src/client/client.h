@@ -12,15 +12,15 @@
 #include "client/font.h"
 #include "client/game_log.h"
 #include "client/ui.h"
-#include "input/input.h"
 
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
 
+// forward declarations
+struct inpt_state;
+
 struct rl_client
 {
-  /** Transient input state. */
-  struct inpt_state istate;
   /** Time before the next action fires. */
   float action_cooldown;
   /** Bitmap font used to draw everything. */
@@ -39,7 +39,9 @@ void
 rl_free_client(struct rl_client* client);
 
 void
-rl_update_client(struct rl_client* client, float dt);
+rl_update_client(struct rl_client* client,
+                  struct inpt_state const* input,
+                  float dt);
 
 void
 rl_render_client(struct rl_client const* client, SDL_Renderer* renderer);

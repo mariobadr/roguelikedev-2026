@@ -18,7 +18,6 @@ rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
     return false;
   }
 
-  inpt_init_state(&client->istate);
   client->action_cooldown = 0.0f;
 
   rl_init_ui_layout(&client->layout);
@@ -51,7 +50,9 @@ rl_free_client(struct rl_client* client)
 }
 
 void
-rl_update_client(struct rl_client* client, float dt)
+rl_update_client(struct rl_client* client,
+                  struct inpt_state const* input,
+                  float dt)
 {
   client->action_cooldown = SDL_max(0.0f, client->action_cooldown - dt);
   if (client->action_cooldown > 0.0f) {
@@ -61,7 +62,7 @@ rl_update_client(struct rl_client* client, float dt)
   struct rl_actor const* rogue =
     rl_get_actor(&client->game_state.world, RL_ROGUE_ID);
   enum rl_action const action =
-    rl_translate_input(&client->istate, rogue->pos, &client->layout.main_panel);
+    rl_translate_input(input, rogue->pos, &client->layout.main_panel);
   if (action == RL_ACTION_NONE) {
     return;
   }
