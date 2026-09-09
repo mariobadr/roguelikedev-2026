@@ -57,9 +57,7 @@ rl_panel_to_pixels(SDL_Rect const* panel, SDL_Point local)
 }
 
 bool
-rl_cell_to_panel(SDL_Rect const* panel,
-                            SDL_Point at,
-                            SDL_Point* local)
+rl_cell_to_panel(SDL_Rect const* panel, SDL_Point at, SDL_Point* local)
 {
   if (!SDL_PointInRect(&at, panel)) {
     return false;
@@ -69,4 +67,11 @@ rl_cell_to_panel(SDL_Rect const* panel,
   local->y = at.y - panel->y;
 
   return true;
+}
+
+SDL_Rect
+rl_panel_clip_rect(SDL_Rect const* panel)
+{
+  SDL_FRect const px = rl_cell_rect_to_pixels(panel);
+  return (SDL_Rect){ (int)px.x, (int)px.y, (int)px.w, (int)px.h };
 }

@@ -44,4 +44,7 @@ rl_panel_to_pixels(SDL_Rect const* panel, SDL_Point local);
 bool
 rl_cell_to_panel(SDL_Rect const* panel, SDL_Point at, SDL_Point* local);
 
+SDL_Rect
+rl_panel_clip_rect(SDL_Rect const* panel);
+
 #endif // GINC_ROGUELIKE_UI_H

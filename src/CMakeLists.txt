@@ -18,6 +18,8 @@ set(GAME_SOURCES
     client/graphics.h
     client/lighting.c
     client/lighting.h
+    client/map_view.c
+    client/map_view.h
     client/palette.h
     client/render.c
     client/render.h
@@ -26,8 +28,8 @@ set(GAME_SOURCES
     client/text.h
     client/ui.c
     client/ui.h
-    client/view.c
-    client/view.h
+    client/ui_view.c
+    client/ui_view.h
     container/alist.c
     container/alist.h
     container/array.h

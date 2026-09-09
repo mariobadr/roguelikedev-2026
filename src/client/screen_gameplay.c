@@ -7,8 +7,9 @@
 #include "action.h"
 #include "controls.h"
 #include "game_log.h"
+#include "map_view.h"
 #include "ui.h"
-#include "view.h"
+#include "ui_view.h"
 
 struct screen_state
 {
