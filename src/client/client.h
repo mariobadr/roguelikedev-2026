@@ -42,6 +42,6 @@ void
 rl_update_client(struct rl_client* client, float dt);
 
 void
-rl_render_client(struct rl_client* client, SDL_Renderer* renderer);
+rl_render_client(struct rl_client const* client, SDL_Renderer* renderer);
 
 #endif // GINC_ROGUELIKE_CLIENT_H

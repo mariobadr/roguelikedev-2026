@@ -2,12 +2,13 @@
 
 #include <SDL3/SDL_render.h>
 
-#include "game/game_state.h"
+#include "game/fov.h"
 #include "game/tile.h"
+#include "game/world.h"
 
 #include "client/cell.h"
-#include "client/client.h"
 #include "client/font.h"
+#include "client/game_log.h"
 #include "client/graphics.h"
 #include "client/lighting.h"
 #include "client/palette.h"
@@ -154,12 +155,37 @@ draw_actors(SDL_Renderer* renderer,
   }
 }
 
-static void
-draw_game_log(SDL_Renderer* renderer,
-              struct rl_font const* font,
-              SDL_Rect const* panel,
-              struct rl_game_log const* log)
+void
+rl_draw_map(SDL_Renderer* renderer,
+            struct rl_font const* font,
+            SDL_Rect const* panel,
+            struct rl_world const* world,
+            struct rl_fov const* fov)
 {
+  struct rl_level const* level = rl_get_current_level(world);
+
+  SDL_Rect const clip = panel_clip_rect(panel);
+  SDL_SetRenderClipRect(renderer, &clip);
+
+  draw_level(renderer, font, panel, level, fov);
+  draw_items(renderer, font, panel, world, fov);
+  draw_actors(renderer, font, panel, world, fov);
+  draw_light(renderer, panel, &level->map, fov);
+
+  SDL_SetRenderClipRect(renderer, NULL);
+}
+
+void
+rl_draw_log(SDL_Renderer* renderer,
+            struct rl_font const* font,
+            SDL_Rect const* panel,
+            struct rl_game_log const* log)
+{
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  SDL_Rect const clip = panel_clip_rect(panel);
+  SDL_SetRenderClipRect(renderer, &clip);
+
   int row = 0;
   int const len = (int)alist_len(&log->messages);
 
@@ -172,15 +198,20 @@ draw_game_log(SDL_Renderer* renderer,
     rl_draw_text(renderer, font, message, at.x, at.y);
     row += 1;
   }
+
+  SDL_SetRenderClipRect(renderer, NULL);
 }
 
-static void
-draw_side_panel(SDL_Renderer* renderer,
-                struct rl_font const* font,
-                SDL_Rect const* panel,
-                struct rl_game_state const* game_state)
+void
+rl_draw_status(SDL_Renderer* renderer,
+               struct rl_font const* font,
+               SDL_Rect const* panel,
+               struct rl_actor const* rogue)
 {
-  struct rl_actor const* rogue = rl_get_actor(&game_state->world, RL_ROGUE_ID);
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  SDL_Rect const clip = panel_clip_rect(panel);
+  SDL_SetRenderClipRect(renderer, &clip);
 
   char text[16];
   SDL_snprintf(text, sizeof(text), "HP: %d / %d", rogue->hp, rogue->max_hp);
@@ -188,74 +219,25 @@ draw_side_panel(SDL_Renderer* renderer,
   SDL_Point const at = rl_translate_ui_position(panel, 0, 0);
   rl_draw_string(
     renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at.x, at.y);
+
+  SDL_SetRenderClipRect(renderer, NULL);
 }
 
-static void
-draw_top_panel(SDL_Renderer* renderer,
-               struct rl_font const* font,
-               SDL_Rect const* panel)
+void
+rl_draw_controls(SDL_Renderer* renderer,
+                 struct rl_font const* font,
+                 SDL_Rect const* panel)
 {
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  SDL_Rect const clip = panel_clip_rect(panel);
+  SDL_SetRenderClipRect(renderer, &clip);
+
   char const* text = "\x18 W | \x1B A | \x19 S | \x1A D";
 
   SDL_Point const at = rl_translate_ui_position(panel, 0, 0);
   rl_draw_string(
     renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at.x, at.y);
-}
 
-static void
-draw_ui(SDL_Renderer* renderer,
-        struct rl_font const* font,
-        struct rl_client const* client)
-{
-  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-  SDL_Rect const bottom_clip = panel_clip_rect(&client->layout.bottom_panel);
-  SDL_SetRenderClipRect(renderer, &bottom_clip);
-  draw_game_log(renderer, font, &client->layout.bottom_panel, &client->log);
   SDL_SetRenderClipRect(renderer, NULL);
-
-  SDL_Rect const right_clip = panel_clip_rect(&client->layout.right_panel);
-  SDL_SetRenderClipRect(renderer, &right_clip);
-  draw_side_panel(
-    renderer, font, &client->layout.right_panel, &client->game_state);
-  SDL_SetRenderClipRect(renderer, NULL);
-
-  SDL_Rect const top_clip = panel_clip_rect(&client->layout.top_panel);
-  SDL_SetRenderClipRect(renderer, &top_clip);
-  draw_top_panel(renderer, font, &client->layout.top_panel);
-  SDL_SetRenderClipRect(renderer, NULL);
-}
-
-void
-rl_render_game(SDL_Renderer* renderer, struct rl_client* client)
-{
-  SDL_SetRenderDrawColorFloat(renderer,
-                              RL_COLOUR_GRAY[9].r,
-                              RL_COLOUR_GRAY[9].g,
-                              RL_COLOUR_GRAY[9].b,
-                              RL_COLOUR_GRAY[9].a);
-  SDL_RenderClear(renderer);
-
-  struct rl_level const* level =
-    rl_get_current_level(&client->game_state.world);
-  SDL_Rect const* main_panel = &client->layout.main_panel;
-
-  SDL_Rect const main_clip = panel_clip_rect(main_panel);
-  SDL_SetRenderClipRect(renderer, &main_clip);
-  draw_level(
-    renderer, &client->font, main_panel, level, &client->game_state.fov);
-  draw_items(renderer,
-             &client->font,
-             main_panel,
-             &client->game_state.world,
-             &client->game_state.fov);
-  draw_actors(renderer,
-              &client->font,
-              main_panel,
-              &client->game_state.world,
-              &client->game_state.fov);
-  draw_light(renderer, main_panel, &level->map, &client->game_state.fov);
-  SDL_SetRenderClipRect(renderer, NULL);
-
-  draw_ui(renderer, &client->font, client);
 }

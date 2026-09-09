@@ -2,9 +2,11 @@
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_render.h>
 
 #include "action.h"
 #include "controls.h"
+#include "palette.h"
 #include "ui.h"
 #include "view.h"
 
@@ -22,8 +24,8 @@ rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
   rl_init_ui_layout(&client->layout);
 
   if (!rl_alloc_game_state(&client->game_state,
-                            client->layout.main_panel.w,
-                            client->layout.main_panel.h)) {
+                           client->layout.main_panel.w,
+                           client->layout.main_panel.h)) {
     rl_free_client(client);
     return false;
   }
@@ -58,8 +60,8 @@ rl_update_client(struct rl_client* client, float dt)
 
   struct rl_actor const* rogue =
     rl_get_actor(&client->game_state.world, RL_ROGUE_ID);
-  enum rl_action const action = rl_translate_input(
-    &client->istate, rogue->pos, &client->layout.main_panel);
+  enum rl_action const action =
+    rl_translate_input(&client->istate, rogue->pos, &client->layout.main_panel);
   if (action == RL_ACTION_NONE) {
     return;
   }
@@ -78,7 +80,25 @@ rl_update_client(struct rl_client* client, float dt)
 }
 
 void
-rl_render_client(struct rl_client* client, SDL_Renderer* renderer)
+rl_render_client(struct rl_client const* client, SDL_Renderer* renderer)
 {
-  rl_render_game(renderer, client);
+  SDL_SetRenderDrawColorFloat(renderer,
+                              RL_COLOUR_GRAY[9].r,
+                              RL_COLOUR_GRAY[9].g,
+                              RL_COLOUR_GRAY[9].b,
+                              RL_COLOUR_GRAY[9].a);
+  SDL_RenderClear(renderer);
+
+  struct rl_actor const* rogue =
+    rl_get_actor(&client->game_state.world, RL_ROGUE_ID);
+
+  rl_draw_map(renderer,
+              &client->font,
+              &client->layout.main_panel,
+              &client->game_state.world,
+              &client->game_state.fov);
+  rl_draw_log(
+    renderer, &client->font, &client->layout.bottom_panel, &client->log);
+  rl_draw_status(renderer, &client->font, &client->layout.right_panel, rogue);
+  rl_draw_controls(renderer, &client->font, &client->layout.top_panel);
 }
