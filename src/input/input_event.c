@@ -41,6 +41,9 @@ handle_mouse_button_event(struct inpt_state* istate,
                           SDL_MouseButtonEvent const* event)
 {
   inpt_set_button(&istate->mouse.buttons[event->button], event->down);
+
+  istate->mouse.position.x = event->x;
+  istate->mouse.position.y = event->y;
 }
 
 bool
