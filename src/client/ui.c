@@ -38,11 +38,26 @@ rl_init_ui_layout(struct rl_ui_layout* layout)
 }
 
 SDL_Point
-rl_translate_ui_position(SDL_Rect const* panel, int col, int row)
+rl_panel_to_screen(SDL_Rect const* panel, SDL_Point local)
 {
   SDL_Point point = { 0 };
-  point.x = panel->x + col;
-  point.y = panel->y + row;
+  point.x = panel->x + local.x;
+  point.y = panel->y + local.y;
 
   return point;
+}
+
+bool
+rl_screen_to_panel(SDL_Rect const* panel,
+                            SDL_Point at,
+                            SDL_Point* local)
+{
+  if (!SDL_PointInRect(&at, panel)) {
+    return false;
+  }
+
+  local->x = at.x - panel->x;
+  local->y = at.y - panel->y;
+
+  return true;
 }

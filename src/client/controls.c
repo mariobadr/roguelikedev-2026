@@ -2,6 +2,7 @@
 
 #include "cell.h"
 #include "input/input.h"
+#include "ui.h"
 
 /**
  * @return -1 for negative, 1 for positive, and 0 for zero
@@ -59,18 +60,15 @@ handle_mouse_input(struct inpt_state const* istate,
     return RL_ACTION_NONE;
   }
 
-  int const col = (int)SDL_floorf(istate->mouse.position.x / rl_cell_width());
-  int const row = (int)SDL_floorf(istate->mouse.position.y / rl_cell_height());
+  SDL_Point const at = rl_cell_point_from_pixels(&istate->mouse.position);
 
-  if (!SDL_PointInRect(&(SDL_Point){ col, row }, main_panel)) {
+  SDL_Point target = { 0 };
+  if (!rl_screen_to_panel(main_panel, at, &target)) {
     return RL_ACTION_NONE;
   }
 
-  int const target_x = col - main_panel->x;
-  int const target_y = row - main_panel->y;
-
-  int const delta_x = target_x - rogue.x;
-  int const delta_y = target_y - rogue.y;
+  int const delta_x = target.x - rogue.x;
+  int const delta_y = target.y - rogue.y;
 
   if (delta_x == 0 && delta_y == 0) {
     // already at target

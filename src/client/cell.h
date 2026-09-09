@@ -25,6 +25,12 @@ SDL_FPoint
 rl_cell_point_to_pixels(SDL_Point const* point);
 
 /**
+ * @return the cell containing the given position in logical pixels.
+ */
+SDL_Point
+rl_cell_point_from_pixels(SDL_FPoint const* pixels);
+
+/**
  * @return the rectangle in logical pixels.
  */
 SDL_FRect
