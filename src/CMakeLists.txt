@@ -69,6 +69,11 @@ set(GAME_SOURCES
     procgen/layout.h
     procgen/rand.c
     procgen/rand.h
+    ui/anchor.c
+    ui/anchor.h
+    ui/layout.c
+    ui/layout.h
+    ui/rectcut.h
     main.c
 )
 
