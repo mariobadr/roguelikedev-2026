@@ -203,7 +203,10 @@ view_is_focusable(enum view_id view)
     case VIEW_CONTROLS:
     case VIEW_STATUS:
       return false;
+    default:
+      break;
   }
+
   return false;
 }
 
@@ -306,6 +309,8 @@ handle_action(struct screen_state* s, enum rl_action action)
       break;
     case VIEW_CONTROLS:
       break;
+    default:
+      break;
   }
 
   if (handled) {
@@ -375,6 +380,8 @@ render_screen(void const* data, SDL_Renderer* renderer)
         break;
       case VIEW_CONTROLS:
         rl_draw_ribbon(&s->ribbon, renderer, s->font);
+        break;
+      default:
         break;
     }
   }
