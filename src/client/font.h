@@ -36,4 +36,10 @@ rl_load_font(struct rl_font* font, SDL_Renderer* renderer);
 void
 rl_unload_font(struct rl_font* font);
 
+/**
+ * @return the width a string with glyph_count needs, in pixels.
+ */
+float
+rl_font_width(struct rl_font const* font, size_t glyph_count);
+
 #endif // GINC_ROGUELIKE_FONT_H

@@ -106,3 +106,10 @@ rl_unload_font(struct rl_font* font)
 
   SDL_DestroyTexture(font->texture);
 }
+
+float
+rl_font_width(struct rl_font const* font, size_t glyph_count)
+{
+  return (float)glyph_count * font->glyph_width;
+}
+
