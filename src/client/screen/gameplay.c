@@ -238,6 +238,20 @@ toggle_inventory(struct screen_state* s)
 }
 
 static bool
+submit_command(struct screen_state* s, struct rl_command const* cmd)
+{
+  bool const handled = rl_update_game_state(&s->game_state, cmd);
+
+  // Consume this update's events exactly once, after submitting a command.
+  for (int i = 0; i < alist_len(&s->game_state.events); i++) {
+    struct rl_event const* event = alist_at(&s->game_state.events, i);
+    rl_log_event(&s->log, event, &s->game_state.world);
+  }
+
+  return handled;
+}
+
+static bool
 handle_inv_action(struct screen_state* s, enum rl_action action)
 {
   switch (action) {
@@ -247,6 +261,25 @@ handle_inv_action(struct screen_state* s, enum rl_action action)
     case RL_ACTION_MOVE_DOWN:
       rl_select_inv_view_down(&s->inv_view, &s->game_state.world);
       return true;
+    case RL_ACTION_SELECT: {
+      int const item_id =
+        rl_inv_view_selected_item(&s->inv_view, &s->game_state.world);
+      if (item_id < 0) {
+        return false;
+      }
+
+      struct rl_command const cmd = {
+        .actor = RL_ROGUE_ID,
+        .type = RL_COMMAND_USE_ITEM,
+        .target = item_id,
+      };
+      bool const handled = submit_command(s, &cmd);
+
+      // Keep selection in bounds after consuming an item.
+      rl_select_inv_view_to(
+        &s->inv_view, &s->game_state.world, s->inv_view.selected);
+      return handled;
+    }
     default:
       break;
   }
@@ -279,15 +312,7 @@ handle_map_action(struct screen_state* s, enum rl_action action)
   }
   struct rl_command cmd =
     rl_build_command(RL_ROGUE_ID, action, &s->game_state.world);
-  bool const handled = rl_update_game_state(&s->game_state, &cmd);
-
-  // Consume this update's events exactly once, after submitting a command.
-  for (int i = 0; i < alist_len(&s->game_state.events); i++) {
-    struct rl_event const* event = alist_at(&s->game_state.events, i);
-    rl_log_event(&s->log, event, &s->game_state.world);
-  }
-
-  return handled;
+  return submit_command(s, &cmd);
 }
 
 static void

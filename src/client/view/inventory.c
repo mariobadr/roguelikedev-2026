@@ -118,6 +118,28 @@ rl_select_inv_view_to(struct rl_inv_view* view,
   }
 }
 
+int
+rl_inv_view_selected_item(struct rl_inv_view const* view,
+                          struct rl_world const* world)
+{
+  int index = 0;
+
+  for (int id = 0; id < alist_len(&world->items); ++id) {
+    struct rl_item const* item = rl_get_item(world, id);
+    if (item->ltype != RL_ITEM_LOCATION_HELD || item->on.actor != RL_ROGUE_ID) {
+      continue;
+    }
+
+    if (index == view->selected) {
+      return item->id;
+    }
+
+    ++index;
+  }
+
+  return -1;
+}
+
 void
 rl_inv_view_ribbon(struct rl_inv_view const* view, struct rl_ribbon* ribbon)
 {

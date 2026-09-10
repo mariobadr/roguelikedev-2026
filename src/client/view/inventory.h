@@ -49,6 +49,11 @@ rl_select_inv_view_to(struct rl_inv_view* view,
 void
 rl_inv_view_ribbon(struct rl_inv_view const* view, struct rl_ribbon* ribbon);
 
+/** Return the selected item ID, or -1 if no item is selected. */
+int
+rl_inv_view_selected_item(struct rl_inv_view const* view,
+                          struct rl_world const* world);
+
 void
 rl_draw_inv_view(struct rl_inv_view const* view,
                  SDL_Renderer* renderer,
