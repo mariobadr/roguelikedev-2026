@@ -226,7 +226,7 @@ rl_map_view_ribbon(struct rl_map_view const* view, struct rl_ribbon* ribbon)
   rl_set_current_mode(ribbon, "Moving");
 
   struct rl_text msg = { 0 };
-  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD]   ");
+  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E]   ");
   rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
 }
 

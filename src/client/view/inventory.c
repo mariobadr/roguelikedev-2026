@@ -127,7 +127,7 @@ rl_inv_view_ribbon(struct rl_inv_view const* view, struct rl_ribbon* ribbon)
   rl_set_current_mode(ribbon, "Selecting");
 
   struct rl_text msg = { 0 };
-  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WSQE]   ");
+  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WS, E]   ");
   rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
 }
 
