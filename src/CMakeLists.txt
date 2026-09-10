@@ -80,6 +80,8 @@ set(GAME_SOURCES
     ui/anchor.h
     ui/layout.c
     ui/layout.h
+    ui/list.c
+    ui/list.h
     ui/rectcut.h
     main.c
 )

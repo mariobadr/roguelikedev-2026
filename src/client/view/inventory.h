@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "ui/list.h"
+
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
 
@@ -17,13 +19,9 @@ struct rl_world;
 
 struct rl_inv_view
 {
-  /** First visible item in the filtered inventory. */
-  int first;
+  struct ui_list list;
   /** Selected item in the filtered inventory. */
   int selected;
-  SDL_FRect viewport;
-  float line_height;
-  int slot_count;
   SDL_FRect slots[8]; // temporary; these are the rects where we draw the text
 };
 

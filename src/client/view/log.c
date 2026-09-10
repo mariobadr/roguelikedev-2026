@@ -1,9 +1,6 @@
 #include "log.h"
 
-#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_render.h>
-
-#include "ui/layout.h"
 
 #include "client/view/ribbon.h"
 
@@ -13,21 +10,14 @@
 #include "client/ui.h"
 
 static int
-last_first(struct rl_log_view const* view, struct rl_game_log const* log)
-{
-  int const len = (int)alist_len(&log->messages);
-  return SDL_max(0, len - view->slot_count);
-}
-
-static int
 current_first(struct rl_log_view const* view, struct rl_game_log const* log)
 {
-  int const last = last_first(view, log);
+  int const count = (int)alist_len(&log->messages);
 
   if (view->follow_tail)
-    return last;
+    return ui_list_max_offset(&view->list, count);
 
-  return SDL_clamp(view->first, 0, last);
+  return ui_list_offset(&view->list, count);
 }
 
 void
@@ -35,32 +25,19 @@ rl_init_log_view(struct rl_log_view* view,
                  SDL_FRect const* viewport,
                  float line_height)
 {
-  SDL_assert(line_height > 0);
-
-  view->first = 0;
   view->follow_tail = true;
-  view->line_height = line_height;
-  rl_resize_log_view(view, viewport);
+  ui_list_init(&view->list,
+               viewport,
+               view->slots,
+               SDL_arraysize(view->slots),
+               line_height,
+               2.0f);
 }
 
 void
 rl_resize_log_view(struct rl_log_view* view, SDL_FRect const* viewport)
 {
-  view->viewport = *viewport;
-
-  struct ui_strip strip = { 0 };
-  strip.item_width = viewport->w;
-  strip.item_height = view->line_height;
-  strip.gap = 2.0f;
-
-  float const capacity =
-    SDL_floorf((viewport->h + strip.gap) / (strip.item_height + strip.gap));
-
-  view->slot_count = (int)SDL_min(capacity, SDL_arraysize(view->slots));
-  strip.count = view->slot_count;
-
-  struct ui_position const pos = { .anchor = UI_ANCHOR_TOP_LEFT };
-  ui_layout_column(pos, viewport, strip, view->slots);
+  ui_list_resize(&view->list, viewport);
 }
 
 void
@@ -80,10 +57,11 @@ rl_scroll_log_view_to(struct rl_log_view* view,
                       struct rl_game_log const* log,
                       int first)
 {
-  int const last = last_first(view, log);
+  int const count = (int)alist_len(&log->messages);
 
-  view->first = SDL_clamp(first, 0, last);
-  view->follow_tail = view->first == last;
+  ui_list_scroll_to(&view->list, count, first);
+  view->follow_tail =
+    ui_list_offset(&view->list, count) == ui_list_max_offset(&view->list, count);
 }
 
 void
@@ -107,7 +85,7 @@ rl_draw_log_view(struct rl_log_view const* view,
 {
   int const len = (int)alist_len(&log->messages);
   int const first = current_first(view, log);
-  int const count = SDL_min(view->slot_count, len - first);
+  int const count = SDL_min(view->list.slot_count, len - first);
 
   for (int row = 0; row < count; ++row) {
     struct rl_text const* message = alist_at(&log->messages, first + row);

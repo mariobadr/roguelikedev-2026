@@ -1,11 +1,8 @@
 #include "inventory.h"
 
-#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_render.h>
 
 #include "game/world.h"
-
-#include "ui/layout.h"
 
 #include "client/view/ribbon.h"
 
@@ -26,14 +23,6 @@ held_item_count(struct rl_world const* world)
   return len;
 }
 
-static int
-current_first(struct rl_inv_view const* view, struct rl_world const* world)
-{
-  int const last = SDL_max(0, held_item_count(world) - view->slot_count);
-
-  return SDL_clamp(view->first, 0, last);
-}
-
 static struct rl_text
 item_text(struct rl_item const* item, bool selected)
 {
@@ -51,33 +40,19 @@ rl_init_inv_view(struct rl_inv_view* view,
                  SDL_FRect const* viewport,
                  float line_height)
 {
-  SDL_assert(line_height > 0);
-
-  view->first = 0;
   view->selected = 0;
-  view->line_height = line_height;
-
-  rl_resize_inv_view(view, viewport);
+  ui_list_init(&view->list,
+               viewport,
+               view->slots,
+               SDL_arraysize(view->slots),
+               line_height,
+               2.0f);
 }
 
 void
 rl_resize_inv_view(struct rl_inv_view* view, SDL_FRect const* viewport)
 {
-  view->viewport = *viewport;
-
-  struct ui_strip strip = { 0 };
-  strip.item_width = viewport->w;
-  strip.item_height = view->line_height;
-  strip.gap = 2.0f;
-
-  float const capacity =
-    SDL_floorf((viewport->h + strip.gap) / (strip.item_height + strip.gap));
-
-  view->slot_count = (int)SDL_min(capacity, SDL_arraysize(view->slots));
-  strip.count = view->slot_count;
-
-  struct ui_position const pos = { .anchor = UI_ANCHOR_TOP_LEFT };
-  ui_layout_column(pos, viewport, strip, view->slots);
+  ui_list_resize(&view->list, viewport);
 }
 
 void
@@ -102,20 +77,8 @@ rl_select_inv_view_to(struct rl_inv_view* view,
                       int selected)
 {
   int const count = held_item_count(world);
-  if (count == 0) {
-    view->selected = 0;
-    view->first = 0;
-    return;
-  }
-
-  view->selected = SDL_clamp(selected, 0, count - 1);
-  view->first = SDL_clamp(view->first, 0, SDL_max(0, count - view->slot_count));
-  if (view->selected < view->first) {
-    view->first = view->selected;
-  } else if (view->slot_count > 0 &&
-             view->selected >= view->first + view->slot_count) {
-    view->first = view->selected - view->slot_count + 1;
-  }
+  view->selected = SDL_clamp(selected, 0, SDL_max(0, count - 1));
+  ui_list_ensure_visible(&view->list, count, view->selected);
 }
 
 int
@@ -160,11 +123,11 @@ rl_draw_inv_view(struct rl_inv_view const* view,
                  struct rl_world const* world)
 {
   int const len = (int)alist_len(&world->items);
-  int const first = current_first(view, world);
+  int const first = ui_list_offset(&view->list, held_item_count(world));
   int skipped = 0;
   int row = 0;
 
-  for (int id = 0; id < len && row < view->slot_count; ++id) {
+  for (int id = 0; id < len && row < view->list.slot_count; ++id) {
     struct rl_item const* item = rl_get_item(world, id);
     if (item->ltype != RL_ITEM_LOCATION_HELD || item->on.actor != RL_ROGUE_ID) {
       continue;

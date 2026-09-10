@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "ui/list.h"
+
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
 
@@ -17,13 +19,9 @@ struct rl_ribbon;
 
 struct rl_log_view
 {
-  /** First visible message when not following the tail. */
-  int first;
+  struct ui_list list;
   /** Keep the latest messages visible. */
   bool follow_tail;
-  SDL_FRect viewport;
-  float line_height;
-  int slot_count;
   SDL_FRect slots[8]; // temporary; these are the rects where we draw the text
 };
 
