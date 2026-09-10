@@ -7,11 +7,6 @@
 #include "game/command.h"
 
 /**
- * How long between subsequent actions.
- */
-#define ACTION_GLOBAL_COOLDOWN (0.115f)
-
-/**
  * The actions a player can perform
  */
 enum rl_action
@@ -21,7 +16,8 @@ enum rl_action
   RL_ACTION_MOVE_DOWN,
   RL_ACTION_MOVE_LEFT,
   RL_ACTION_MOVE_RIGHT,
-  RL_ACTION_INTERACT,
+  RL_ACTION_SELECT,
+  RL_ACTION_FOCUS_NEXT,
   RL_ACTION_DEBUG_USE_ITEM,
 };
 

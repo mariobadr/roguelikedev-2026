@@ -12,12 +12,12 @@
 struct inpt_state;
 struct rl_map_view;
 
-/**
- * Translate the current input state into a game action.
- */
 enum rl_action
-rl_translate_input(struct inpt_state const* istate,
-                   SDL_Point rogue_position,
-                   struct rl_map_view const* map_view);
+rl_handle_keyboard_input(struct inpt_state const* istate);
+
+enum rl_action
+rl_handle_mouse_input(struct inpt_state const* istate,
+                      SDL_Point rogue,
+                      struct rl_map_view const* map_view);
 
 #endif // GINC_ROGUELIKE_CONTROLS_H

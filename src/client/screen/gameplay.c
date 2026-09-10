@@ -18,20 +18,39 @@
 #define RL_UI_MARGIN_X 4.0f
 /** The vertical margin between UI panels, in logical pixels. */
 #define RL_UI_MARGIN_Y 4.0f
+/** How long between subsequent keys. */
+#define KEY_REPEAT_COOLDOWN (0.115f)
 
-struct rl_ui_layout
+// I'm not sure if this stays in screen
+enum view_id
 {
-  SDL_FRect map_panel;
-  SDL_FRect top_panel;
-  SDL_FRect bottom_panel;
-  SDL_FRect right_panel;
+  VIEW_MAP,
+  VIEW_LOG,
+  // VIEW_INVENTORY,
+  VIEW_CONTROLS,
+  VIEW_STATUS,
+  VIEW_COUNT,
+};
+
+// I think this stays in screen
+enum panel_id
+{
+  PANEL_MAIN,
+  PANEL_TOP,
+  PANEL_BOTTOM,
+  PANEL_RIGHT,
+  PANEL_COUNT
 };
 
 struct screen_state
 {
   struct rl_font const* font;
-  /** Time before the next action fires. */
-  float action_cooldown;
+  float repeat_cooldown;
+
+  // UI state
+  SDL_FRect panel_bounds[PANEL_COUNT];
+  enum view_id panel_views[PANEL_COUNT];
+  enum panel_id focused_panel;
 
   // Game state
   struct rl_game_state game_state;
@@ -40,7 +59,6 @@ struct screen_state
   struct rl_game_log log;
 
   // View state
-  struct rl_ui_layout layout;
   struct rl_map_view map_view;
 };
 
@@ -57,35 +75,40 @@ struct screen_state
  * │         bottom panel         │               │
  * └──────────────────────────────┴───────────────┘
  */
-static struct rl_ui_layout
-create_layout(void)
+static void
+create_layout(SDL_FRect panels[PANEL_COUNT])
 {
-  struct rl_ui_layout layout = { 0 };
   SDL_FRect screen = { 0.0f, 0.0f, (float)RL_UI_WIDTH, (float)RL_UI_HEIGHT };
 
   ui_cut_left(&screen, RL_UI_MARGIN_X);
   SDL_FRect left = ui_cut_left(&screen, 384.0f);
   ui_cut_left(&screen, RL_UI_MARGIN_X);
-  layout.right_panel = screen;
+  panels[PANEL_RIGHT] = screen;
 
   // One line of text.
-  layout.top_panel = ui_cut_top(&left, 8.0f);
+  panels[PANEL_TOP] = ui_cut_top(&left, 8.0f);
   ui_cut_top(&left, RL_UI_MARGIN_Y);
   // Must stay a whole number of cells (see rl_draw_map).
-  layout.map_panel = ui_cut_top(&left, 288.0f);
+  panels[PANEL_MAIN] = ui_cut_top(&left, 288.0f);
   ui_cut_top(&left, RL_UI_MARGIN_Y);
-  layout.bottom_panel = left;
-
-  return layout;
+  panels[PANEL_BOTTOM] = left;
 }
 
 static bool
 alloc_screen(struct screen_state* s, struct rl_font const* font)
 {
-  s->layout = create_layout();
+  // the layout is fixed
+  create_layout(s->panel_bounds);
 
+  // this is the initial mapping
+  s->panel_views[PANEL_MAIN] = VIEW_MAP;
+  s->panel_views[PANEL_TOP] = VIEW_CONTROLS;
+  s->panel_views[PANEL_BOTTOM] = VIEW_LOG;
+  s->panel_views[PANEL_RIGHT] = VIEW_STATUS;
+
+  // the map is only designed to work in the main panel right now
   rl_init_map_view(
-    &s->map_view, &s->layout.map_panel, font->glyph_width, font->glyph_height);
+    &s->map_view, &s->panel_bounds[PANEL_MAIN], font->glyph_width, font->glyph_height);
 
   int width, height;
   rl_map_view_size(&s->map_view, &width, &height);
@@ -99,7 +122,8 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
     return false;
   }
 
-  s->action_cooldown = 0.0f;
+  s->focused_panel = PANEL_MAIN;
+  s->repeat_cooldown = 0.0f;
   s->font = font;
 
   return true;
@@ -130,6 +154,47 @@ exit_screen(void* data)
   (void)data;
 }
 
+static bool 
+handle_map_action(struct screen_state* s, enum rl_action action)
+{
+  if (action == RL_ACTION_NONE) {
+    return false;
+  }
+  struct rl_command cmd =
+    rl_build_command(RL_ROGUE_ID, action, &s->game_state.world);
+  bool const handled = rl_update_game_state(&s->game_state, &cmd);
+
+  // Consume this update's events exactly once, after submitting a command.
+  for (int i = 0; i < alist_len(&s->game_state.events); i++) {
+    struct rl_event const* event = alist_at(&s->game_state.events, i);
+    rl_log_event(&s->log, event, &s->game_state.world);
+  }
+
+  return handled;
+}
+
+static void
+handle_action(struct screen_state* s, enum rl_action action)
+{
+  bool handled = false;
+
+  switch (s->panel_views[s->focused_panel]) {
+    case VIEW_MAP:
+      handled = handle_map_action(s, action);
+      break;
+    case VIEW_LOG:
+      break;
+    case VIEW_STATUS:
+      break;
+    case VIEW_CONTROLS:
+      break;
+  }
+
+  if (handled) {
+    s->repeat_cooldown = KEY_REPEAT_COOLDOWN;
+  }
+}
+
 static struct rl_screen_transition
 update_screen(void* data, struct inpt_state const* istate, float dt)
 {
@@ -137,30 +202,25 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   struct screen_state* s = (struct screen_state*)data;
   SDL_assert(s != NULL);
 
-  s->action_cooldown = SDL_max(0.0f, s->action_cooldown - dt);
-  if (s->action_cooldown > 0.0f) {
+  s->repeat_cooldown = SDL_max(0.0f, s->repeat_cooldown - dt);
+  if (s->repeat_cooldown > 0.0f) {
     return transition;
   }
 
-  struct rl_actor const* rogue =
-    rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
-  enum rl_action const action =
-    rl_translate_input(istate, rogue->pos, &s->map_view);
-  if (action == RL_ACTION_NONE) {
+  enum rl_action action = rl_handle_keyboard_input(istate);
+  if (action == RL_ACTION_FOCUS_NEXT) {
+    s->focused_panel = (enum panel_id)((s->focused_panel + 1) % PANEL_COUNT);
     return transition;
   }
 
-  struct rl_command cmd =
-    rl_build_command(RL_ROGUE_ID, action, &s->game_state.world);
-  if (rl_update_game_state(&s->game_state, &cmd)) {
-    s->action_cooldown = ACTION_GLOBAL_COOLDOWN;
+  enum view_id const view = s->panel_views[s->focused_panel];
+  if (action == RL_ACTION_NONE && view == VIEW_MAP) {
+    struct rl_actor const* rogue =
+      rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
+    action = rl_handle_mouse_input(istate, rogue->pos, &s->map_view);
   }
 
-  // Consume this update's events exactly once, after submitting a command.
-  for (int i = 0; i < alist_len(&s->game_state.events); i++) {
-    struct rl_event const* event = alist_at(&s->game_state.events, i);
-    rl_log_event(&s->log, event, &s->game_state.world);
-  }
+  handle_action(s, action);
 
   return transition;
 }
@@ -174,11 +234,26 @@ render_screen(void const* data, SDL_Renderer* renderer)
   struct rl_actor const* rogue =
     rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
 
-  rl_draw_map_view(
-    &s->map_view, renderer, s->font, &s->game_state.world, &s->game_state.fov);
-  rl_draw_log(renderer, s->font, &s->layout.bottom_panel, &s->log);
-  rl_draw_status(renderer, s->font, &s->layout.right_panel, rogue);
-  rl_draw_controls(renderer, s->font, &s->layout.top_panel);
+  for (int panel = 0; panel < PANEL_COUNT; ++panel) {
+    switch (s->panel_views[panel]) {
+      case VIEW_MAP:
+        rl_draw_map_view(&s->map_view,
+                         renderer,
+                         s->font,
+                         &s->game_state.world,
+                         &s->game_state.fov);
+        break;
+      case VIEW_LOG:
+        rl_draw_log(renderer, s->font, &s->panel_bounds[panel], &s->log);
+        break;
+      case VIEW_STATUS:
+        rl_draw_status(renderer, s->font, &s->panel_bounds[panel], rogue);
+        break;
+      case VIEW_CONTROLS:
+        rl_draw_controls(renderer, s->font, &s->panel_bounds[panel]);
+        break;
+    }
+  }
 }
 
 bool

@@ -16,8 +16,8 @@ sign(int number)
 /**
  * @return the action based on keyboard state
  */
-static enum rl_action
-handle_keyboard_input(struct inpt_state const* istate)
+enum rl_action
+rl_handle_keyboard_input(struct inpt_state const* istate)
 {
   // "is down" actions
   if (inpt_is_down(istate->keys[SDL_SCANCODE_W])) {
@@ -38,7 +38,11 @@ handle_keyboard_input(struct inpt_state const* istate)
 
   // "was pressed" actions
   if (inpt_was_pressed(istate->keys[SDL_SCANCODE_E])) {
-    return RL_ACTION_INTERACT;
+    return RL_ACTION_SELECT;
+  }
+
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_TAB])) {
+    return RL_ACTION_FOCUS_NEXT;
   }
 
   if (inpt_was_pressed(istate->keys[SDL_SCANCODE_U])) {
@@ -51,8 +55,8 @@ handle_keyboard_input(struct inpt_state const* istate)
 /**
  * @return the action based on mouse state
  */
-static enum rl_action
-handle_mouse_input(struct inpt_state const* istate,
+enum rl_action
+rl_handle_mouse_input(struct inpt_state const* istate,
                    SDL_Point rogue,
                    struct rl_map_view const* map_view)
 {
@@ -85,18 +89,4 @@ handle_mouse_input(struct inpt_state const* istate,
     return RL_ACTION_MOVE_DOWN;
   }
   return RL_ACTION_MOVE_UP;
-}
-
-enum rl_action
-rl_translate_input(struct inpt_state const* istate,
-                   SDL_Point rogue_position,
-                   struct rl_map_view const* map_view)
-{
-  // prioritize keyboard input over mouse input (?)
-  enum rl_action const action = handle_keyboard_input(istate);
-  if (action != RL_ACTION_NONE) {
-    return action;
-  }
-
-  return handle_mouse_input(istate, rogue_position, map_view);
 }
