@@ -7,7 +7,6 @@
 #include "game/tile.h"
 
 #include "client/render.h"
-#include "client/text.h"
 
 // forward declarations
 struct rl_actor;
@@ -43,11 +42,5 @@ rl_get_item_gfx(struct rl_item const *item);
  */
 struct rl_gfx_tile
 rl_get_actor_gfx(struct rl_actor const* actor);
-
-/**
- * @return how the text should be rendered on the screen.
- */
-struct rl_gfx_tile
-rl_get_text_gfx(enum rl_text_style style);
 
 #endif // GINC_ROGUELIKE_GRAPHICS_H

@@ -37,10 +37,10 @@ rl_draw_log(SDL_Renderer* renderer,
   int row = 0;
   for (int i = start; i < len; i++) {
     struct rl_text const* message = alist_at(&log->messages, i);
-    SDL_FPoint const at = {
-      panel->x, panel->y + (float)row * line_advance(font)
-    };
-    rl_draw_text(renderer, font, message, at);
+    SDL_FPoint const at = { panel->x,
+                            panel->y + (float)row * line_advance(font) };
+    rl_draw_text(
+      renderer, font, message, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
     row += 1;
   }
 

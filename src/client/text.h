@@ -4,24 +4,39 @@
 #ifndef GINC_ROGUELIKE_TEXT_H
 #define GINC_ROGUELIKE_TEXT_H
 
-enum rl_text_style
+#include <SDL3/SDL_pixels.h>
+#include <SDL3/SDL_stdinc.h>
+
+/** Bytes of content, including the null terminator. */
+#define RL_TEXT_CAPACITY 256
+/** Maximum number of colour spans. */
+#define RL_TEXT_SPAN_CAPACITY 8
+
+struct rl_text_span
 {
-  RL_TEXT_NORMAL,
-  RL_TEXT_PLAYER,
-  RL_TEXT_ENEMY,
-  RL_TEXT_ITEM,
+  size_t start;
+  size_t end;
+  SDL_FColor colour;
 };
 
-struct rl_text_run
-{
-  enum rl_text_style style;
-  char text[64];
-};
-
+/**
+ * Coloured text.
+ */
 struct rl_text
 {
-  struct rl_text_run runs[8];
-  int run_count;
+  char content[RL_TEXT_CAPACITY];
+  size_t length;
+  struct rl_text_span spans[RL_TEXT_SPAN_CAPACITY];
+  size_t span_count;
 };
+
+bool
+rl_append_text(struct rl_text* text, SDL_FColor const* colour, char const* str);
+
+bool
+rl_append_text_format(struct rl_text* text,
+                      SDL_FColor const* colour,
+                      SDL_PRINTF_FORMAT_STRING char const* fmt,
+                      ...) SDL_PRINTF_VARARG_FUNC(3);
 
 #endif // GINC_ROGUELIKE_TEXT_H

@@ -34,6 +34,8 @@ void
 rl_draw_text(SDL_Renderer* renderer,
              struct rl_font const* font,
              struct rl_text const* text,
+             SDL_FColor fg,
+             SDL_FColor bg,
              SDL_FPoint at);
 
 #endif // GINC_ROGUELIKE_RENDER_H

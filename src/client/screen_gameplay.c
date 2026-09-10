@@ -148,7 +148,7 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   // Consume this update's events exactly once, after submitting a command.
   for (int i = 0; i < alist_len(&s->game_state.events); i++) {
     struct rl_event const* event = alist_at(&s->game_state.events, i);
-    rl_game_log_on_event(&s->log, event, &s->game_state.world);
+    rl_log_event(&s->log, event, &s->game_state.world);
   }
 
   return transition;

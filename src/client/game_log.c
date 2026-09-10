@@ -7,38 +7,12 @@
 #include "game/item.h"
 #include "game/world.h"
 
-static void
-push_run(struct rl_text* message, char const* text, enum rl_text_style style)
+#include "client/graphics.h"
+
+static SDL_FColor
+actor_colour(struct rl_actor const* actor)
 {
-  if (message->run_count >= SDL_arraysize(message->runs)) {
-    return;
-  }
-
-  struct rl_text_run* run = &message->runs[message->run_count++];
-  run->style = style;
-  SDL_snprintf(run->text, sizeof run->text, "%s", text);
-}
-
-static void
-push_number(struct rl_text* message, int value, enum rl_text_style style)
-{
-  if (message->run_count >= SDL_arraysize(message->runs)) {
-    return;
-  }
-
-  struct rl_text_run* run = &message->runs[message->run_count++];
-  run->style = style;
-  SDL_snprintf(run->text, sizeof run->text, "%d", value);
-}
-
-static enum rl_text_style
-actor_style(struct rl_actor const* actor)
-{
-  if (actor->type == RL_ACTOR_ROGUE) {
-    return RL_TEXT_PLAYER;
-  }
-
-  return RL_TEXT_ENEMY;
+  return rl_get_actor_gfx(actor).fg;
 }
 
 static struct rl_text
@@ -47,22 +21,23 @@ build_attack_log(struct rl_world const* world,
 {
   struct rl_actor const* attacker = rl_get_actor(world, event->attacker);
   struct rl_actor const* defender = rl_get_actor(world, event->defender);
+  SDL_FColor const attacker_colour = actor_colour(attacker);
+  SDL_FColor const defender_colour = actor_colour(defender);
 
-  // build up the message piece by piece
   struct rl_text msg = { 0 };
 
   // <attacker> <hits or misses> <defender>
-  push_run(&msg, attacker->name, actor_style(attacker));
-  push_run(&msg, event->damage < 0 ? " misses " : " hits ", RL_TEXT_NORMAL);
-  push_run(&msg, defender->name, actor_style(defender));
+  rl_append_text(&msg, &attacker_colour, attacker->name);
+  rl_append_text(&msg, NULL, event->damage < 0 ? " misses " : " hits ");
+  rl_append_text(&msg, &defender_colour, defender->name);
 
   if (event->damage >= 0) {
     // if we didn't miss, append how much damage was done
-    push_run(&msg, " for ", RL_TEXT_NORMAL);
-    push_number(&msg, event->damage, RL_TEXT_NORMAL);
+    rl_append_text_format(&msg, NULL, " for %d.", event->damage);
+  } else {
+    rl_append_text(&msg, NULL, ".");
   }
 
-  push_run(&msg, ".", RL_TEXT_NORMAL);
   return msg;
 }
 
@@ -72,16 +47,17 @@ build_death_log(struct rl_world const* world,
 {
   struct rl_actor const* actor = rl_get_actor(world, event->actor);
   struct rl_actor const* killer = rl_get_actor(world, event->killer);
+  SDL_FColor const killer_colour = actor_colour(killer);
+  SDL_FColor const actor_colour_ = actor_colour(actor);
 
-  // build up the message piece by piece
   struct rl_text msg = { 0 };
 
   // <killer> killed <actor>
-  push_run(&msg, killer->name, actor_style(killer));
-  push_run(&msg, " killed ", RL_TEXT_NORMAL);
-  push_run(&msg, actor->name, actor_style(actor));
+  rl_append_text(&msg, &killer_colour, killer->name);
+  rl_append_text(&msg, NULL, " killed ");
+  rl_append_text(&msg, &actor_colour_, actor->name);
+  rl_append_text(&msg, NULL, ".");
 
-  push_run(&msg, ".", RL_TEXT_NORMAL);
   return msg;
 }
 
@@ -90,13 +66,13 @@ build_awaken_log(struct rl_world const* world,
                  struct rl_event_awaken const* event)
 {
   struct rl_actor const* actor = rl_get_actor(world, event->actor);
+  SDL_FColor const colour = actor_colour(actor);
 
-  // build up the message piece by piece
   struct rl_text msg = { 0 };
 
-  push_run(&msg, "A ", RL_TEXT_NORMAL);
-  push_run(&msg, actor->name, actor_style(actor));
-  push_run(&msg, " woke up!", RL_TEXT_NORMAL);
+  rl_append_text(&msg, NULL, "A ");
+  rl_append_text(&msg, &colour, actor->name);
+  rl_append_text(&msg, NULL, " woke up!");
 
   return msg;
 }
@@ -108,13 +84,14 @@ build_pickup_log(struct rl_world const* world,
   struct rl_actor const* actor = rl_get_actor(world, event->actor);
   struct rl_item const* item = rl_get_item(world, event->item);
   struct rl_item_def const* idef = rl_get_item_def(item->itype);
+  SDL_FColor const actor_colour_ = actor_colour(actor);
+  SDL_FColor const item_colour = rl_get_item_gfx(item).fg;
 
-  // build up the message piece by piece
   struct rl_text msg = { 0 };
 
-  push_run(&msg, actor->name, actor_style(actor));
-  push_run(&msg, " picked up a ", RL_TEXT_NORMAL);
-  push_run(&msg, idef->name, RL_TEXT_ITEM);
+  rl_append_text(&msg, &actor_colour_, actor->name);
+  rl_append_text(&msg, NULL, " picked up a ");
+  rl_append_text(&msg, &item_colour, idef->name);
 
   return msg;
 }
@@ -123,16 +100,13 @@ static struct rl_text
 build_heal_log(struct rl_world const* world, struct rl_event_heal const* event)
 {
   struct rl_actor const* actor = rl_get_actor(world, event->actor);
+  SDL_FColor const colour = actor_colour(actor);
 
-  // build up the message piece by piece
   struct rl_text msg = { 0 };
 
-  push_run(&msg, actor->name, actor_style(actor));
-  push_run(&msg, " gained ", RL_TEXT_NORMAL);
-  push_number(&msg, event->effective, RL_TEXT_NORMAL);
-  push_run(&msg, " of ", RL_TEXT_NORMAL);
-  push_number(&msg, event->total, RL_TEXT_NORMAL);
-  push_run(&msg, " HP.", RL_TEXT_NORMAL);
+  rl_append_text(&msg, &colour, actor->name);
+  rl_append_text_format(
+    &msg, NULL, " gained %d of %d HP.", event->effective, event->total);
 
   return msg;
 }
@@ -155,10 +129,22 @@ rl_free_game_log(struct rl_game_log* log)
   alist_free(&log->messages);
 }
 
+bool
+rl_log_text(struct rl_game_log* log, struct rl_text const* message)
+{
+  struct rl_text* slot = alist_push(&log->messages);
+  if (slot == NULL) {
+    return false;
+  }
+
+  *slot = *message;
+  return true;
+}
+
 void
-rl_game_log_on_event(struct rl_game_log* log,
-                     struct rl_event const* event,
-                     struct rl_world const* world)
+rl_log_event(struct rl_game_log* log,
+             struct rl_event const* event,
+             struct rl_world const* world)
 {
   struct rl_text msg;
 
@@ -182,5 +168,5 @@ rl_game_log_on_event(struct rl_game_log* log,
       return;
   }
 
-  *alist_push(&log->messages) = msg;
+  rl_log_text(log, &msg);
 }
