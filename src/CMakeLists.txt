@@ -3,6 +3,8 @@
 ###############################################################################
 set(GAME_SOURCES
     client/screen/gameplay.c
+    client/view/log.c
+    client/view/log.h
     client/view/map.c
     client/view/map.h
     client/action.c

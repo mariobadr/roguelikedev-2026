@@ -6,13 +6,15 @@
 
 #include "ui/rectcut.h"
 
+#include "client/view/log.h"
+#include "client/view/map.h"
+
 #include "client/action.h"
 #include "client/controls.h"
 #include "client/font.h"
 #include "client/game_log.h"
 #include "client/ui.h"
 #include "client/ui_view.h"
-#include "client/view/map.h"
 
 /** The horizontal margin between UI panels, in logical pixels. */
 #define RL_UI_MARGIN_X 4.0f
@@ -59,6 +61,7 @@ struct screen_state
   struct rl_game_log log;
 
   // View state
+  struct rl_log_view log_view;
   struct rl_map_view map_view;
 };
 
@@ -110,6 +113,9 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   rl_init_map_view(
     &s->map_view, &s->panel_bounds[PANEL_MAIN], font->glyph_width, font->glyph_height);
 
+  rl_init_log_view(
+    &s->log_view, &s->panel_bounds[PANEL_BOTTOM], (float)font->glyph_height);
+
   int width, height;
   rl_map_view_size(&s->map_view, &width, &height);
 
@@ -155,6 +161,23 @@ exit_screen(void* data)
 }
 
 static bool 
+handle_log_action(struct screen_state* s, enum rl_action action)
+{
+  switch (action) {
+    case RL_ACTION_MOVE_UP:
+      rl_scroll_log_view_up(&s->log_view, &s->log);
+      return true;
+    case RL_ACTION_MOVE_DOWN:
+      rl_scroll_log_view_down(&s->log_view, &s->log);
+      return true;
+    default:
+      break;
+  }
+
+  return false;
+}
+
+static bool 
 handle_map_action(struct screen_state* s, enum rl_action action)
 {
   if (action == RL_ACTION_NONE) {
@@ -183,6 +206,7 @@ handle_action(struct screen_state* s, enum rl_action action)
       handled = handle_map_action(s, action);
       break;
     case VIEW_LOG:
+      handled = handle_log_action(s, action);
       break;
     case VIEW_STATUS:
       break;
@@ -244,7 +268,7 @@ render_screen(void const* data, SDL_Renderer* renderer)
                          &s->game_state.fov);
         break;
       case VIEW_LOG:
-        rl_draw_log(renderer, s->font, &s->panel_bounds[panel], &s->log);
+        rl_draw_log_view(&s->log_view, renderer, s->font, &s->log);
         break;
       case VIEW_STATUS:
         rl_draw_status(renderer, s->font, &s->panel_bounds[panel], rogue);

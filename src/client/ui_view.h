@@ -15,12 +15,6 @@ struct rl_font;
 struct rl_game_log;
 
 void
-rl_draw_log(SDL_Renderer* renderer,
-            struct rl_font const* font,
-            SDL_FRect const* panel,
-            struct rl_game_log const* log);
-
-void
 rl_draw_status(SDL_Renderer* renderer,
                struct rl_font const* font,
                SDL_FRect const* panel,
