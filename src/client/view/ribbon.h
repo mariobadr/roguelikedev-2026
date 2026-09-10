@@ -1,0 +1,7 @@
+/**
+ * @file ribbon.h
+ */
+#ifndef GINC_ROGUELIKE_RIBBON_VIEW_H
+#define GINC_ROGUELIKE_RIBBON_VIEW_H
+
+#endif // GINC_ROGUELIKE_RIBBON_VIEW_H

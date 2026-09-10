@@ -1,17 +1,18 @@
-#include "screen.h"
+#include "client/screen.h"
 
 #include <SDL3/SDL_assert.h>
 
 #include "game/game_state.h"
 
-#include "action.h"
-#include "controls.h"
-#include "game_log.h"
-#include "map_view.h"
-#include "ui.h"
-#include "ui_view.h"
-
 #include "ui/rectcut.h"
+
+#include "client/action.h"
+#include "client/controls.h"
+#include "client/font.h"
+#include "client/game_log.h"
+#include "client/ui.h"
+#include "client/ui_view.h"
+#include "client/view/map.h"
 
 /** The horizontal margin between UI panels, in logical pixels. */
 #define RL_UI_MARGIN_X 4.0f
@@ -29,13 +30,18 @@ struct rl_ui_layout
 struct screen_state
 {
   struct rl_font const* font;
-
   /** Time before the next action fires. */
   float action_cooldown;
 
+  // Game state
   struct rl_game_state game_state;
+
+  // Model state
   struct rl_game_log log;
+
+  // View state
   struct rl_ui_layout layout;
+  struct rl_map_view map_view;
 };
 
 /**
@@ -78,9 +84,14 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
 {
   s->layout = create_layout();
 
+  rl_init_map_view(
+    &s->map_view, &s->layout.map_panel, font->glyph_width, font->glyph_height);
+
+  int width, height;
+  rl_map_view_size(&s->map_view, &width, &height);
+
   // TODO: add a camera at some point?
-  SDL_Point const size = rl_map_viewport_size(&s->layout.map_panel);
-  if (!rl_alloc_game_state(&s->game_state, size.x, size.y)) {
+  if (!rl_alloc_game_state(&s->game_state, width, height)) {
     return false;
   }
 
@@ -134,7 +145,7 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   struct rl_actor const* rogue =
     rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
   enum rl_action const action =
-    rl_translate_input(istate, rogue->pos, &s->layout.map_panel);
+    rl_translate_input(istate, rogue->pos, &s->map_view);
   if (action == RL_ACTION_NONE) {
     return transition;
   }
@@ -163,11 +174,8 @@ render_screen(void const* data, SDL_Renderer* renderer)
   struct rl_actor const* rogue =
     rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
 
-  rl_draw_map(renderer,
-              s->font,
-              &s->layout.map_panel,
-              &s->game_state.world,
-              &s->game_state.fov);
+  rl_draw_map_view(
+    &s->map_view, renderer, s->font, &s->game_state.world, &s->game_state.fov);
   rl_draw_log(renderer, s->font, &s->layout.bottom_panel, &s->log);
   rl_draw_status(renderer, s->font, &s->layout.right_panel, rogue);
   rl_draw_controls(renderer, s->font, &s->layout.top_panel);

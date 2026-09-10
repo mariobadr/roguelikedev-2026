@@ -2,6 +2,9 @@
 # Source files
 ###############################################################################
 set(GAME_SOURCES
+    client/screen/gameplay.c
+    client/view/map.c
+    client/view/map.h
     client/action.c
     client/action.h
     client/client.c
@@ -16,12 +19,9 @@ set(GAME_SOURCES
     client/graphics.h
     client/lighting.c
     client/lighting.h
-    client/map_view.c
-    client/map_view.h
     client/palette.h
     client/render.c
     client/render.h
-    client/screen_gameplay.c
     client/screen.h
     client/text.c
     client/text.h

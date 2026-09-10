@@ -1,7 +1,8 @@
 #include "controls.h"
 
 #include "input/input.h"
-#include "map_view.h"
+
+#include "client/view/map.h"
 
 /**
  * @return -1 for negative, 1 for positive, and 0 for zero
@@ -53,14 +54,14 @@ handle_keyboard_input(struct inpt_state const* istate)
 static enum rl_action
 handle_mouse_input(struct inpt_state const* istate,
                    SDL_Point rogue,
-                   SDL_FRect const* main_panel)
+                   struct rl_map_view const* map_view)
 {
   if (!inpt_is_down(istate->mouse.buttons[SDL_BUTTON_LEFT])) {
     return RL_ACTION_NONE;
   }
 
   SDL_Point target = { 0 };
-  if (!rl_map_cell_from_pixels(main_panel, istate->mouse.position, &target)) {
+  if (!rl_map_view_cell_at(map_view, istate->mouse.position, &target)) {
     return RL_ACTION_NONE;
   }
 
@@ -89,7 +90,7 @@ handle_mouse_input(struct inpt_state const* istate,
 enum rl_action
 rl_translate_input(struct inpt_state const* istate,
                    SDL_Point rogue_position,
-                   SDL_FRect const* main_panel)
+                   struct rl_map_view const* map_view)
 {
   // prioritize keyboard input over mouse input (?)
   enum rl_action const action = handle_keyboard_input(istate);
@@ -97,5 +98,5 @@ rl_translate_input(struct inpt_state const* istate,
     return action;
   }
 
-  return handle_mouse_input(istate, rogue_position, main_panel);
+  return handle_mouse_input(istate, rogue_position, map_view);
 }
