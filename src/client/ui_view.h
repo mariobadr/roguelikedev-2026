@@ -20,9 +20,4 @@ rl_draw_status(SDL_Renderer* renderer,
                SDL_FRect const* panel,
                struct rl_actor const* rogue);
 
-void
-rl_draw_controls(SDL_Renderer* renderer,
-                 struct rl_font const* font,
-                 SDL_FRect const* panel);
-
 #endif // GINC_ROGUELIKE_UI_VIEW_H

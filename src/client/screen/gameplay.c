@@ -8,6 +8,7 @@
 
 #include "client/view/log.h"
 #include "client/view/map.h"
+#include "client/view/ribbon.h"
 
 #include "client/action.h"
 #include "client/controls.h"
@@ -63,6 +64,7 @@ struct screen_state
   // View state
   struct rl_log_view log_view;
   struct rl_map_view map_view;
+  struct rl_ribbon ribbon;
 };
 
 /**
@@ -109,12 +111,18 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   s->panel_views[PANEL_BOTTOM] = VIEW_LOG;
   s->panel_views[PANEL_RIGHT] = VIEW_STATUS;
 
-  // the map is only designed to work in the main panel right now
-  rl_init_map_view(
-    &s->map_view, &s->panel_bounds[PANEL_MAIN], font->glyph_width, font->glyph_height);
-
+  // log view
   rl_init_log_view(
     &s->log_view, &s->panel_bounds[PANEL_BOTTOM], (float)font->glyph_height);
+
+  // the map is only designed to work in the main panel right now
+  rl_init_map_view(&s->map_view,
+                   &s->panel_bounds[PANEL_MAIN],
+                   font->glyph_width,
+                   font->glyph_height);
+
+  // ribbon
+  rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP]);
 
   int width, height;
   rl_map_view_size(&s->map_view, &width, &height);
@@ -128,9 +136,11 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
     return false;
   }
 
-  s->focused_panel = PANEL_MAIN;
   s->repeat_cooldown = 0.0f;
   s->font = font;
+
+  s->focused_panel = PANEL_MAIN;
+  rl_map_view_ribbon(&s->map_view, &s->ribbon);
 
   return true;
 }
@@ -160,7 +170,7 @@ exit_screen(void* data)
   (void)data;
 }
 
-static bool 
+static bool
 handle_log_action(struct screen_state* s, enum rl_action action)
 {
   switch (action) {
@@ -177,7 +187,7 @@ handle_log_action(struct screen_state* s, enum rl_action action)
   return false;
 }
 
-static bool 
+static bool
 handle_map_action(struct screen_state* s, enum rl_action action)
 {
   if (action == RL_ACTION_NONE) {
@@ -194,6 +204,31 @@ handle_map_action(struct screen_state* s, enum rl_action action)
   }
 
   return handled;
+}
+
+static bool
+view_is_focusable(enum view_id view)
+{
+  switch (view) {
+    case VIEW_MAP:
+    case VIEW_LOG:
+      return true;
+    case VIEW_CONTROLS:
+    case VIEW_STATUS:
+      return false;
+  }
+  return false;
+}
+
+static enum panel_id
+next_focusable_panel(struct screen_state const* s)
+{
+  enum panel_id next = s->focused_panel;
+  do {
+    next = (enum panel_id)((next + 1) % PANEL_COUNT);
+  } while (!view_is_focusable(s->panel_views[next]) &&
+           next != s->focused_panel);
+  return next;
 }
 
 static void
@@ -233,7 +268,7 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
 
   enum rl_action action = rl_handle_keyboard_input(istate);
   if (action == RL_ACTION_FOCUS_NEXT) {
-    s->focused_panel = (enum panel_id)((s->focused_panel + 1) % PANEL_COUNT);
+    s->focused_panel = next_focusable_panel(s);
     return transition;
   }
 
@@ -245,6 +280,17 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   }
 
   handle_action(s, action);
+
+  switch (view) {
+    case VIEW_MAP:
+      rl_map_view_ribbon(&s->map_view, &s->ribbon);
+      break;
+    case VIEW_LOG:
+      rl_log_view_ribbon(&s->log_view, &s->ribbon);
+      break;
+    default:
+      break;
+  }
 
   return transition;
 }
@@ -274,7 +320,7 @@ render_screen(void const* data, SDL_Renderer* renderer)
         rl_draw_status(renderer, s->font, &s->panel_bounds[panel], rogue);
         break;
       case VIEW_CONTROLS:
-        rl_draw_controls(renderer, s->font, &s->panel_bounds[panel]);
+        rl_draw_ribbon(&s->ribbon, renderer, s->font);
         break;
     }
   }

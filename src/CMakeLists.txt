@@ -7,6 +7,8 @@ set(GAME_SOURCES
     client/view/log.h
     client/view/map.c
     client/view/map.h
+    client/view/ribbon.c
+    client/view/ribbon.h
     client/action.c
     client/action.h
     client/client.c

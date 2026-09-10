@@ -7,6 +7,8 @@
 #include "game/tile.h"
 #include "game/world.h"
 
+#include "client/view/ribbon.h"
+
 #include "client/graphics.h"
 #include "client/lighting.h"
 #include "client/palette.h"
@@ -213,6 +215,19 @@ rl_map_view_cell_at(struct rl_map_view const* map,
   cell->y = (int)SDL_floorf((pos.y - origin.y) / (float)map->cell_height);
 
   return true;
+}
+
+void
+rl_map_view_ribbon(struct rl_map_view const* view, struct rl_ribbon* ribbon)
+{
+  (void)view;
+
+  rl_set_current_view(ribbon, "Map");
+  rl_set_current_mode(ribbon, "Moving");
+
+  struct rl_text msg = { 0 };
+  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD]   ");
+  rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
 }
 
 void

@@ -5,6 +5,8 @@
 
 #include "ui/layout.h"
 
+#include "client/view/ribbon.h"
+
 #include "client/game_log.h"
 #include "client/palette.h"
 #include "client/render.h"
@@ -82,6 +84,19 @@ rl_scroll_log_view_to(struct rl_log_view* view,
 
   view->first = SDL_clamp(first, 0, last);
   view->follow_tail = view->first == last;
+}
+
+void
+rl_log_view_ribbon(struct rl_log_view const* view, struct rl_ribbon* ribbon)
+{
+  (void)view;
+
+  rl_set_current_view(ribbon, "Log");
+  rl_set_current_mode(ribbon, "Scrolling");
+
+  struct rl_text msg = { 0 };
+  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WS]   ");
+  rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
 }
 
 void

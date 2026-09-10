@@ -13,6 +13,7 @@ typedef struct SDL_Renderer SDL_Renderer;
 // forward declarations
 struct rl_font;
 struct rl_game_log;
+struct rl_ribbon;
 
 struct rl_log_view
 {
@@ -45,6 +46,12 @@ void
 rl_scroll_log_view_to(struct rl_log_view* view,
                       struct rl_game_log const* log,
                       int first);
+
+/**
+ * Update ribbon based on the log view's current state.
+ */
+void
+rl_log_view_ribbon(struct rl_log_view const* view, struct rl_ribbon* ribbon);
 
 void
 rl_draw_log_view(struct rl_log_view const* view,

@@ -30,21 +30,3 @@ rl_draw_status(SDL_Renderer* renderer,
 
   SDL_SetRenderClipRect(renderer, NULL);
 }
-
-void
-rl_draw_controls(SDL_Renderer* renderer,
-                 struct rl_font const* font,
-                 SDL_FRect const* panel)
-{
-  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-  SDL_Rect const clip = rl_panel_clip_rect(panel);
-  SDL_SetRenderClipRect(renderer, &clip);
-
-  char const* text = "\x18 W | \x1B A | \x19 S | \x1A D";
-
-  SDL_FPoint const at = { panel->x, panel->y };
-  rl_draw_string(renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
-
-  SDL_SetRenderClipRect(renderer, NULL);
-}
