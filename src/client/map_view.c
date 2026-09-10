@@ -96,15 +96,15 @@ draw_level(SDL_Renderer* renderer,
       }
 
       enum rl_tile const tile = *grid_at(map, x, y);
-      struct rl_gfx_tile gfx = rl_get_tile_gfx(tile);
+      struct rl_cell cell = rl_get_tile_gfx(tile);
 
       if (!fov->visible.data[index]) {
         // dim explored but not visible tiles
-        gfx.fg = rl_lerp_colour(gfx.fg, RL_COLOUR_BLACK, 0.4f);
+        cell.fg = rl_lerp_colour(cell.fg, RL_COLOUR_BLACK, 0.4f);
       }
 
       SDL_FPoint const at = cell_to_pixels(viewport, (SDL_Point){ x, y });
-      rl_draw_tile(renderer, font, &gfx, at);
+      rl_draw_cell(renderer, font, &cell, at);
     }
   }
 }
@@ -152,9 +152,9 @@ draw_item(SDL_Renderer* renderer,
           SDL_FRect const* viewport,
           struct rl_item const* item)
 {
-  struct rl_gfx_tile const tile = rl_get_item_gfx(item);
+  struct rl_cell const cell = rl_get_item_gfx(item);
   SDL_FPoint const at = cell_to_pixels(viewport, item->on.map);
-  rl_draw_tile(renderer, font, &tile, at);
+  rl_draw_cell(renderer, font, &cell, at);
 }
 
 static void
@@ -185,9 +185,9 @@ draw_actor(SDL_Renderer* renderer,
            SDL_FRect const* viewport,
            struct rl_actor const* actor)
 {
-  struct rl_gfx_tile const tile = rl_get_actor_gfx(actor);
+  struct rl_cell const cell = rl_get_actor_gfx(actor);
   SDL_FPoint const at = cell_to_pixels(viewport, actor->pos);
-  rl_draw_tile(renderer, font, &tile, at);
+  rl_draw_cell(renderer, font, &cell, at);
 }
 
 static void

@@ -14,27 +14,27 @@ struct tile_gfx_desc
   Uint8 bg_index;
 };
 
-static struct rl_gfx_tile
+static struct rl_cell
 lookup_gfx_tile(struct tile_gfx_desc const* table, int index)
 {
   struct tile_gfx_desc const* desc = &table[index];
 
-  struct rl_gfx_tile gfx = { 0 };
-  gfx.glyph = desc->glyph;
+  struct rl_cell cell = { 0 };
+  cell.glyph = desc->glyph;
 
   if (desc->fg_colour == NULL) {
-    gfx.fg = RL_COLOUR_BLACK;
+    cell.fg = RL_COLOUR_BLACK;
   } else {
-    gfx.fg = desc->fg_colour[desc->fg_index];
+    cell.fg = desc->fg_colour[desc->fg_index];
   }
 
   if (desc->bg_colour == NULL) {
-    gfx.bg = RL_COLOUR_BLACK;
+    cell.bg = RL_COLOUR_BLACK;
   } else {
-    gfx.bg = desc->bg_colour[desc->bg_index];
+    cell.bg = desc->bg_colour[desc->bg_index];
   }
 
-  return gfx;
+  return cell;
 }
 
 static struct tile_gfx_desc const tile_gfx_table[] = {
@@ -52,7 +52,7 @@ static struct tile_gfx_desc const tile_gfx_table[] = {
   },
 };
 
-struct rl_gfx_tile
+struct rl_cell
 rl_get_tile_gfx(enum rl_tile tile)
 {
   return lookup_gfx_tile(tile_gfx_table, tile);
@@ -67,7 +67,7 @@ static struct tile_gfx_desc const item_gfx_table[] = {
   },
 };
 
-struct rl_gfx_tile
+struct rl_cell
 rl_get_item_gfx(struct rl_item const* item)
 {
   return lookup_gfx_tile(item_gfx_table, item->itype);
@@ -88,7 +88,7 @@ static struct tile_gfx_desc const actor_gfx_table[] = {
   },
 };
 
-struct rl_gfx_tile
+struct rl_cell
 rl_get_actor_gfx(struct rl_actor const* actor)
 {
   return lookup_gfx_tile(actor_gfx_table, actor->type);

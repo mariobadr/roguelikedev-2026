@@ -49,9 +49,9 @@ next_span_colour(struct rl_text const* text,
 }
 
 void
-rl_draw_tile(SDL_Renderer* renderer,
+rl_draw_cell(SDL_Renderer* renderer,
              struct rl_font const* font,
-             struct rl_gfx_tile const* tile,
+             struct rl_cell const* tile,
              SDL_FPoint at)
 {
   SDL_FRect const dst = calculate_destination(font, at);
@@ -80,14 +80,14 @@ rl_draw_string(SDL_Renderer* renderer,
                SDL_FColor bg,
                SDL_FPoint at)
 {
-  struct rl_gfx_tile tile = { 0 };
+  struct rl_cell tile = { 0 };
   tile.fg = fg;
   tile.bg = bg;
 
   size_t const length = SDL_strlen(text);
   for (size_t i = 0; i < length; i++) {
     tile.glyph = text[i];
-    rl_draw_tile(renderer, font, &tile, at);
+    rl_draw_cell(renderer, font, &tile, at);
 
     at.x += font->glyph_width;
   }
@@ -101,14 +101,14 @@ rl_draw_text(SDL_Renderer* renderer,
              SDL_FColor bg,
              SDL_FPoint at)
 {
-  struct rl_gfx_tile gfx = { 0 };
+  struct rl_cell gfx = { 0 };
   gfx.bg = bg;
 
   size_t span = 0;
   for (size_t i = 0; i < text->length; i++) {
     gfx.fg = next_span_colour(text, &span, i, fg);
     gfx.glyph = text->content[i];
-    rl_draw_tile(renderer, font, &gfx, at);
+    rl_draw_cell(renderer, font, &gfx, at);
 
     at.x += font->glyph_width;
   }
