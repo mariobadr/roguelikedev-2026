@@ -6,6 +6,12 @@ static struct rl_item_def const RL_ITEM_DEFS[] = {
     .name = "Minor Health Potion",
     .effect = RL_ITEM_EFFECT_HEAL,
     .power = 10, },
+  [RL_ITEM_SCROLL_FIREBALL] = {
+    .class = RL_ITEM_CLASS_SCROLL,
+    .name = "Scroll of Minor Fireball",
+    .effect = RL_ITEM_EFFECT_DAMAGE_AREA,
+    .power = 10,
+  }
 };
 
 struct rl_item_def const*

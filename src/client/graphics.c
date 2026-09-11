@@ -61,8 +61,14 @@ rl_get_tile_gfx(enum rl_tile tile)
 static struct tile_gfx_desc const item_gfx_table[] = {
   [RL_ITEM_POTION_HEALTH_MINOR] = {
     .glyph = '!',
-    .fg_colour = RL_COLOUR_YELLOW,
-    .fg_index = 2,
+    .fg_colour = RL_COLOUR_RED,
+    .fg_index = 4,
+    .bg_colour = NULL,
+  },
+  [RL_ITEM_SCROLL_FIREBALL] = {
+    .glyph = '?',
+    .fg_colour = RL_COLOUR_RED,
+    .fg_index = 5,
     .bg_colour = NULL,
   },
 };

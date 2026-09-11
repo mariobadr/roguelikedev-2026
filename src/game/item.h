@@ -12,18 +12,21 @@
 enum rl_item_class
 {
   RL_ITEM_CLASS_POTION,
+  RL_ITEM_CLASS_SCROLL,
 };
 
 /** Possible items found in the game. */
 enum rl_item_type
 {
   RL_ITEM_POTION_HEALTH_MINOR,
+  RL_ITEM_SCROLL_FIREBALL,
 };
 
 /** The different effects an item can have. */
 enum rl_item_effect
 {
   RL_ITEM_EFFECT_HEAL,
+  RL_ITEM_EFFECT_DAMAGE_AREA,
 };
 
 /** Immutable data that defines an item. */

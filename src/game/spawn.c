@@ -40,7 +40,7 @@ rl_gen_actor_type(int depth, struct rand_state* rng)
 static int
 rl_gen_total_items(struct rand_state* rng)
 {
-  return (int)rand_next_between(rng, 5, 12);
+  return (int)rand_next_between(rng, 8, 20);
 }
 
 /**
@@ -50,10 +50,9 @@ static enum rl_item_type
 rl_gen_item_type(int depth, struct rand_state* rng)
 {
   (void)depth;
-  (void)rng;
 
-  // TODO: fix when there are more types
-  return RL_ITEM_POTION_HEALTH_MINOR;
+  return (enum rl_item_type)rand_next_between(
+    rng, RL_ITEM_POTION_HEALTH_MINOR, RL_ITEM_SCROLL_FIREBALL);
 }
 
 static bool
