@@ -254,7 +254,7 @@ update_ribbon(void const* data, struct rl_ribbon* ribbon)
   rl_set_current_mode(ribbon, "Moving");
 
   struct rl_text msg = { 0 };
-  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E]");
+  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E, Z]");
   rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
 }
 
@@ -279,6 +279,7 @@ update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
     case RL_ACTION_MOVE_LEFT:
     case RL_ACTION_MOVE_RIGHT:
     case RL_ACTION_SELECT:
+    case RL_ACTION_WAIT:
       *out = rl_build_command(RL_ROGUE_ID, action, s->world);
       return true;
     default:

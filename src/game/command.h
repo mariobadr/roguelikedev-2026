@@ -22,6 +22,7 @@ enum rl_command_type
   RL_COMMAND_ATTACK,   //< Attack an actor
   RL_COMMAND_PICK_UP,  //< Pick up an item
   RL_COMMAND_USE_ITEM, //< Use an item
+  RL_COMMAND_WAIT,     //< Consume a turn without acting
 };
 
 /**

@@ -63,6 +63,8 @@ rl_apply_command(struct rl_world* world,
       return rl_pick_up_item(world, actor->id, cmd->dst, events);
     case RL_COMMAND_USE_ITEM:
       return rl_use_item(world, actor->id, cmd->target, events, rng);
+    case RL_COMMAND_WAIT:
+      return true;
     default:
       break;
   }

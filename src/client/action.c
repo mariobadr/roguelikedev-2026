@@ -40,6 +40,9 @@ rl_build_command(int actor_id,
       return rl_new_bump_command(actor_id, (SDL_Point){ 1, 0 }, world);
     case RL_ACTION_SELECT:
       return build_pickup(actor_id, world);
+    case RL_ACTION_WAIT:
+      cmd.type = RL_COMMAND_WAIT;
+      break;
     default:
       break;
   }

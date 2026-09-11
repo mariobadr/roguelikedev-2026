@@ -39,6 +39,10 @@ rl_handle_keyboard_input(struct inpt_state const* istate)
     return RL_ACTION_SELECT;
   }
 
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_Z])) {
+    return RL_ACTION_WAIT;
+  }
+
   if (inpt_was_pressed(istate->keys[SDL_SCANCODE_I])) {
     return RL_ACTION_TOGGLE_INVENTORY;
   }
