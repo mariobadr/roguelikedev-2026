@@ -7,6 +7,7 @@
 
 #define MISS_CHANCE 5
 #define ARMOR_SCALING 20
+#define DAMAGE_AREA_RADIUS 5
 
 static bool
 are_adjacent(SDL_Point a, SDL_Point b)
@@ -54,18 +55,14 @@ can_move(struct rl_world const* world, SDL_Point dst)
 }
 
 static int
-attack_actor(struct rl_actor const* attacker,
-             struct rl_actor* defender,
-             struct rand_state* rng)
+attack_actor(int power, struct rl_actor* defender, struct rand_state* rng)
 {
   if (rand_next_up_to(rng, 100) < MISS_CHANCE) {
     return -1;
   }
 
-  // from the good old WoW days
-  int const ap = 2 * attacker->strength;
   // integer division truncates, but we avoid floating point (yay!)
-  int const base = (int)rand_next_between(rng, ap * 8 / 10, ap * 12 / 10);
+  int const base = (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
   // our random base damage is then mitigated by armor
   int const damage =
     base - (base * defender->armor / (defender->armor + ARMOR_SCALING));
@@ -76,6 +73,48 @@ attack_actor(struct rl_actor const* attacker,
   return damage;
 }
 
+static void
+enqueue_attack_event(int attacker_id,
+                     int defender_id,
+                     int damage,
+                     alist(rl_event) * events)
+{
+  struct rl_event event = { 0 };
+  event.type = RL_EVENT_ATTACK;
+  event.as.attack.attacker = attacker_id;
+  event.as.attack.defender = defender_id;
+  event.as.attack.damage = damage;
+  *alist_push(events) = event;
+}
+
+static void
+enqueue_death_event(int actor_id, int killer_id, alist(rl_event) * events)
+{
+  struct rl_event event = { 0 };
+  event.type = RL_EVENT_DEATH;
+  event.as.death.actor = actor_id;
+  event.as.death.killer = killer_id;
+  *alist_push(events) = event;
+}
+
+static bool
+in_blast_radius_euclidean(SDL_Point origin, SDL_Point pos, int radius)
+{
+  int const dx = pos.x - origin.x;
+  int const dy = pos.y - origin.y;
+  return dx * dx + dy * dy <= radius * radius;
+}
+
+/*
+static bool
+in_blast_radius_chebyshev(SDL_Point origin, SDL_Point pos, int radius)
+{
+  int const dx = SDL_abs(pos.x - origin.x);
+  int const dy = SDL_abs(pos.y - origin.y);
+  return SDL_max(dx, dy) <= radius;
+}
+*/
+
 static bool
 use_item_heal(struct rl_actor* actor,
               struct rl_item* item,
@@ -83,12 +122,13 @@ use_item_heal(struct rl_actor* actor,
               alist(rl_event) * events,
               struct rand_state* rng)
 {
-  if(actor->hp >= actor->max_hp) {
+  if (actor->hp >= actor->max_hp) {
     return false;
   }
 
   // TODO: make this more sophisticated?
-  int const amount = (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
+  int const amount =
+    (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
   // apply the effect
   int const effective = rl_heal_actor(actor, amount);
 
@@ -99,6 +139,39 @@ use_item_heal(struct rl_actor* actor,
   event.as.heal.total = amount;
   event.as.heal.effective = effective;
   *alist_push(events) = event;
+
+  // mark the item as consumed
+  item->ltype = RL_ITEM_LOCATION_NONE;
+
+  return true;
+}
+
+static bool
+use_item_damage_area(struct rl_world* world,
+                     struct rl_actor* actor,
+                     struct rl_item* item,
+                     SDL_Point origin,
+                     int power,
+                     alist(rl_event) * events,
+                     struct rand_state* rng)
+{
+  for (int id = 0; id < rl_actor_count(world); id++) {
+    struct rl_actor* defender = rl_edit_actor(world, id);
+    if (!rl_actor_is_alive(defender)) {
+      continue;
+    }
+
+    if (!in_blast_radius_euclidean(origin, defender->pos, DAMAGE_AREA_RADIUS)) {
+      continue;
+    }
+
+    int const damage = attack_actor(power, defender, rng);
+    enqueue_attack_event(actor->id, defender->id, damage, events);
+
+    if (defender->hp <= 0) {
+      enqueue_death_event(defender->id, actor->id, events);
+    }
+  }
 
   // mark the item as consumed
   item->ltype = RL_ITEM_LOCATION_NONE;
@@ -155,19 +228,13 @@ rl_attack_melee(struct rl_world* world,
     return false;
   }
 
-  int const damage = attack_actor(attacker, defender, rng);
-  struct rl_event event = { 0 };
-  event.type = RL_EVENT_ATTACK;
-  event.as.attack.attacker = attacker->id;
-  event.as.attack.defender = defender->id;
-  event.as.attack.damage = damage;
-  *alist_push(events) = event;
+  // from the good old WoW days
+  int const ap = 2 * attacker->strength;
+  int const damage = attack_actor(ap, defender, rng);
+  enqueue_attack_event(attacker->id, defender->id, damage, events);
 
   if (defender->hp <= 0) {
-    event.type = RL_EVENT_DEATH;
-    event.as.death.actor = defender->id;
-    event.as.death.killer = attacker->id;
-    *alist_push(events) = event;
+    enqueue_death_event(defender->id, attacker->id, events);
   }
 
   return true;
@@ -211,6 +278,7 @@ bool
 rl_use_item(struct rl_world* world,
             int actor_id,
             int item_id,
+            SDL_Point target,
             alist(rl_event) * events,
             struct rand_state* rng)
 {
@@ -232,6 +300,10 @@ rl_use_item(struct rl_world* world,
   switch (idef->effect) {
     case RL_ITEM_EFFECT_HEAL:
       return use_item_heal(actor, item, idef->power, events, rng);
+    case RL_ITEM_EFFECT_DAMAGE_AREA:
+      return use_item_damage_area(
+        world, actor, item, target, idef->power, events, rng);
+      break;
     default:
       break;
   }

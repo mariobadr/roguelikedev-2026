@@ -151,7 +151,7 @@ update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
 
       out->actor = RL_ROGUE_ID;
       out->type = RL_COMMAND_USE_ITEM;
-      out->target = item_id;
+      out->use_item.item_id = item_id;
 
       return true;
     }

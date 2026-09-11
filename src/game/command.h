@@ -25,6 +25,12 @@ enum rl_command_type
   RL_COMMAND_WAIT,     //< Consume a turn without acting
 };
 
+struct rl_item_use
+{
+  int item_id;
+  SDL_Point dst;
+};
+
 /**
  * A command that can be applied to the game.
  */
@@ -39,8 +45,10 @@ struct rl_command
   {
     /** MOVE, PICK UP */
     SDL_Point dst;
-    /** ATTACK, USE ITEM */
-    int target;
+    /** ATTACK */
+    int target_actor;
+    /** USE ITEM */
+    struct rl_item_use use_item;
   };
 };
 

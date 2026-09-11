@@ -53,6 +53,7 @@ bool
 rl_use_item(struct rl_world* world,
             int actor_id,
             int item_id,
+            SDL_Point target,
             alist(rl_event) * events,
             struct rand_state* rng);
 

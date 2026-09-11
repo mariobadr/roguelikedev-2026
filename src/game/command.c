@@ -30,7 +30,7 @@ rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world)
   struct rl_actor const* target = rl_find_actor(world, dst);
   if (target != NULL) {
     cmd.type = RL_COMMAND_ATTACK;
-    cmd.target = target->id;
+    cmd.target_actor = target->id;
   } else if (rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
     cmd.type = RL_COMMAND_MOVE;
     cmd.dst = dst;
@@ -58,11 +58,16 @@ rl_apply_command(struct rl_world* world,
     case RL_COMMAND_MOVE:
       return rl_move(world, actor->id, cmd->dst);
     case RL_COMMAND_ATTACK:
-      return rl_attack_melee(world, actor->id, cmd->target, events, rng);
+      return rl_attack_melee(world, actor->id, cmd->target_actor, events, rng);
     case RL_COMMAND_PICK_UP:
       return rl_pick_up_item(world, actor->id, cmd->dst, events);
     case RL_COMMAND_USE_ITEM:
-      return rl_use_item(world, actor->id, cmd->target, events, rng);
+      return rl_use_item(world,
+                         actor->id,
+                         cmd->use_item.item_id,
+                         cmd->use_item.dst,
+                         events,
+                         rng);
     case RL_COMMAND_WAIT:
       return true;
     default:
