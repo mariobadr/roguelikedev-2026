@@ -61,12 +61,6 @@ init_view_state(struct view_state* s,
     &s->list, viewport, s->slots, SDL_arraysize(s->slots), line_height, 2.0f);
 }
 
-static bool
-can_interact(void)
-{
-  return true;
-}
-
 static void
 update_ribbon(void const* data, struct rl_ribbon* ribbon)
 {
@@ -147,7 +141,6 @@ rl_alloc_log_view(struct rl_view* view,
 
   init_view_state(view->state, log, viewport, line_height);
 
-  view->can_interact = can_interact;
   view->free = SDL_free;
   view->update_ribbon = update_ribbon;
   view->update = update_view;

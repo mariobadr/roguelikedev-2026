@@ -110,12 +110,6 @@ rl_inv_view_selected_item(struct view_state const* view)
   return -1;
 }
 
-static bool
-can_interact(void)
-{
-  return true;
-}
-
 static void
 update_ribbon(void const* data, struct rl_ribbon* ribbon)
 {
@@ -221,7 +215,6 @@ rl_alloc_inv_view(struct rl_view* view,
 
   init_view_state(view->state, world, viewport, line_height);
 
-  view->can_interact = can_interact;
   view->free = SDL_free;
   view->update_ribbon = update_ribbon;
   view->update = update_view;

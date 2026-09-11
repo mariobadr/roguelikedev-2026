@@ -44,11 +44,15 @@ rl_handle_keyboard_input(struct inpt_state const* istate)
   }
 
   if (inpt_was_pressed(istate->keys[SDL_SCANCODE_I])) {
-    return RL_ACTION_TOGGLE_INVENTORY;
+    return RL_ACTION_SHOW_INVENTORY;
   }
 
-  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_TAB])) {
-    return RL_ACTION_FOCUS_NEXT;
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_L])) {
+    return RL_ACTION_SHOW_LOG;
+  }
+
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_ESCAPE])) {
+    return RL_ACTION_CANCEL;
   }
 
   return RL_ACTION_NONE;

@@ -239,12 +239,6 @@ draw_actors(struct view_state const* s,
   }
 }
 
-static bool
-can_interact(void)
-{
-  return true;
-}
-
 static void
 update_ribbon(void const* data, struct rl_ribbon* ribbon)
 {
@@ -332,7 +326,6 @@ rl_alloc_map_view(struct rl_view* view,
 
   init_view_state(view->state, world, fov, viewport, cell_width, cell_height);
 
-  view->can_interact = can_interact;
   view->free = SDL_free;
   view->update_ribbon = update_ribbon;
   view->update = update_view;

@@ -187,32 +187,36 @@ exit_screen(void* data)
   (void)data;
 }
 
-static enum panel_id
-next_focusable_panel(struct screen_state const* s)
+static void
+cancel_focus(struct screen_state* s)
 {
-  enum panel_id next = s->focused_panel;
-  do {
-    next = (enum panel_id)((next + 1) % PANEL_COUNT);
-  } while ((next == PANEL_TOP ||
-            !rl_view_can_interact(&s->views[s->panel_views[next]])) &&
-           next != s->focused_panel);
-  return next;
+  s->focused_panel = PANEL_MAIN;
 }
 
 static void
-toggle_inventory(struct screen_state* s)
+show_inventory(struct screen_state* s)
 {
-  if (s->panel_views[PANEL_BOTTOM] == RL_VIEW_INVENTORY) {
-    s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
-    s->focused_panel = PANEL_MAIN;
+  if (s->focused_panel == PANEL_BOTTOM &&
+      s->panel_views[PANEL_BOTTOM] == RL_VIEW_INVENTORY) {
+    cancel_focus(s);
     return;
   }
 
-  if (s->panel_views[PANEL_BOTTOM] == RL_VIEW_LOG) {
-    s->panel_views[PANEL_BOTTOM] = RL_VIEW_INVENTORY;
-    s->focused_panel = PANEL_BOTTOM;
+  s->panel_views[PANEL_BOTTOM] = RL_VIEW_INVENTORY;
+  s->focused_panel = PANEL_BOTTOM;
+}
+
+static void
+show_log(struct screen_state* s)
+{
+  if (s->focused_panel == PANEL_BOTTOM &&
+      s->panel_views[PANEL_BOTTOM] == RL_VIEW_LOG) {
+    cancel_focus(s);
     return;
   }
+
+  s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
+  s->focused_panel = PANEL_BOTTOM;
 }
 
 static bool
@@ -229,7 +233,7 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
   return handled;
 }
 
-static void
+static bool
 handle_action(struct screen_state* s, struct inpt_state const* istate)
 {
   struct rl_view* view = &s->views[s->panel_views[s->focused_panel]];
@@ -244,6 +248,8 @@ handle_action(struct screen_state* s, struct inpt_state const* istate)
   if (handled) {
     s->repeat_cooldown = KEY_REPEAT_COOLDOWN;
   }
+
+  return handled;
 }
 
 static struct rl_screen_transition
@@ -259,10 +265,14 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   }
 
   enum rl_action action = rl_handle_keyboard_input(istate);
-  if (action == RL_ACTION_FOCUS_NEXT) {
-    s->focused_panel = next_focusable_panel(s);
-  } else if (action == RL_ACTION_TOGGLE_INVENTORY) {
-    toggle_inventory(s);
+  if (action == RL_ACTION_SHOW_INVENTORY) {
+    show_inventory(s);
+  } else if (action == RL_ACTION_SHOW_LOG) {
+    show_log(s);
+  } else if (action == RL_ACTION_CANCEL) {
+    if (!handle_action(s, istate)) {
+      cancel_focus(s);
+    }
   } else {
     handle_action(s, istate);
   }

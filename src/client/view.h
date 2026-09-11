@@ -35,8 +35,6 @@ struct rl_view
 {
   void* state;
 
-  bool (*can_interact)(void);
-
   void (*free)(void* data);
 
   void (*update_ribbon)(void const* data, struct rl_ribbon* ribbon);
@@ -51,16 +49,6 @@ struct rl_view
                  SDL_Renderer* renderer,
                  struct rl_font const* font);
 };
-
-static inline bool
-rl_view_can_interact(struct rl_view const* view)
-{
-  if (view->can_interact == NULL) {
-    return false;
-  }
-
-  return view->can_interact();
-}
 
 static inline void
 rl_free_view(struct rl_view* view)

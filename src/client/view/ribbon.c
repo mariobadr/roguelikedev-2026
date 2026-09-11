@@ -34,7 +34,6 @@ rl_set_current_view(struct rl_ribbon* ribbon, char const* str)
   struct rl_text txt = { 0 };
   rl_append_text(&txt, NULL, "View: ");
   rl_append_text(&txt, NULL, str);
-  rl_append_text(&txt, &RL_COLOUR_YELLOW[3], " [TAB]");
 
   rl_set_ribbon_text(ribbon, RL_RIBBON_LEFT, &txt);
 }
