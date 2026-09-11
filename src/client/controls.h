@@ -10,7 +10,6 @@
 
 // forward declarations
 struct inpt_state;
-struct rl_map_view;
 
 enum rl_action
 rl_handle_keyboard_input(struct inpt_state const* istate);
@@ -18,6 +17,6 @@ rl_handle_keyboard_input(struct inpt_state const* istate);
 enum rl_action
 rl_handle_mouse_input(struct inpt_state const* istate,
                       SDL_Point rogue,
-                      struct rl_map_view const* map_view);
+                      SDL_Point target);
 
 #endif // GINC_ROGUELIKE_CONTROLS_H

@@ -7,54 +7,14 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
-#include "ui/list.h"
-
-// external forward declarations
-typedef struct SDL_Renderer SDL_Renderer;
-
 // forward declarations
-struct rl_font;
 struct rl_game_log;
-struct rl_ribbon;
+struct rl_view;
 
-struct rl_log_view
-{
-  struct ui_list list;
-  /** Keep the latest messages visible. */
-  bool follow_tail;
-  SDL_FRect slots[8]; // temporary; these are the rects where we draw the text
-};
-
-void
-rl_init_log_view(struct rl_log_view* view,
-                 SDL_FRect const* viewport,
-                 float line_height);
-
-void
-rl_resize_log_view(struct rl_log_view* view, SDL_FRect const* viewport);
-
-void
-rl_scroll_log_view_up(struct rl_log_view* view, struct rl_game_log const* log);
-
-void
-rl_scroll_log_view_down(struct rl_log_view* view,
-                        struct rl_game_log const* log);
-
-void
-rl_scroll_log_view_to(struct rl_log_view* view,
-                      struct rl_game_log const* log,
-                      int first);
-
-/**
- * Update ribbon based on the log view's current state.
- */
-void
-rl_log_view_ribbon(struct rl_log_view const* view, struct rl_ribbon* ribbon);
-
-void
-rl_draw_log_view(struct rl_log_view const* view,
-                 SDL_Renderer* renderer,
-                 struct rl_font const* font,
-                 struct rl_game_log const* log);
+bool
+rl_alloc_log_view(struct rl_view* view,
+                  struct rl_game_log const* log,
+                  SDL_FRect const* viewport,
+                  float line_height);
 
 #endif // GINC_ROGUELIKE_LOG_VIEW_H

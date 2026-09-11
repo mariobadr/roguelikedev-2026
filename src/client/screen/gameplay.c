@@ -6,6 +6,7 @@
 
 #include "ui/rectcut.h"
 
+#include "client/view/in_sight.h"
 #include "client/view/inventory.h"
 #include "client/view/log.h"
 #include "client/view/map.h"
@@ -16,7 +17,7 @@
 #include "client/font.h"
 #include "client/game_log.h"
 #include "client/ui.h"
-#include "client/ui_view.h"
+#include "client/view.h"
 
 /** The horizontal margin between UI panels, in logical pixels. */
 #define RL_UI_MARGIN_X 4.0f
@@ -24,17 +25,6 @@
 #define RL_UI_MARGIN_Y 4.0f
 /** How long between subsequent keys. */
 #define KEY_REPEAT_COOLDOWN (0.115f)
-
-// I'm not sure if this stays in screen
-enum view_id
-{
-  VIEW_MAP,
-  VIEW_LOG,
-  VIEW_INVENTORY,
-  VIEW_CONTROLS,
-  VIEW_STATUS,
-  VIEW_COUNT,
-};
 
 // I think this stays in screen
 enum panel_id
@@ -53,7 +43,7 @@ struct screen_state
 
   // UI state
   SDL_FRect panel_bounds[PANEL_COUNT];
-  enum view_id panel_views[PANEL_COUNT];
+  enum rl_view_id panel_views[PANEL_COUNT];
   enum panel_id focused_panel;
 
   // Game state
@@ -63,18 +53,16 @@ struct screen_state
   struct rl_game_log log;
 
   // View state
-  struct rl_inv_view inv_view;
-  struct rl_log_view log_view;
-  struct rl_map_view map_view;
+  struct rl_view views[RL_VIEW_COUNT];
   struct rl_ribbon ribbon;
 };
 
 /**
  * Roughly:
  *
- * ┌──────────────────────────────┬───────────────┐
- * │          top panel           │               │
- * ├──────────────────────────────┤               │
+ * ┌──────────────────────────────────────────────┐
+ * │                  top panel                   │
+ * ├──────────────────────────────┬───────────────┤
  * │                              │  right panel  │
  * │            main              │               │
  * │                              │               │
@@ -88,13 +76,15 @@ create_layout(SDL_FRect panels[PANEL_COUNT])
   SDL_FRect screen = { 0.0f, 0.0f, (float)RL_UI_WIDTH, (float)RL_UI_HEIGHT };
 
   ui_cut_left(&screen, RL_UI_MARGIN_X);
+
+  // One line of text across the full available width.
+  panels[PANEL_TOP] = ui_cut_top(&screen, 8.0f);
+  ui_cut_top(&screen, RL_UI_MARGIN_Y);
+
   SDL_FRect left = ui_cut_left(&screen, 384.0f);
   ui_cut_left(&screen, RL_UI_MARGIN_X);
   panels[PANEL_RIGHT] = screen;
 
-  // One line of text.
-  panels[PANEL_TOP] = ui_cut_top(&left, 8.0f);
-  ui_cut_top(&left, RL_UI_MARGIN_Y);
   // Must stay a whole number of cells (see rl_draw_map).
   panels[PANEL_MAIN] = ui_cut_top(&left, 288.0f);
   ui_cut_top(&left, RL_UI_MARGIN_Y);
@@ -107,29 +97,48 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   // the layout is fixed
   create_layout(s->panel_bounds);
 
-  // this is the initial mapping
-  s->panel_views[PANEL_MAIN] = VIEW_MAP;
-  s->panel_views[PANEL_TOP] = VIEW_CONTROLS;
-  s->panel_views[PANEL_BOTTOM] = VIEW_LOG;
-  s->panel_views[PANEL_RIGHT] = VIEW_STATUS;
+  // this is the initial mapping; PANEL_TOP always shows the ribbon, which
+  // isn't a view, so it has no entry here
+  s->panel_views[PANEL_MAIN] = RL_VIEW_MAP;
+  s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
+  s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
 
-  // bottom panel views
-  rl_init_log_view(
-    &s->log_view, &s->panel_bounds[PANEL_BOTTOM], (float)font->glyph_height);
-  rl_init_inv_view(
-    &s->inv_view, &s->panel_bounds[PANEL_BOTTOM], (float)font->glyph_height);
+  if (!rl_alloc_in_sight_view(&s->views[RL_VIEW_IN_SIGHT],
+                              &s->game_state.world,
+                              &s->game_state.fov,
+                              &s->panel_bounds[PANEL_RIGHT])) {
+    return false;
+  }
+
+  if (!rl_alloc_log_view(&s->views[RL_VIEW_LOG],
+                         &s->log,
+                         &s->panel_bounds[PANEL_BOTTOM],
+                         (float)font->glyph_height)) {
+    return false;
+  }
+
+  if (!rl_alloc_inv_view(&s->views[RL_VIEW_INVENTORY],
+                         &s->game_state.world,
+                         &s->panel_bounds[PANEL_BOTTOM],
+                         (float)font->glyph_height)) {
+    return false;
+  }
 
   // the map is only designed to work in the main panel right now
-  rl_init_map_view(&s->map_view,
-                   &s->panel_bounds[PANEL_MAIN],
-                   font->glyph_width,
-                   font->glyph_height);
+  if (!rl_alloc_map_view(&s->views[RL_VIEW_MAP],
+                         &s->game_state.world,
+                         &s->game_state.fov,
+                         &s->panel_bounds[PANEL_MAIN],
+                         font->glyph_width,
+                         font->glyph_height)) {
+    return false;
+  }
 
   // ribbon
   rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP]);
 
   int width, height;
-  rl_map_view_size(&s->map_view, &width, &height);
+  rl_map_view_size(&s->views[RL_VIEW_MAP], &width, &height);
 
   // TODO: add a camera at some point?
   if (!rl_alloc_game_state(&s->game_state, width, height)) {
@@ -144,7 +153,8 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   s->font = font;
 
   s->focused_panel = PANEL_MAIN;
-  rl_map_view_ribbon(&s->map_view, &s->ribbon);
+  rl_view_update_ribbon(&s->views[s->panel_views[s->focused_panel]],
+                        &s->ribbon);
 
   return true;
 }
@@ -155,6 +165,10 @@ free_screen(void* data)
   struct screen_state* s = (struct screen_state*)data;
   if (s == NULL) {
     return;
+  }
+
+  for (int i = 0; i < RL_VIEW_COUNT; ++i) {
+    rl_free_view(&s->views[i]);
   }
 
   rl_free_game_log(&s->log);
@@ -174,49 +188,14 @@ exit_screen(void* data)
   (void)data;
 }
 
-static void
-update_ribbon(struct screen_state* s)
-{
-  switch (s->panel_views[s->focused_panel]) {
-    case VIEW_MAP:
-      rl_map_view_ribbon(&s->map_view, &s->ribbon);
-      break;
-    case VIEW_LOG:
-      rl_log_view_ribbon(&s->log_view, &s->ribbon);
-      break;
-    case VIEW_INVENTORY:
-      rl_inv_view_ribbon(&s->inv_view, &s->ribbon);
-      break;
-    default:
-      break;
-  }
-}
-
-static bool
-view_is_focusable(enum view_id view)
-{
-  switch (view) {
-    case VIEW_INVENTORY:
-    case VIEW_LOG:
-    case VIEW_MAP:
-      return true;
-    case VIEW_CONTROLS:
-    case VIEW_STATUS:
-      return false;
-    default:
-      break;
-  }
-
-  return false;
-}
-
 static enum panel_id
 next_focusable_panel(struct screen_state const* s)
 {
   enum panel_id next = s->focused_panel;
   do {
     next = (enum panel_id)((next + 1) % PANEL_COUNT);
-  } while (!view_is_focusable(s->panel_views[next]) &&
+  } while ((next == PANEL_TOP ||
+            !rl_view_can_interact(&s->views[s->panel_views[next]])) &&
            next != s->focused_panel);
   return next;
 }
@@ -224,14 +203,14 @@ next_focusable_panel(struct screen_state const* s)
 static void
 toggle_inventory(struct screen_state* s)
 {
-  if (s->panel_views[PANEL_BOTTOM] == VIEW_INVENTORY) {
-    s->panel_views[PANEL_BOTTOM] = VIEW_LOG;
+  if (s->panel_views[PANEL_BOTTOM] == RL_VIEW_INVENTORY) {
+    s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
     s->focused_panel = PANEL_MAIN;
     return;
   }
 
-  if (s->panel_views[PANEL_BOTTOM] == VIEW_LOG) {
-    s->panel_views[PANEL_BOTTOM] = VIEW_INVENTORY;
+  if (s->panel_views[PANEL_BOTTOM] == RL_VIEW_LOG) {
+    s->panel_views[PANEL_BOTTOM] = RL_VIEW_INVENTORY;
     s->focused_panel = PANEL_BOTTOM;
     return;
   }
@@ -251,91 +230,16 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
   return handled;
 }
 
-static bool
-handle_inv_action(struct screen_state* s, enum rl_action action)
-{
-  switch (action) {
-    case RL_ACTION_MOVE_UP:
-      rl_select_inv_view_up(&s->inv_view, &s->game_state.world);
-      return true;
-    case RL_ACTION_MOVE_DOWN:
-      rl_select_inv_view_down(&s->inv_view, &s->game_state.world);
-      return true;
-    case RL_ACTION_SELECT: {
-      int const item_id =
-        rl_inv_view_selected_item(&s->inv_view, &s->game_state.world);
-      if (item_id < 0) {
-        return false;
-      }
-
-      struct rl_command const cmd = {
-        .actor = RL_ROGUE_ID,
-        .type = RL_COMMAND_USE_ITEM,
-        .target = item_id,
-      };
-      bool const handled = submit_command(s, &cmd);
-
-      // Keep selection in bounds after consuming an item.
-      rl_select_inv_view_to(
-        &s->inv_view, &s->game_state.world, s->inv_view.selected);
-      return handled;
-    }
-    default:
-      break;
-  }
-
-  return false;
-}
-
-static bool
-handle_log_action(struct screen_state* s, enum rl_action action)
-{
-  switch (action) {
-    case RL_ACTION_MOVE_UP:
-      rl_scroll_log_view_up(&s->log_view, &s->log);
-      return true;
-    case RL_ACTION_MOVE_DOWN:
-      rl_scroll_log_view_down(&s->log_view, &s->log);
-      return true;
-    default:
-      break;
-  }
-
-  return false;
-}
-
-static bool
-handle_map_action(struct screen_state* s, enum rl_action action)
-{
-  if (action == RL_ACTION_NONE) {
-    return false;
-  }
-  struct rl_command cmd =
-    rl_build_command(RL_ROGUE_ID, action, &s->game_state.world);
-  return submit_command(s, &cmd);
-}
-
 static void
-handle_action(struct screen_state* s, enum rl_action action)
+handle_action(struct screen_state* s, struct inpt_state const* istate)
 {
-  bool handled = false;
+  struct rl_view* view = &s->views[s->panel_views[s->focused_panel]];
 
-  switch (s->panel_views[s->focused_panel]) {
-    case VIEW_INVENTORY:
-      handled = handle_inv_action(s, action);
-      break;
-    case VIEW_LOG:
-      handled = handle_log_action(s, action);
-      break;
-    case VIEW_MAP:
-      handled = handle_map_action(s, action);
-      break;
-    case VIEW_STATUS:
-      break;
-    case VIEW_CONTROLS:
-      break;
-    default:
-      break;
+  struct rl_command cmd = { 0 };
+  bool handled = rl_update_view(view, istate, &cmd);
+
+  if (cmd.type != RL_COMMAND_NONE) {
+    handled = submit_command(s, &cmd);
   }
 
   if (handled) {
@@ -361,18 +265,14 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   } else if (action == RL_ACTION_TOGGLE_INVENTORY) {
     toggle_inventory(s);
   } else {
-    enum view_id const view = s->panel_views[s->focused_panel];
-
-    if (action == RL_ACTION_NONE && view == VIEW_MAP) {
-      struct rl_actor const* rogue =
-        rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
-      action = rl_handle_mouse_input(istate, rogue->pos, &s->map_view);
-    }
-
-    handle_action(s, action);
+    handle_action(s, istate);
   }
 
-  update_ribbon(s);
+  for (int i = 0; i < RL_VIEW_COUNT; ++i) {
+    rl_prepare_view(&s->views[i]);
+  }
+  rl_view_update_ribbon(&s->views[s->panel_views[s->focused_panel]],
+                        &s->ribbon);
   return transition;
 }
 
@@ -382,33 +282,13 @@ render_screen(void const* data, SDL_Renderer* renderer)
   struct screen_state const* s = (struct screen_state*)data;
   SDL_assert(s != NULL);
 
-  struct rl_actor const* rogue =
-    rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
-
   for (int panel = 0; panel < PANEL_COUNT; ++panel) {
-    switch (s->panel_views[panel]) {
-      case VIEW_MAP:
-        rl_draw_map_view(&s->map_view,
-                         renderer,
-                         s->font,
-                         &s->game_state.world,
-                         &s->game_state.fov);
-        break;
-      case VIEW_LOG:
-        rl_draw_log_view(&s->log_view, renderer, s->font, &s->log);
-        break;
-      case VIEW_INVENTORY:
-        rl_draw_inv_view(&s->inv_view, renderer, s->font, &s->game_state.world);
-        break;
-      case VIEW_STATUS:
-        rl_draw_status(renderer, s->font, &s->panel_bounds[panel], rogue);
-        break;
-      case VIEW_CONTROLS:
-        rl_draw_ribbon(&s->ribbon, renderer, s->font);
-        break;
-      default:
-        break;
+    if (panel == PANEL_TOP) {
+      rl_draw_ribbon(&s->ribbon, renderer, s->font);
+      continue;
     }
+
+    rl_render_view(&s->views[s->panel_views[panel]], renderer, s->font);
   }
 }
 

@@ -3,6 +3,8 @@
 ###############################################################################
 set(GAME_SOURCES
     client/screen/gameplay.c
+    client/view/in_sight.c
+    client/view/in_sight.h
     client/view/inventory.c
     client/view/inventory.h
     client/view/log.c
@@ -33,8 +35,6 @@ set(GAME_SOURCES
     client/text.h
     client/ui.c
     client/ui.h
-    client/ui_view.c
-    client/ui_view.h
     container/alist.c
     container/alist.h
     container/array.h

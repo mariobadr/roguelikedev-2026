@@ -2,8 +2,6 @@
 
 #include "input/input.h"
 
-#include "client/view/map.h"
-
 /**
  * @return -1 for negative, 1 for positive, and 0 for zero
  */
@@ -57,15 +55,10 @@ rl_handle_keyboard_input(struct inpt_state const* istate)
  */
 enum rl_action
 rl_handle_mouse_input(struct inpt_state const* istate,
-                   SDL_Point rogue,
-                   struct rl_map_view const* map_view)
+                      SDL_Point rogue,
+                      SDL_Point target)
 {
   if (!inpt_is_down(istate->mouse.buttons[SDL_BUTTON_LEFT])) {
-    return RL_ACTION_NONE;
-  }
-
-  SDL_Point target = { 0 };
-  if (!rl_map_view_cell_at(map_view, istate->mouse.position, &target)) {
     return RL_ACTION_NONE;
   }
 
