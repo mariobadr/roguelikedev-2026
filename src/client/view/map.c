@@ -20,10 +20,23 @@
 #include "client/render.h"
 #include "client/view.h"
 
+/**
+ * Possible input modes for the map.
+ */
+enum map_mode
+{
+  MAP_MODE_MOVE,    //< Move the rogue around
+  MAP_MODE_SELECT,  //< Move the cursor around
+};
+
 struct view_state
 {
+  // the "model" for this view
   struct rl_world const* world;
   struct rl_fov const* fov;
+
+  /** Which mode the view is in. */
+  enum map_mode mode;
   /** Where this view exists on the screen. */
   SDL_FRect viewport;
   /** The width of a cell in the map. */
@@ -32,6 +45,11 @@ struct view_state
   int cell_height;
   /** A "camera" of what's currently visible. */
   SDL_Rect camera;
+
+  // for the SELECT mode
+  SDL_Point cursor;
+  enum rl_map_selection_result pending;
+  SDL_Point pending_point;
 };
 
 static void
@@ -239,25 +257,42 @@ draw_actors(struct view_state const* s,
   }
 }
 
+static bool
+is_explored(struct rl_level const* level, SDL_Point p)
+{
+  grid(rl_tile) const* map = &level->map;
+
+  if (!grid_contains(map, p.x, p.y)) {
+    return false;
+  }
+
+  return level->explored.data[grid_index_of(map, p.x, p.y)];
+}
+
 static void
 update_ribbon(void const* data, struct rl_ribbon* ribbon)
 {
-  (void)data;
+  struct view_state const* s = (struct view_state const*)data;
+  SDL_assert(s != NULL);
 
   rl_set_current_view(ribbon, "Map");
-  rl_set_current_mode(ribbon, "Moving");
 
   struct rl_text msg = { 0 };
-  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E, Z]");
+  if (s->mode == MAP_MODE_SELECT) {
+    rl_set_current_mode(ribbon, "Selecting");
+    rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E, Esc]");
+  } else {
+    rl_set_current_mode(ribbon, "Moving");
+    rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E, Z]");
+  }
   rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
 }
 
 static bool
-update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
+update_move(struct view_state* s,
+            struct inpt_state const* istate,
+            struct rl_command* out)
 {
-  struct view_state* s = (struct view_state*)data;
-  SDL_assert(s != NULL);
-
   enum rl_action action = rl_handle_keyboard_input(istate);
   if (action == RL_ACTION_NONE) {
     SDL_Point target;
@@ -281,6 +316,59 @@ update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
   }
 }
 
+static bool
+update_select(struct view_state* s, struct inpt_state const* istate)
+{
+  enum rl_action const action = rl_handle_keyboard_input(istate);
+
+  SDL_Point next = s->cursor;
+  switch (action) {
+    case RL_ACTION_MOVE_UP:
+      next.y -= 1;
+      break;
+    case RL_ACTION_MOVE_DOWN:
+      next.y += 1;
+      break;
+    case RL_ACTION_MOVE_LEFT:
+      next.x -= 1;
+      break;
+    case RL_ACTION_MOVE_RIGHT:
+      next.x += 1;
+      break;
+    case RL_ACTION_SELECT:
+      s->pending = RL_MAP_SELECTION_CONFIRMED;
+      s->pending_point = s->cursor;
+      s->mode = MAP_MODE_MOVE;
+      return true;
+    case RL_ACTION_CANCEL:
+      s->pending = RL_MAP_SELECTION_CANCELLED;
+      s->mode = MAP_MODE_MOVE;
+      return true;
+    default:
+      return false;
+  }
+
+  struct rl_level const* level = rl_get_current_level(s->world);
+  if (is_explored(level, next)) {
+    s->cursor = next;
+  }
+
+  return true;
+}
+
+static bool
+update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
+{
+  struct view_state* s = (struct view_state*)data;
+  SDL_assert(s != NULL);
+
+  if (s->mode == MAP_MODE_SELECT) {
+    return update_select(s, istate);
+  }
+
+  return update_move(s, istate, out);
+}
+
 static void
 prepare_view(void* data)
 {
@@ -290,8 +378,23 @@ prepare_view(void* data)
   struct rl_actor const* rogue = rl_get_actor(s->world, RL_ROGUE_ID);
   grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
 
-  rl_centre_camera_on(
-    &s->camera, rogue->pos, grid_width(map), grid_height(map));
+  SDL_Point const origin = s->mode == MAP_MODE_SELECT ? s->cursor : rogue->pos;
+  rl_centre_camera_on(&s->camera, origin, grid_width(map), grid_height(map));
+}
+
+static void
+draw_cursor(struct view_state const* s, SDL_Renderer* renderer)
+{
+  SDL_FPoint const at = cell_to_pixels(s, s->cursor);
+  SDL_FRect rect = { 0 };
+  rect.x = at.x;
+  rect.y = at.y;
+  rect.w = (float)s->cell_width;
+  rect.h = (float)s->cell_height;
+
+  SDL_FColor colour = RL_COLOUR_YELLOW[5];
+  SDL_SetRenderDrawColorFloat(renderer, colour.r, colour.g, colour.b, colour.a);
+  SDL_RenderRect(renderer, &rect);
 }
 
 void
@@ -306,6 +409,10 @@ render_view(void const* data,
   draw_items(s, renderer, font);
   draw_actors(s, renderer, font);
   draw_light(s, renderer);
+
+  if (s->mode == MAP_MODE_SELECT) {
+    draw_cursor(s, renderer);
+  }
 }
 
 bool
@@ -333,4 +440,34 @@ rl_alloc_map_view(struct rl_view* view,
   view->render = render_view;
 
   return true;
+}
+
+void
+rl_map_view_begin_select(struct rl_view* view, SDL_Point origin)
+{
+  struct view_state* s = (struct view_state*)view->state;
+  SDL_assert(s != NULL);
+
+  s->mode = MAP_MODE_SELECT;
+  s->cursor = origin;
+  s->pending = RL_MAP_SELECTION_NONE;
+}
+
+enum rl_map_selection_result
+rl_map_view_take_selection(struct rl_view* view, SDL_Point* out)
+{
+  struct view_state* s = (struct view_state*)view->state;
+  SDL_assert(s != NULL);
+
+  enum rl_map_selection_result const result = s->pending;
+  if (result != RL_MAP_SELECTION_NONE) {
+    if (out != NULL) {
+      *out = s->pending_point;
+    }
+
+    // reset before returning
+    s->pending = RL_MAP_SELECTION_NONE;
+  }
+
+  return result;
 }
