@@ -26,6 +26,9 @@
 /** How long between subsequent keys. */
 #define KEY_REPEAT_COOLDOWN (0.115f)
 
+#define RL_WORLD_WIDTH 64
+#define RL_WORLD_HEIGHT 64
+
 // I think this stays in screen
 enum panel_id
 {
@@ -137,11 +140,7 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   // ribbon
   rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP]);
 
-  int width, height;
-  rl_map_view_size(&s->views[RL_VIEW_MAP], &width, &height);
-
-  // TODO: add a camera at some point?
-  if (!rl_alloc_game_state(&s->game_state, width, height)) {
+  if (!rl_alloc_game_state(&s->game_state, RL_WORLD_WIDTH, RL_WORLD_HEIGHT)) {
     return false;
   }
 

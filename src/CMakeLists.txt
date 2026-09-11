@@ -15,6 +15,8 @@ set(GAME_SOURCES
     client/view/ribbon.h
     client/action.c
     client/action.h
+    client/camera.c
+    client/camera.h
     client/client.c
     client/client.h
     client/controls.c

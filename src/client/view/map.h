@@ -12,12 +12,6 @@ struct rl_fov;
 struct rl_view;
 struct rl_world;
 
-/**
- * Get the width and height of map. Width and/or height can be NULL.
- */
-void
-rl_map_view_size(struct rl_view const* view, int* width, int* height);
-
 bool
 rl_alloc_map_view(struct rl_view* view,
                   struct rl_world const* world,

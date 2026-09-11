@@ -12,6 +12,7 @@
 #include "client/view/ribbon.h"
 
 #include "client/action.h"
+#include "client/camera.h"
 #include "client/controls.h"
 #include "client/graphics.h"
 #include "client/lighting.h"
@@ -29,6 +30,8 @@ struct view_state
   int cell_width;
   /** The height of a cell in the map. */
   int cell_height;
+  /** A "camera" of what's currently visible. */
+  SDL_Rect camera;
 };
 
 static void
@@ -44,6 +47,11 @@ init_view_state(struct view_state* s,
   s->viewport = *viewport;
   s->cell_width = cell_width;
   s->cell_height = cell_height;
+
+  s->camera.x = 0;
+  s->camera.y = 0;
+  s->camera.w = (int)viewport->w / cell_width;
+  s->camera.h = (int)viewport->h / cell_height;
 }
 
 static SDL_FPoint
@@ -62,10 +70,34 @@ cell_to_pixels(struct view_state const* s, SDL_Point cell)
   SDL_FPoint const origin = cell_origin(&s->viewport);
 
   SDL_FPoint pixels = { 0 };
-  pixels.x = origin.x + (float)(cell.x * s->cell_width);
-  pixels.y = origin.y + (float)(cell.y * s->cell_height);
+  pixels.x = origin.x + (float)((cell.x - s->camera.x) * s->cell_width);
+  pixels.y = origin.y + (float)((cell.y - s->camera.y) * s->cell_height);
 
   return pixels;
+}
+
+static bool
+cell_at(struct view_state const* s, SDL_FPoint pos, SDL_Point* cell)
+{
+  if (!SDL_PointInRectFloat(&pos, &s->viewport)) {
+    return false;
+  }
+
+  SDL_FPoint const origin = cell_origin(&s->viewport);
+
+  SDL_Point world = { 0 };
+  world.x =
+    (int)SDL_floorf((pos.x - origin.x) / (float)s->cell_width) + s->camera.x;
+  world.y =
+    (int)SDL_floorf((pos.y - origin.y) / (float)s->cell_height) + s->camera.y;
+
+  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
+  if (!grid_contains(map, world.x, world.y)) {
+    return false;
+  }
+
+  *cell = world;
+  return true;
 }
 
 static void
@@ -76,8 +108,11 @@ draw_level(struct view_state const* s,
   struct rl_level const* level = rl_get_current_level(s->world);
   grid(rl_tile) const* map = &level->map;
 
-  for (int y = 0; y < grid_height(map); y++) {
-    for (int x = 0; x < grid_width(map); x++) {
+  SDL_Rect const visible =
+    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
+
+  for (int y = visible.y; y < visible.y + visible.h; y++) {
+    for (int x = visible.x; x < visible.x + visible.w; x++) {
       size_t const index = grid_index_of(map, x, y);
 
       if (!level->explored.data[index]) {
@@ -112,8 +147,11 @@ draw_light(struct view_state const* s, SDL_Renderer* renderer)
   // the colour of the light source - make this an argument?
   SDL_FColor const light = RL_COLOUR_GRAY[6];
 
-  for (int y = 0; y < grid_height(map); y++) {
-    for (int x = 0; x < grid_width(map); x++) {
+  SDL_Rect const visible =
+    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
+
+  for (int y = visible.y; y < visible.y + visible.h; y++) {
+    for (int x = visible.x; x < visible.x + visible.w; x++) {
       size_t const index = grid_index_of(map, x, y);
 
       if (!s->fov->visible.data[index]) {
@@ -202,21 +240,6 @@ draw_actors(struct view_state const* s,
 }
 
 static bool
-cell_at(struct view_state const* s, SDL_FPoint pos, SDL_Point* cell)
-{
-  if (!SDL_PointInRectFloat(&pos, &s->viewport)) {
-    return false;
-  }
-
-  SDL_FPoint const origin = cell_origin(&s->viewport);
-
-  cell->x = (int)SDL_floorf((pos.x - origin.x) / (float)s->cell_width);
-  cell->y = (int)SDL_floorf((pos.y - origin.y) / (float)s->cell_height);
-
-  return true;
-}
-
-static bool
 can_interact(void)
 {
   return true;
@@ -266,7 +289,14 @@ update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
 static void
 prepare_view(void* data)
 {
-  (void)data;
+  struct view_state* s = (struct view_state*)data;
+  SDL_assert(s != NULL);
+
+  struct rl_actor const* rogue = rl_get_actor(s->world, RL_ROGUE_ID);
+  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
+
+  rl_centre_camera_on(
+    &s->camera, rogue->pos, grid_width(map), grid_height(map));
 }
 
 void
@@ -274,28 +304,13 @@ render_view(void const* data,
             SDL_Renderer* renderer,
             struct rl_font const* font)
 {
-  struct view_state* s = (struct view_state*)data;
+  struct view_state const* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
   draw_level(s, renderer, font);
   draw_items(s, renderer, font);
   draw_actors(s, renderer, font);
   draw_light(s, renderer);
-}
-
-void
-rl_map_view_size(struct rl_view const* view, int* width, int* height)
-{
-  struct view_state* s = (struct view_state*)view->state;
-  SDL_assert(s != NULL);
-
-  if (width != NULL) {
-    *width = (int)s->viewport.w / s->cell_width;
-  }
-
-  if (height != NULL) {
-    *height = (int)s->viewport.h / s->cell_height;
-  }
 }
 
 bool
