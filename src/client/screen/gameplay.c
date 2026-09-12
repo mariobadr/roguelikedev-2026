@@ -51,6 +51,7 @@ struct screen_state
 
   // Game state
   struct rl_game_state game_state;
+  struct rl_command pending_target_cmd; // RL_COMMAND_NONE when idle
 
   // Model state
   struct rl_game_log log;
@@ -233,6 +234,46 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
   return handled;
 }
 
+static void
+begin_target_select(struct screen_state* s, int item_id)
+{
+  struct rl_actor const* rogue =
+    rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
+
+  s->pending_target_cmd = (struct rl_command){ 0 };
+  s->pending_target_cmd.actor = RL_ROGUE_ID;
+  s->pending_target_cmd.type = RL_COMMAND_USE_ITEM;
+  s->pending_target_cmd.use_item.item_id = item_id;
+
+  rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos);
+  s->focused_panel = PANEL_MAIN;
+}
+
+static void
+resolve_pending_target(struct screen_state* s)
+{
+  if (s->pending_target_cmd.type == RL_COMMAND_NONE) {
+    return;
+  }
+
+  SDL_Point dst;
+  enum rl_map_selection_result result =
+    rl_map_view_take_selection(&s->views[RL_VIEW_MAP], &dst);
+
+  switch (result) {
+    case RL_MAP_SELECTION_CONFIRMED:
+      s->pending_target_cmd.use_item.dst = dst;
+      submit_command(s, &s->pending_target_cmd);
+      s->pending_target_cmd = (struct rl_command){ 0 };
+      break;
+    case RL_MAP_SELECTION_CANCELLED:
+      s->pending_target_cmd = (struct rl_command){ 0 };
+      break;
+    case RL_MAP_SELECTION_NONE:
+      break;
+  }
+}
+
 static bool
 handle_item_selection(struct screen_state* s, int item_id)
 {
@@ -258,7 +299,8 @@ handle_item_selection(struct screen_state* s, int item_id)
       handled = submit_command(s, &cmd);
       break;
     case RL_ITEM_TARGET_TILE:
-      // TODO: begin select mode
+      begin_target_select(s, item_id);
+      handled = true;
       break;
   }
 
@@ -276,12 +318,12 @@ handle_action(struct screen_state* s, struct inpt_state const* istate)
   switch (view_id) {
     case RL_VIEW_INVENTORY:
       int item_id = rl_inv_view_take_selection(view);
-      handled = handle_item_selection(s, item_id);
+      handled = handle_item_selection(s, item_id) || handled;
       break;
     case RL_VIEW_MAP: {
       struct rl_command cmd;
       if (rl_map_view_take_command(view, &cmd)) {
-        handled = submit_command(s, &cmd);
+        handled = submit_command(s, &cmd) || handled;
       }
       break;
     }
@@ -309,7 +351,11 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   }
 
   enum rl_action action = rl_handle_keyboard_input(istate);
-  if (action == RL_ACTION_SHOW_INVENTORY) {
+
+  if (s->pending_target_cmd.type != RL_COMMAND_NONE) {
+    // Targeting a tile, don't interrupt
+    handle_action(s, istate);
+  } else if (action == RL_ACTION_SHOW_INVENTORY) {
     show_inventory(s);
   } else if (action == RL_ACTION_SHOW_LOG) {
     show_log(s);
@@ -321,9 +367,12 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
     handle_action(s, istate);
   }
 
+  resolve_pending_target(s);
+
   for (int i = 0; i < RL_VIEW_COUNT; ++i) {
     rl_prepare_view(&s->views[i]);
   }
+
   rl_view_update_ribbon(&s->views[s->panel_views[s->focused_panel]],
                         &s->ribbon);
   return transition;
