@@ -18,12 +18,16 @@
 
 struct view_state
 {
+  // the "model" data
   struct rl_world const* world;
-
+  // the UI component
   struct ui_list list;
-  /** Selected item in the filtered inventory. */
+  // temporary; these are the rects where we draw the text
+  SDL_FRect slots[8];
+  // selected item index in the filtered inventory
   int selected;
-  SDL_FRect slots[8]; // temporary; these are the rects where we draw the text
+  // the selected item, waiting to be "pulled"
+  int pending_item_id;
 };
 
 static void
@@ -34,6 +38,7 @@ init_view_state(struct view_state* s,
 {
   s->world = world;
   s->selected = 0;
+  s->pending_item_id = -1;
 
   ui_list_init(
     &s->list, viewport, s->slots, SDL_arraysize(s->slots), line_height, 2.0f);
@@ -64,33 +69,32 @@ item_text(struct rl_item const* item, bool selected)
   return text;
 }
 
-void
-rl_select_inv_view_to(struct view_state* view,
-                      int selected)
+static void
+scroll_to(struct view_state* view, int selected)
 {
   int const count = held_item_count(view->world);
   view->selected = SDL_clamp(selected, 0, SDL_max(0, count - 1));
   ui_list_ensure_visible(&view->list, count, view->selected);
 }
 
-void
-rl_select_inv_view_up(struct view_state* view)
+static void
+scroll_up(struct view_state* view)
 {
   int const last = SDL_max(0, held_item_count(view->world) - 1);
   int const selected = SDL_clamp(view->selected, 0, last);
-  rl_select_inv_view_to(view, selected - 1);
+  scroll_to(view, selected - 1);
 }
 
-void
-rl_select_inv_view_down(struct view_state* view)
+static void
+scroll_down(struct view_state* view)
 {
   int const last = SDL_max(0, held_item_count(view->world) - 1);
   int const selected = SDL_clamp(view->selected, 0, last);
-  rl_select_inv_view_to(view, selected + 1);
+  scroll_to(view, selected + 1);
 }
 
-int
-rl_inv_view_selected_item(struct view_state const* view)
+static int
+get_selected_item(struct view_state const* view)
 {
   int index = 0;
 
@@ -124,7 +128,7 @@ update_ribbon(void const* data, struct rl_ribbon* ribbon)
 }
 
 static bool
-update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
+update_view(void* data, struct inpt_state const* istate)
 {
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
@@ -132,23 +136,14 @@ update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
   enum rl_action const action = rl_handle_keyboard_input(istate);
   switch (action) {
     case RL_ACTION_MOVE_UP:
-      rl_select_inv_view_up(s);
+      scroll_up(s);
       return true;
     case RL_ACTION_MOVE_DOWN:
-      rl_select_inv_view_down(s);
+      scroll_down(s);
       return true;
-    case RL_ACTION_SELECT: {
-      int const item_id = rl_inv_view_selected_item(s);
-      if (item_id < 0) {
-        return false;
-      }
-
-      out->actor = RL_ROGUE_ID;
-      out->type = RL_COMMAND_USE_ITEM;
-      out->use_item.item_id = item_id;
-
-      return true;
-    }
+    case RL_ACTION_SELECT:
+      s->pending_item_id = get_selected_item(s);
+      return s->pending_item_id >= 0;
     default:
       break;
   }
@@ -163,7 +158,7 @@ prepare_view(void* data)
   SDL_assert(s != NULL);
 
   // Keep selection in bounds after consuming an item.
-  rl_select_inv_view_to(s, s->selected);
+  scroll_to(s, s->selected);
 }
 
 static void
@@ -222,4 +217,16 @@ rl_alloc_inv_view(struct rl_view* view,
   view->render = render_view;
 
   return true;
+}
+
+int
+rl_inv_view_take_selection(struct rl_view* view)
+{
+  struct view_state* s = view->state;
+  SDL_assert(s != NULL);
+
+  int const item_id = s->pending_item_id;
+  s->pending_item_id = -1;
+
+  return item_id;
 }

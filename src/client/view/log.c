@@ -75,10 +75,8 @@ update_ribbon(void const* data, struct rl_ribbon* ribbon)
 }
 
 static bool
-update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
+update_view(void* data, struct inpt_state const* istate)
 {
-  (void)out;
-
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 

@@ -11,7 +11,6 @@ typedef struct SDL_Renderer SDL_Renderer;
 
 // forward declarations
 struct inpt_state;
-struct rl_command;
 struct rl_font;
 struct rl_ribbon;
 
@@ -39,9 +38,7 @@ struct rl_view
 
   void (*update_ribbon)(void const* data, struct rl_ribbon* ribbon);
 
-  bool (*update)(void* data,
-                 struct inpt_state const* istate,
-                 struct rl_command* out);
+  bool (*update)(void* data, struct inpt_state const* istate);
 
   void (*prepare)(void* data);
 
@@ -71,15 +68,13 @@ rl_view_update_ribbon(struct rl_view const* view, struct rl_ribbon* ribbon)
 }
 
 static inline bool
-rl_update_view(struct rl_view* view,
-               struct inpt_state const* istate,
-               struct rl_command* out)
+rl_update_view(struct rl_view* view, struct inpt_state const* istate)
 {
   if (view->update == NULL) {
     return false;
   }
 
-  return view->update(view->state, istate, out);
+  return view->update(view->state, istate);
 }
 
 static inline void

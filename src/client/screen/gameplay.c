@@ -234,15 +234,59 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
 }
 
 static bool
+handle_item_selection(struct screen_state* s, int item_id)
+{
+  if (item_id < 0) {
+    return false;
+  }
+
+  struct rl_item const* item = rl_get_item(&s->game_state.world, item_id);
+  if (item == NULL) {
+    return false;
+  }
+
+  struct rl_item_def const* def = rl_get_item_def(item->itype);
+  bool handled = false;
+
+  switch (def->target) {
+    case RL_ITEM_TARGET_NONE:
+      // use item
+      struct rl_command cmd = { 0 };
+      cmd.actor = RL_ROGUE_ID;
+      cmd.type = RL_COMMAND_USE_ITEM;
+      cmd.use_item.item_id = item_id;
+      handled = submit_command(s, &cmd);
+      break;
+    case RL_ITEM_TARGET_TILE:
+      // TODO: begin select mode
+      break;
+  }
+
+  return handled;
+}
+
+static bool
 handle_action(struct screen_state* s, struct inpt_state const* istate)
 {
-  struct rl_view* view = &s->views[s->panel_views[s->focused_panel]];
+  enum rl_view_id const view_id = s->panel_views[s->focused_panel];
+  struct rl_view* view = &s->views[view_id];
 
-  struct rl_command cmd = { 0 };
-  bool handled = rl_update_view(view, istate, &cmd);
+  bool handled = rl_update_view(view, istate);
 
-  if (cmd.type != RL_COMMAND_NONE) {
-    handled = submit_command(s, &cmd);
+  switch (view_id) {
+    case RL_VIEW_INVENTORY:
+      int item_id = rl_inv_view_take_selection(view);
+      handled = handle_item_selection(s, item_id);
+      break;
+    case RL_VIEW_MAP: {
+      struct rl_command cmd;
+      if (rl_map_view_take_command(view, &cmd)) {
+        handled = submit_command(s, &cmd);
+      }
+      break;
+    }
+    default:
+      break;
   }
 
   if (handled) {

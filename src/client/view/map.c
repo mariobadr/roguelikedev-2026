@@ -25,8 +25,8 @@
  */
 enum map_mode
 {
-  MAP_MODE_MOVE,    //< Move the rogue around
-  MAP_MODE_SELECT,  //< Move the cursor around
+  MAP_MODE_MOVE,   //< Move the rogue around
+  MAP_MODE_SELECT, //< Move the cursor around
 };
 
 struct view_state
@@ -46,9 +46,12 @@ struct view_state
   /** A "camera" of what's currently visible. */
   SDL_Rect camera;
 
+  // for the MOVE mode
+  struct rl_command pending_command;
+
   // for the SELECT mode
   SDL_Point cursor;
-  enum rl_map_selection_result pending;
+  enum rl_map_selection_result pending_select;
   SDL_Point pending_point;
 };
 
@@ -289,9 +292,7 @@ update_ribbon(void const* data, struct rl_ribbon* ribbon)
 }
 
 static bool
-update_move(struct view_state* s,
-            struct inpt_state const* istate,
-            struct rl_command* out)
+update_move(struct view_state* s, struct inpt_state const* istate)
 {
   enum rl_action action = rl_handle_keyboard_input(istate);
   if (action == RL_ACTION_NONE) {
@@ -309,7 +310,7 @@ update_move(struct view_state* s,
     case RL_ACTION_MOVE_RIGHT:
     case RL_ACTION_SELECT:
     case RL_ACTION_WAIT:
-      *out = rl_build_command(RL_ROGUE_ID, action, s->world);
+      s->pending_command = rl_build_command(RL_ROGUE_ID, action, s->world);
       return true;
     default:
       return false;
@@ -336,12 +337,12 @@ update_select(struct view_state* s, struct inpt_state const* istate)
       next.x += 1;
       break;
     case RL_ACTION_SELECT:
-      s->pending = RL_MAP_SELECTION_CONFIRMED;
+      s->pending_select = RL_MAP_SELECTION_CONFIRMED;
       s->pending_point = s->cursor;
       s->mode = MAP_MODE_MOVE;
       return true;
     case RL_ACTION_CANCEL:
-      s->pending = RL_MAP_SELECTION_CANCELLED;
+      s->pending_select = RL_MAP_SELECTION_CANCELLED;
       s->mode = MAP_MODE_MOVE;
       return true;
     default:
@@ -357,7 +358,7 @@ update_select(struct view_state* s, struct inpt_state const* istate)
 }
 
 static bool
-update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
+update_view(void* data, struct inpt_state const* istate)
 {
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
@@ -366,7 +367,7 @@ update_view(void* data, struct inpt_state const* istate, struct rl_command* out)
     return update_select(s, istate);
   }
 
-  return update_move(s, istate, out);
+  return update_move(s, istate);
 }
 
 static void
@@ -442,6 +443,22 @@ rl_alloc_map_view(struct rl_view* view,
   return true;
 }
 
+bool
+rl_map_view_take_command(struct rl_view* view, struct rl_command* out)
+{
+  struct view_state* s = view->state;
+  SDL_assert(s != NULL);
+
+  if (s->pending_command.type == RL_COMMAND_NONE) {
+    return false;
+  }
+
+  *out = s->pending_command;
+  s->pending_command = (struct rl_command){ 0 };
+
+  return true;
+}
+
 void
 rl_map_view_begin_select(struct rl_view* view, SDL_Point origin)
 {
@@ -450,23 +467,25 @@ rl_map_view_begin_select(struct rl_view* view, SDL_Point origin)
 
   s->mode = MAP_MODE_SELECT;
   s->cursor = origin;
-  s->pending = RL_MAP_SELECTION_NONE;
+  s->pending_select = RL_MAP_SELECTION_NONE;
 }
 
 enum rl_map_selection_result
 rl_map_view_take_selection(struct rl_view* view, SDL_Point* out)
 {
+  SDL_assert(out != NULL);
+
   struct view_state* s = (struct view_state*)view->state;
   SDL_assert(s != NULL);
 
-  enum rl_map_selection_result const result = s->pending;
+  enum rl_map_selection_result const result = s->pending_select;
   if (result != RL_MAP_SELECTION_NONE) {
-    if (out != NULL) {
+    if (result == RL_MAP_SELECTION_CONFIRMED) {
       *out = s->pending_point;
     }
 
     // reset before returning
-    s->pending = RL_MAP_SELECTION_NONE;
+    s->pending_select = RL_MAP_SELECTION_NONE;
   }
 
   return result;

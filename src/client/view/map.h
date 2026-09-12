@@ -8,6 +8,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 // forward declarations
+struct rl_command;
 struct rl_fov;
 struct rl_view;
 struct rl_world;
@@ -32,6 +33,12 @@ rl_alloc_map_view(struct rl_view* view,
                   SDL_FRect const* viewport,
                   int cell_width,
                   int cell_height);
+
+/**
+ * Consume a pending command.
+ */
+bool
+rl_map_view_take_command(struct rl_view* view, struct rl_command* out);
 
 /**
  * Enter cursor-selection mode, with the cursor starting at origin.

@@ -17,4 +17,7 @@ rl_alloc_inv_view(struct rl_view* view,
                   SDL_FRect const* viewport,
                   float line_height);
 
+int
+rl_inv_view_take_selection(struct rl_view* view);
+
 #endif // GINC_ROGUELIKE_INVENTORY_VIEW_H
