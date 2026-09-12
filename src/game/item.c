@@ -3,13 +3,15 @@
 static struct rl_item_def const RL_ITEM_DEFS[] = {
   [RL_ITEM_POTION_HEALTH_MINOR] = {
     .class = RL_ITEM_CLASS_POTION,
-    .name = "Minor Health Potion",
     .effect = RL_ITEM_EFFECT_HEAL,
+    .target = RL_ITEM_TARGET_NONE,
+    .name = "Minor Health Potion",
     .power = 10, },
   [RL_ITEM_SCROLL_FIREBALL] = {
     .class = RL_ITEM_CLASS_SCROLL,
-    .name = "Scroll of Minor Fireball",
     .effect = RL_ITEM_EFFECT_DAMAGE_AREA,
+    .target = RL_ITEM_TARGET_TILE,
+    .name = "Scroll of Minor Fireball",
     .power = 10,
   }
 };

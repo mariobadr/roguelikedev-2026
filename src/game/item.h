@@ -29,12 +29,21 @@ enum rl_item_effect
   RL_ITEM_EFFECT_DAMAGE_AREA,
 };
 
+/** The different targetting requirements of an item. */
+enum rl_item_target
+{
+  RL_ITEM_TARGET_NONE,
+  RL_ITEM_TARGET_TILE,
+};
+
 /** Immutable data that defines an item. */
 struct rl_item_def
 {
   enum rl_item_class class;
-  char const* name;
   enum rl_item_effect effect;
+  enum rl_item_target target;
+
+  char const* name;
   int power;
 };
 
