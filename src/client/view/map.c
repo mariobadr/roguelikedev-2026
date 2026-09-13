@@ -134,22 +134,22 @@ draw_level(struct view_state const* s,
 
   for (int y = visible.y; y < visible.y + visible.h; y++) {
     for (int x = visible.x; x < visible.x + visible.w; x++) {
-      size_t const index = grid_index_of(map, x, y);
+      SDL_Point const p = { x, y };
 
-      if (!level->explored.data[index]) {
+      if (!rl_is_tile_explored(level, p)) {
         // don't draw anything for unexplored tiles
         continue;
       }
 
-      enum rl_tile const tile = *grid_at(map, x, y);
+      enum rl_tile const tile = *grid_at(map, p.x, p.y);
       struct rl_cell cell = rl_get_tile_gfx(tile);
 
-      if (!s->fov->visible.data[index]) {
+      if (!rl_is_tile_visible(s->fov, p)) {
         // dim explored but not visible tiles
         cell.fg = rl_lerp_colour(cell.fg, RL_COLOUR_BLACK, 0.4f);
       }
 
-      SDL_FPoint const at = cell_to_pixels(s, (SDL_Point){ x, y });
+      SDL_FPoint const at = cell_to_pixels(s, p);
       rl_draw_cell(renderer, font, &cell, at);
     }
   }
@@ -173,19 +173,19 @@ draw_light(struct view_state const* s, SDL_Renderer* renderer)
 
   for (int y = visible.y; y < visible.y + visible.h; y++) {
     for (int x = visible.x; x < visible.x + visible.w; x++) {
-      size_t const index = grid_index_of(map, x, y);
+      SDL_Point const p = { x, y };
 
-      if (!s->fov->visible.data[index]) {
+      if (!rl_is_tile_visible(s->fov, p)) {
         // not visible, so there's no "glow" to add
         continue;
       }
 
       float const brightness = rl_calculate_brightness(
-        s->fov->origin, (SDL_Point){ x, y }, (float)s->fov->radius);
+        s->fov->origin, p, (float)s->fov->radius);
       float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
 
       SDL_FColor const colour = { light.r, light.g, light.b, alpha };
-      SDL_FPoint const at = cell_to_pixels(s, (SDL_Point){ x, y });
+      SDL_FPoint const at = cell_to_pixels(s, p);
 
       SDL_FRect dst = { 0 };
       dst.x = at.x;
@@ -225,7 +225,7 @@ draw_items(struct view_state const* s,
       continue;
     }
 
-    if (*grid_at(&s->fov->visible, item->on.map.x, item->on.map.y)) {
+    if (rl_is_tile_visible(s->fov, item->on.map)) {
       draw_item(s, renderer, font, item);
     }
   }
@@ -254,22 +254,25 @@ draw_actors(struct view_state const* s,
       continue;
     }
 
-    if (*grid_at(&s->fov->visible, actor->pos.x, actor->pos.y)) {
+    if (rl_is_tile_visible(s->fov, actor->pos)) {
       draw_actor(s, renderer, font, actor);
     }
   }
 }
 
-static bool
-is_explored(struct rl_level const* level, SDL_Point p)
+static void
+draw_cursor(struct view_state const* s, SDL_Renderer* renderer)
 {
-  grid(rl_tile) const* map = &level->map;
+  SDL_FPoint const at = cell_to_pixels(s, s->cursor);
+  SDL_FRect rect = { 0 };
+  rect.x = at.x;
+  rect.y = at.y;
+  rect.w = (float)s->cell_width;
+  rect.h = (float)s->cell_height;
 
-  if (!grid_contains(map, p.x, p.y)) {
-    return false;
-  }
-
-  return level->explored.data[grid_index_of(map, p.x, p.y)];
+  SDL_FColor colour = RL_COLOUR_YELLOW[5];
+  SDL_SetRenderDrawColorFloat(renderer, colour.r, colour.g, colour.b, colour.a);
+  SDL_RenderRect(renderer, &rect);
 }
 
 static void
@@ -350,7 +353,7 @@ update_select(struct view_state* s, struct inpt_state const* istate)
   }
 
   struct rl_level const* level = rl_get_current_level(s->world);
-  if (is_explored(level, next)) {
+  if (rl_is_tile_explored(level, next)) {
     s->cursor = next;
   }
 
@@ -384,21 +387,6 @@ prepare_view(void* data)
 }
 
 static void
-draw_cursor(struct view_state const* s, SDL_Renderer* renderer)
-{
-  SDL_FPoint const at = cell_to_pixels(s, s->cursor);
-  SDL_FRect rect = { 0 };
-  rect.x = at.x;
-  rect.y = at.y;
-  rect.w = (float)s->cell_width;
-  rect.h = (float)s->cell_height;
-
-  SDL_FColor colour = RL_COLOUR_YELLOW[5];
-  SDL_SetRenderDrawColorFloat(renderer, colour.r, colour.g, colour.b, colour.a);
-  SDL_RenderRect(renderer, &rect);
-}
-
-void
 render_view(void const* data,
             SDL_Renderer* renderer,
             struct rl_font const* font)

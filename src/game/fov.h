@@ -35,4 +35,17 @@ rl_clear_fov(struct rl_fov* fov);
 void
 rl_update_fov(struct rl_fov* fov, grid(rl_tile) const* map, SDL_Point origin);
 
+/**
+ * @return whether p is visible.
+ */
+static inline bool
+rl_is_tile_visible(struct rl_fov const* fov, SDL_Point p)
+{
+  if (!grid_contains(&fov->visible, p.x, p.y)) {
+    return false;
+  }
+
+  return *grid_at(&fov->visible, p.x, p.y);
+}
+
 #endif // GINC_ROGUELIKE_FOV_H

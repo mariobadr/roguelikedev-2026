@@ -69,20 +69,14 @@ free_view(void* data)
   SDL_free(s);
 }
 
-static bool
-is_visible(struct view_state const* s, SDL_Point pos)
-{
-  return grid_contains(&s->fov->visible, pos.x, pos.y) &&
-         *grid_at(&s->fov->visible, pos.x, pos.y);
-}
-
 static int
 visible_item_count(struct view_state const* s)
 {
   int count = 0;
   for (int id = 0; id < alist_len(&s->world->items); ++id) {
     struct rl_item const* item = rl_get_item(s->world, id);
-    if (item->ltype == RL_ITEM_LOCATION_MAP && is_visible(s, item->on.map)) {
+    if (item->ltype == RL_ITEM_LOCATION_MAP &&
+        rl_is_tile_visible(s->fov, item->on.map)) {
       ++count;
     }
   }
@@ -266,7 +260,7 @@ prepare_view(void* data)
   for (int id = 0; id < rl_actor_count(s->world); ++id) {
     struct rl_actor const* actor = rl_get_actor(s->world, id);
     if (id == RL_ROGUE_ID || !rl_actor_is_alive(actor) ||
-        !is_visible(s, actor->pos)) {
+        !rl_is_tile_visible(s->fov, actor->pos)) {
       continue;
     }
 
