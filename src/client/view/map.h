@@ -42,9 +42,11 @@ rl_map_view_take_command(struct rl_view* view, struct rl_command* out);
 
 /**
  * Enter cursor-selection mode, with the cursor starting at origin.
+ *
+ * When radius > 0, draws a filled circle around origin.
  */
 void
-rl_map_view_begin_select(struct rl_view* view, SDL_Point origin);
+rl_map_view_begin_select(struct rl_view* view, SDL_Point origin, int radius);
 
 /**
  * Consume the result of a selection, if one is pending.

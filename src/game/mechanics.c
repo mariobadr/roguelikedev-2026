@@ -7,7 +7,6 @@
 
 #define MISS_CHANCE 5
 #define ARMOR_SCALING 20
-#define DAMAGE_AREA_RADIUS 5
 
 static bool
 are_adjacent(SDL_Point a, SDL_Point b)
@@ -105,16 +104,6 @@ in_blast_radius_euclidean(SDL_Point origin, SDL_Point pos, int radius)
   return dx * dx + dy * dy <= radius * radius;
 }
 
-/*
-static bool
-in_blast_radius_chebyshev(SDL_Point origin, SDL_Point pos, int radius)
-{
-  int const dx = SDL_abs(pos.x - origin.x);
-  int const dy = SDL_abs(pos.y - origin.y);
-  return SDL_max(dx, dy) <= radius;
-}
-*/
-
 static bool
 use_item_heal(struct rl_actor* actor,
               struct rl_item* item,
@@ -161,7 +150,8 @@ use_item_damage_area(struct rl_world* world,
       continue;
     }
 
-    if (!in_blast_radius_euclidean(origin, defender->pos, DAMAGE_AREA_RADIUS)) {
+    if (!in_blast_radius_euclidean(
+          origin, defender->pos, RL_DAMAGE_AREA_RADIUS)) {
       continue;
     }
 

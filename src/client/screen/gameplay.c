@@ -3,6 +3,7 @@
 #include <SDL3/SDL_assert.h>
 
 #include "game/game_state.h"
+#include "game/mechanics.h"
 
 #include "ui/rectcut.h"
 
@@ -235,7 +236,9 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
 }
 
 static void
-begin_target_select(struct screen_state* s, int item_id)
+begin_target_select(struct screen_state* s,
+                    int item_id,
+                    struct rl_item_def const* def)
 {
   struct rl_actor const* rogue =
     rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
@@ -245,7 +248,9 @@ begin_target_select(struct screen_state* s, int item_id)
   s->pending_target_cmd.type = RL_COMMAND_USE_ITEM;
   s->pending_target_cmd.use_item.item_id = item_id;
 
-  rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos);
+  int const radius =
+    def->effect == RL_ITEM_EFFECT_DAMAGE_AREA ? RL_DAMAGE_AREA_RADIUS : 0;
+  rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos, radius);
   s->focused_panel = PANEL_MAIN;
 }
 
@@ -299,7 +304,7 @@ handle_item_selection(struct screen_state* s, int item_id)
       handled = submit_command(s, &cmd);
       break;
     case RL_ITEM_TARGET_TILE:
-      begin_target_select(s, item_id);
+      begin_target_select(s, item_id, def);
       handled = true;
       break;
   }

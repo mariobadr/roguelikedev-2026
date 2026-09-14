@@ -51,6 +51,7 @@ struct view_state
 
   // for the SELECT mode
   SDL_Point cursor;
+  int select_radius;
   enum rl_map_selection_result pending_select;
   SDL_Point pending_point;
 };
@@ -180,8 +181,8 @@ draw_light(struct view_state const* s, SDL_Renderer* renderer)
         continue;
       }
 
-      float const brightness = rl_calculate_brightness(
-        s->fov->origin, p, (float)s->fov->radius);
+      float const brightness =
+        rl_calculate_brightness(s->fov->origin, p, (float)s->fov->radius);
       float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
 
       SDL_FColor const colour = { light.r, light.g, light.b, alpha };
@@ -258,6 +259,51 @@ draw_actors(struct view_state const* s,
       draw_actor(s, renderer, font, actor);
     }
   }
+}
+
+static void
+draw_blast_radius(struct view_state const* s, SDL_Renderer* renderer)
+{
+  SDL_BlendMode prev;
+  SDL_GetRenderDrawBlendMode(renderer, &prev);
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  SDL_FColor const colour = RL_COLOUR_RED[5];
+  SDL_SetRenderDrawColorFloat(renderer, colour.r, colour.g, colour.b, 0.35f);
+
+  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
+  SDL_Rect const visible =
+    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
+
+  float const cx = (float)s->cursor.x;
+  float const cy = (float)s->cursor.y;
+  float const r = (float)s->select_radius;
+
+  int const top = (int)SDL_ceilf(cy - r);
+  int const bottom = (int)SDL_floorf(cy + r);
+  for (int y = top; y <= bottom; y++) {
+    float const dy = (float)y - cy;
+    float const dx = SDL_sqrtf(r * r - dy * dy);
+    int const left = (int)SDL_ceilf(cx - dx);
+    int const right = (int)SDL_floorf(cx + dx);
+    for (int x = left; x <= right; x++) {
+      SDL_Point const p = { x, y };
+      if (!SDL_PointInRect(&p, &visible)) {
+        // off-map or off-camera
+        continue;
+      }
+
+      SDL_FPoint const at = cell_to_pixels(s, p);
+      SDL_FRect rect = { 0 };
+      rect.x = at.x;
+      rect.y = at.y;
+      rect.w = (float)s->cell_width;
+      rect.h = (float)s->cell_height;
+      SDL_RenderFillRect(renderer, &rect);
+    }
+  }
+
+  SDL_SetRenderDrawBlendMode(renderer, prev);
 }
 
 static void
@@ -400,6 +446,9 @@ render_view(void const* data,
   draw_light(s, renderer);
 
   if (s->mode == MAP_MODE_SELECT) {
+    if (s->select_radius > 0) {
+      draw_blast_radius(s, renderer);
+    }
     draw_cursor(s, renderer);
   }
 }
@@ -448,13 +497,14 @@ rl_map_view_take_command(struct rl_view* view, struct rl_command* out)
 }
 
 void
-rl_map_view_begin_select(struct rl_view* view, SDL_Point origin)
+rl_map_view_begin_select(struct rl_view* view, SDL_Point origin, int radius)
 {
   struct view_state* s = (struct view_state*)view->state;
   SDL_assert(s != NULL);
 
   s->mode = MAP_MODE_SELECT;
   s->cursor = origin;
+  s->select_radius = radius;
   s->pending_select = RL_MAP_SELECTION_NONE;
 }
 
