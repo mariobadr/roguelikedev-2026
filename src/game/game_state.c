@@ -78,8 +78,6 @@ rl_alloc_game_state(struct rl_game_state* game_state,
                     int map_width,
                     int map_height)
 {
-  rand_seed(&game_state->rng, 1234);
-
   if (!alist_alloc(&game_state->events, 8)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
     return false;
@@ -102,9 +100,16 @@ rl_alloc_game_state(struct rl_game_state* game_state,
     return false;
   }
 
+  return true;
+}
+
+bool
+rl_new_game(struct rl_game_state* game_state, Uint64 seed)
+{
+  rand_seed(&game_state->rng, seed);
+
   if (!rl_gen_level(
         &game_state->world, &game_state->world.level, &game_state->rng)) {
-    rl_free_game_state(game_state);
     return false;
   }
 

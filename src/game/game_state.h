@@ -43,6 +43,9 @@ rl_alloc_game_state(struct rl_game_state* game_state,
 void
 rl_free_game_state(struct rl_game_state* game_state);
 
+bool
+rl_new_game(struct rl_game_state* game_state, Uint64 seed);
+
 /**
  * @return whether applying the command consumes a turn.
  */

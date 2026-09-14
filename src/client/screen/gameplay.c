@@ -146,6 +146,10 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
     return false;
   }
 
+  if (!rl_new_game(&s->game_state, 1234)) {
+    return false;
+  }
+
   if (!rl_init_game_log(&s->log)) {
     return false;
   }
