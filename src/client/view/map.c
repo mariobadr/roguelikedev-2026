@@ -398,8 +398,7 @@ update_select(struct view_state* s, struct inpt_state const* istate)
       return false;
   }
 
-  struct rl_level const* level = rl_get_current_level(s->world);
-  if (rl_is_tile_explored(level, next)) {
+  if (rl_is_tile_visible(s->fov, next)) {
     s->cursor = next;
   }
 
