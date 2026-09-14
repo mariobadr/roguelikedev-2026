@@ -8,6 +8,7 @@
 #include "game/world.h"
 
 #include "client/graphics.h"
+#include "client/palette.h"
 
 static SDL_FColor
 actor_colour(struct rl_actor const* actor)
@@ -111,6 +112,16 @@ build_heal_log(struct rl_world const* world, struct rl_event_heal const* event)
   return msg;
 }
 
+static struct rl_text
+build_feedback_log(struct rl_event_feedback const* event)
+{
+  struct rl_text msg = { 0 };
+
+  rl_append_text(&msg, &RL_COLOUR_BLUE[3], event->message);
+
+  return msg;
+}
+
 bool
 rl_init_game_log(struct rl_game_log* log)
 {
@@ -163,6 +174,9 @@ rl_log_event(struct rl_game_log* log,
       break;
     case RL_EVENT_HEAL:
       msg = build_heal_log(world, &event->as.heal);
+      break;
+    case RL_EVENT_FEEDBACK:
+      msg = build_feedback_log(&event->as.feedback);
       break;
     default:
       return;

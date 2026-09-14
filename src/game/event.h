@@ -18,6 +18,7 @@ enum rl_event_type
   RL_EVENT_AWAKEN,
   RL_EVENT_PICKUP,
   RL_EVENT_HEAL,
+  RL_EVENT_FEEDBACK,
 };
 
 /**
@@ -78,6 +79,15 @@ struct rl_event_heal
 };
 
 /**
+ * Feedback (i.e., a message) for the player..
+ */
+struct rl_event_feedback
+{
+  /** Message to show the player. */
+  char const* message;
+};
+
+/**
  * An event.
  */
 struct rl_event
@@ -91,6 +101,7 @@ struct rl_event
     struct rl_event_awaken awaken;
     struct rl_event_pickup pickup;
     struct rl_event_heal heal;
+    struct rl_event_feedback feedback;
   } as;
 };
 

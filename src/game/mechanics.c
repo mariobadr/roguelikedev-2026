@@ -112,6 +112,10 @@ use_item_heal(struct rl_actor* actor,
               struct rand_state* rng)
 {
   if (actor->hp >= actor->max_hp) {
+    struct rl_event event = { 0 };
+    event.type = RL_EVENT_FEEDBACK;
+    event.as.feedback.message = "You are already at full health.";
+    *alist_push(events) = event;
     return false;
   }
 
