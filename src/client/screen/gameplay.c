@@ -295,7 +295,7 @@ handle_item_selection(struct screen_state* s, int item_id)
   bool handled = false;
 
   switch (def->target) {
-    case RL_ITEM_TARGET_NONE:
+    case RL_ITEM_TARGET_NONE: {
       // use item
       struct rl_command cmd = { 0 };
       cmd.actor = RL_ROGUE_ID;
@@ -303,6 +303,7 @@ handle_item_selection(struct screen_state* s, int item_id)
       cmd.use_item.item_id = item_id;
       handled = submit_command(s, &cmd);
       break;
+    }
     case RL_ITEM_TARGET_TILE:
       begin_target_select(s, item_id, def);
       handled = true;
@@ -321,10 +322,11 @@ handle_action(struct screen_state* s, struct inpt_state const* istate)
   bool handled = rl_update_view(view, istate);
 
   switch (view_id) {
-    case RL_VIEW_INVENTORY:
+    case RL_VIEW_INVENTORY: {
       int item_id = rl_inv_view_take_selection(view);
       handled = handle_item_selection(s, item_id) || handled;
       break;
+    }
     case RL_VIEW_MAP: {
       struct rl_command cmd;
       if (rl_map_view_take_command(view, &cmd)) {
