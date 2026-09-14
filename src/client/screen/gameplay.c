@@ -193,6 +193,7 @@ static void
 cancel_focus(struct screen_state* s)
 {
   s->focused_panel = PANEL_MAIN;
+  s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
 }
 
 static void
@@ -270,9 +271,11 @@ resolve_pending_target(struct screen_state* s)
       s->pending_target_cmd.use_item.dst = dst;
       submit_command(s, &s->pending_target_cmd);
       s->pending_target_cmd = (struct rl_command){ 0 };
+      cancel_focus(s);
       break;
     case RL_MAP_SELECTION_CANCELLED:
       s->pending_target_cmd = (struct rl_command){ 0 };
+      cancel_focus(s);
       break;
     case RL_MAP_SELECTION_NONE:
       break;
@@ -302,6 +305,7 @@ handle_item_selection(struct screen_state* s, int item_id)
       cmd.type = RL_COMMAND_USE_ITEM;
       cmd.use_item.item_id = item_id;
       handled = submit_command(s, &cmd);
+      cancel_focus(s);
       break;
     }
     case RL_ITEM_TARGET_TILE:
