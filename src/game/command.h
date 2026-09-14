@@ -10,6 +10,7 @@
 
 // forward declarations
 struct rl_world;
+struct rl_fov;
 struct rand_state;
 
 /**
@@ -64,6 +65,7 @@ rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world);
 bool
 rl_apply_command(struct rl_world* world,
                  struct rl_command const* cmd,
+                 struct rl_fov const* fov,
                  alist(rl_event) * events,
                  struct rand_state* rng);
 

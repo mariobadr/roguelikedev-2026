@@ -11,6 +11,7 @@
 
 // forward declarations
 struct rl_world;
+struct rl_fov;
 struct rand_state;
 
 /** Radius, in tiles, of a damage-area item's blast (Euclidean). */
@@ -57,6 +58,7 @@ rl_use_item(struct rl_world* world,
             int actor_id,
             int item_id,
             SDL_Point target,
+            struct rl_fov const* fov,
             alist(rl_event) * events,
             struct rand_state* rng);
 

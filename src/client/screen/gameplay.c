@@ -298,7 +298,8 @@ handle_item_selection(struct screen_state* s, int item_id)
   bool handled = false;
 
   switch (def->target) {
-    case RL_ITEM_TARGET_NONE: {
+    case RL_ITEM_TARGET_NONE:
+    case RL_ITEM_TARGET_CLOSEST: {
       // use item
       struct rl_command cmd = { 0 };
       cmd.actor = RL_ROGUE_ID;

@@ -54,7 +54,7 @@ update_actors(struct rl_world* world,
 
     // choose and execute each actor's command before updating the next actor
     struct rl_command cmd = rl_next_ai_command(actor, world, distances);
-    rl_apply_command(world, &cmd, events, rng);
+    rl_apply_command(world, &cmd, fov, events, rng);
 
     if (!rl_actor_is_alive(rogue)) {
       // the player is dead
@@ -138,8 +138,11 @@ rl_update_game_state(struct rl_game_state* game_state,
   // clear the last update's events
   alist_clear(&game_state->events);
 
-  bool turn_taken = rl_apply_command(
-    &game_state->world, cmd, &game_state->events, &game_state->rng);
+  bool turn_taken = rl_apply_command(&game_state->world,
+                                     cmd,
+                                     &game_state->fov,
+                                     &game_state->events,
+                                     &game_state->rng);
 
   if (turn_taken) {
     struct rl_actor const* rogue =

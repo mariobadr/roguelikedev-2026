@@ -3,6 +3,7 @@
 #include "procgen/rand.h"
 
 #include "actor.h"
+#include "fov.h"
 #include "world.h"
 
 #define MISS_CHANCE 5
@@ -173,6 +174,64 @@ use_item_damage_area(struct rl_world* world,
   return true;
 }
 
+static bool
+use_item_lightning(struct rl_actor* actor,
+                   struct rl_world* world,
+                   struct rl_item* item,
+                   struct rl_fov const* fov,
+                   int power,
+                   alist(rl_event) * events,
+                   struct rand_state* rng)
+{
+  struct rl_actor* nearest = NULL;
+  int nearest_dist_sq = 0;
+
+  for (int id = 0; id < rl_actor_count(world); id++) {
+    if (id == actor->id) {
+      continue;
+    }
+
+    struct rl_actor* candidate = rl_edit_actor(world, id);
+    if (!rl_actor_is_alive(candidate)) {
+      continue;
+    }
+
+    if (!rl_is_tile_visible(fov, candidate->pos)) {
+      continue;
+    }
+
+    int const dx = candidate->pos.x - actor->pos.x;
+    int const dy = candidate->pos.y - actor->pos.y;
+    int const dist_sq = dx * dx + dy * dy;
+
+    if (nearest != NULL && dist_sq >= nearest_dist_sq) {
+      continue;
+    }
+
+    nearest = candidate;
+    nearest_dist_sq = dist_sq;
+  }
+
+  if (nearest == NULL) {
+    struct rl_event event = { 0 };
+    event.type = RL_EVENT_FEEDBACK;
+    event.as.feedback.message = "There is no target in sight.";
+    *alist_push(events) = event;
+    return false;
+  }
+
+  int const damage = attack_actor(power, nearest, rng);
+  enqueue_attack_event(actor->id, nearest->id, damage, events);
+  if (nearest->hp <= 0) {
+    enqueue_death_event(nearest->id, actor->id, events);
+  }
+
+  // mark the item as consumed
+  item->ltype = RL_ITEM_LOCATION_NONE;
+
+  return true;
+}
+
 bool
 rl_move(struct rl_world* world, int actor_id, SDL_Point dst)
 {
@@ -273,6 +332,7 @@ rl_use_item(struct rl_world* world,
             int actor_id,
             int item_id,
             SDL_Point target,
+            struct rl_fov const* fov,
             alist(rl_event) * events,
             struct rand_state* rng)
 {
@@ -297,7 +357,9 @@ rl_use_item(struct rl_world* world,
     case RL_ITEM_EFFECT_DAMAGE_AREA:
       return use_item_damage_area(
         world, actor, item, target, idef->power, events, rng);
-      break;
+    case RL_ITEM_EFFECT_DAMAGE_NEAREST:
+      return use_item_lightning(
+        actor, world, item, fov, idef->power, events, rng);
     default:
       break;
   }

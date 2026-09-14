@@ -42,6 +42,7 @@ rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world)
 bool
 rl_apply_command(struct rl_world* world,
                  struct rl_command const* cmd,
+                 struct rl_fov const* fov,
                  alist(rl_event) * events,
                  struct rand_state* rng)
 {
@@ -66,6 +67,7 @@ rl_apply_command(struct rl_world* world,
                          actor->id,
                          cmd->use_item.item_id,
                          cmd->use_item.dst,
+                         fov,
                          events,
                          rng);
     case RL_COMMAND_WAIT:

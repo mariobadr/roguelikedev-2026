@@ -20,6 +20,7 @@ enum rl_item_type
 {
   RL_ITEM_POTION_HEALTH_MINOR,
   RL_ITEM_SCROLL_FIREBALL,
+  RL_ITEM_SCROLL_LIGHTNING,
 };
 
 /** The different effects an item can have. */
@@ -27,6 +28,7 @@ enum rl_item_effect
 {
   RL_ITEM_EFFECT_HEAL,
   RL_ITEM_EFFECT_DAMAGE_AREA,
+  RL_ITEM_EFFECT_DAMAGE_NEAREST,
 };
 
 /** The different targetting requirements of an item. */
@@ -34,6 +36,8 @@ enum rl_item_target
 {
   RL_ITEM_TARGET_NONE,
   RL_ITEM_TARGET_TILE,
+  /** Automatically targets the closest visible enemy. */
+  RL_ITEM_TARGET_CLOSEST,
 };
 
 /** Immutable data that defines an item. */

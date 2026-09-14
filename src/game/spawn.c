@@ -52,7 +52,7 @@ rl_gen_item_type(int depth, struct rand_state* rng)
   (void)depth;
 
   return (enum rl_item_type)rand_next_between(
-    rng, RL_ITEM_POTION_HEALTH_MINOR, RL_ITEM_SCROLL_FIREBALL);
+    rng, RL_ITEM_POTION_HEALTH_MINOR, RL_ITEM_SCROLL_LIGHTNING);
 }
 
 static bool
