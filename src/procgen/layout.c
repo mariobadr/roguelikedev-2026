@@ -461,7 +461,7 @@ rl_init_layout(struct rl_layout* layout,
   policy.max_hw_ratio = 2.0;
   rl_bsp_split(&tree, 0, rng, 0, &policy);
 
-  if(!array_alloc(&layout->rooms, tree.leaf_count)) {
+  if (!array_alloc(&layout->rooms, tree.leaf_count)) {
     SDL_Log("array_alloc failed: %s", SDL_GetError());
     rl_bsp_tree_free(&tree);
     return false;
@@ -470,7 +470,6 @@ rl_init_layout(struct rl_layout* layout,
   if (!array_alloc(&layout->corridors, tree.leaf_count - 1 + 4)) {
     SDL_Log("array_alloc failed: %s", SDL_GetError());
     rl_bsp_tree_free(&tree);
-    rl_free_layout(layout);
     return false;
   }
 

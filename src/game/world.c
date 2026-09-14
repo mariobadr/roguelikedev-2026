@@ -10,21 +10,18 @@ rl_alloc_world(struct rl_world* world, int width, int height)
 {
   // TODO: need an alist of levels
   if (!rl_alloc_level(&world->level, 1, width, height)) {
-    rl_free_world(world);
     return false;
   }
 
   // allocate space for the actors
   if (!alist_alloc(&world->actors, 16)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
-    rl_free_world(world);
     return false;
   }
 
   // allocate space for the items
   if (!alist_alloc(&world->items, 8)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
-    rl_free_world(world);
     return false;
   }
 

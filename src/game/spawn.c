@@ -3,6 +3,7 @@
 #include "container/array.h"
 #include "container/grid.h"
 
+#include "procgen/layout.h"
 #include "procgen/rand.h"
 
 #include "actor.h"
@@ -104,13 +105,14 @@ static bool
 find_spawn_point(SDL_Point* out,
                  array(int) * eligible,
                  struct rl_level const* level,
+                 struct rl_layout const* layout,
                  alist(rl_actor) const* actors,
                  struct rand_state* rng)
 {
   while (!array_empty(eligible)) {
     int const slot = (int)rand_next_up_to(rng, array_len(eligible));
     int const room_index = *array_at(eligible, slot);
-    SDL_Rect const* room = array_at(&level->layout.rooms, room_index);
+    SDL_Rect const* room = array_at(&layout->rooms, room_index);
 
     if (pick_free_tile(out, room, &level->map, actors, rng)) {
       return true;
@@ -140,11 +142,12 @@ add_actor(alist(rl_actor) * actors, enum rl_actor_type type, SDL_Point pos)
 
 bool
 rl_spawn_actors(struct rl_level const* level,
+                struct rl_layout const* layout,
                 alist(rl_actor) * actors,
                 int reserved_room,
                 struct rand_state* rng)
 {
-  int const room_count = (int)array_len(&level->layout.rooms);
+  int const room_count = (int)array_len(&layout->rooms);
 
   array(int) eligible;
   if (!array_alloc(&eligible, room_count)) {
@@ -161,7 +164,7 @@ rl_spawn_actors(struct rl_level const* level,
   int const total = rl_gen_total_actors(level->depth, rng);
   for (int i = 0; i < total && !array_empty(&eligible); i++) {
     SDL_Point pos = { 0 };
-    if (!find_spawn_point(&pos, &eligible, level, actors, rng)) {
+    if (!find_spawn_point(&pos, &eligible, level, layout, actors, rng)) {
       ok = false;
       break;
     }
@@ -195,16 +198,17 @@ add_item(alist(rl_item) * items, enum rl_item_type type, SDL_Point pos)
 
 bool
 rl_spawn_items(struct rl_level const* level,
+               struct rl_layout const* layout,
                alist(rl_item) * items,
                struct rand_state* rng)
 {
-  int const room_count = (int)array_len(&level->layout.rooms);
+  int const room_count = (int)array_len(&layout->rooms);
   int const total = rl_gen_total_items(rng);
 
   bool ok = true;
   for (int i = 0; i < total; i++) {
     int const room_index = (int)rand_next_up_to(rng, room_count);
-    SDL_Rect const* room = array_at(&level->layout.rooms, room_index);
+    SDL_Rect const* room = array_at(&layout->rooms, room_index);
 
     SDL_Point pos;
     pos.x = (int)rand_next_between(rng, room->x, room->x + room->w - 1);

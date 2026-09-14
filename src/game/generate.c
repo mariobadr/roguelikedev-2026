@@ -1,5 +1,7 @@
 #include "generate.h"
 
+#include "procgen/layout.h"
+
 #include "level.h"
 #include "spawn.h"
 #include "world.h"
@@ -32,18 +34,20 @@ carve_map(grid(rl_tile) * map, struct rl_layout const* layout)
 }
 
 static bool
-generate_level(struct rl_level* level, struct rand_state* rng)
+generate_level(struct rl_level* level,
+               struct rl_layout* layout,
+               struct rand_state* rng)
 {
   int const width = grid_width(&level->map);
   int const height = grid_height(&level->map);
 
   // randomly generate the dungeon layout
-  if (!rl_init_layout(&level->layout, width, height, rng)) {
+  if (!rl_init_layout(layout, width, height, rng)) {
     return false;
   }
 
   // update the tiles in the map based on the layout
-  carve_map(&level->map, &level->layout);
+  carve_map(&level->map, layout);
 
   return true;
 }
@@ -51,21 +55,22 @@ generate_level(struct rl_level* level, struct rand_state* rng)
 static bool
 populate_level(struct rl_world* world,
                struct rl_level* level,
+               struct rl_layout const* layout,
                struct rand_state* rng)
 {
   // put the rogue at the centre of the first room
   int const rogue_room = 0;
-  SDL_Rect const* room = array_at(&level->layout.rooms, rogue_room);
+  SDL_Rect const* room = array_at(&layout->rooms, rogue_room);
   world->rogue.pos.x = room->x + room->w / 2;
   world->rogue.pos.y = room->y + room->h / 2;
 
   // spawn the other actors
-  if (!rl_spawn_actors(level, &world->actors, rogue_room, rng)) {
+  if (!rl_spawn_actors(level, layout, &world->actors, rogue_room, rng)) {
     return false;
   }
 
   // spawn items
-  if (!rl_spawn_items(level, &world->items, rng)) {
+  if (!rl_spawn_items(level, layout, &world->items, rng)) {
     return false;
   }
 
@@ -77,15 +82,17 @@ rl_gen_level(struct rl_world* world,
              struct rl_level* level,
              struct rand_state* rng)
 {
-  if (!generate_level(level, rng)) {
-    return false;
+  // the layout only matters while generating -- it's not kept afterward
+  struct rl_layout layout = { 0 };
+
+  bool ok = generate_level(level, &layout, rng);
+  if (ok) {
+    ok = populate_level(world, level, &layout, rng);
   }
 
-  if (!populate_level(world, level, rng)) {
-    return false;
-  }
+  rl_free_layout(&layout);
 
   // TODO: push level into world
 
-  return true;
+  return ok;
 }

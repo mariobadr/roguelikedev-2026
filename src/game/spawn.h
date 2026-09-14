@@ -12,15 +12,18 @@
 // forward declarations
 struct rand_state;
 struct rl_level;
+struct rl_layout;
 
 bool
 rl_spawn_actors(struct rl_level const* level,
+                struct rl_layout const* layout,
                 alist(rl_actor) * actors,
                 int reserved_room,
                 struct rand_state* rng);
 
 bool
 rl_spawn_items(struct rl_level const* level,
+               struct rl_layout const* layout,
                alist(rl_item) * items,
                struct rand_state* rng);
 

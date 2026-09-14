@@ -84,19 +84,16 @@ rl_alloc_game_state(struct rl_game_state* game_state,
   }
 
   if (!rl_alloc_world(&game_state->world, map_width, map_height)) {
-    rl_free_game_state(game_state);
     return false;
   }
 
   // allocate space for the distance map
   if (!grid_alloc(&game_state->distances, map_width, map_height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());
-    rl_free_game_state(game_state);
     return false;
   }
 
   if (!rl_alloc_fov(&game_state->fov, map_width, map_height, FOV_RADIUS)) {
-    rl_free_game_state(game_state);
     return false;
   }
 
