@@ -61,10 +61,11 @@ populate_level(struct rl_world* world,
   // put the rogue at the centre of the first room
   int const rogue_room = 0;
   SDL_Rect const* room = array_at(&layout->rooms, rogue_room);
-  world->rogue.pos.x = room->x + room->w / 2;
-  world->rogue.pos.y = room->y + room->h / 2;
+  struct rl_actor* rogue = rl_edit_actor(world, RL_ROGUE_ID);
+  rogue->pos.x = room->x + room->w / 2;
+  rogue->pos.y = room->y + room->h / 2;
 
-  // spawn the other actors
+  // spawn the other actors (invalidates rogue if world->actors grows)
   if (!rl_spawn_actors(level, layout, &world->actors, rogue_room, rng)) {
     return false;
   }

@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
@@ -34,6 +35,11 @@ update_actors(struct rl_world* world,
   for (int i = 0; i < alist_len(&world->actors); i++) {
     struct rl_actor* actor = alist_at(&world->actors, i);
 
+    if (actor->id == RL_ROGUE_ID) {
+      // the player is not controlled by the AI
+      continue;
+    }
+
     if (!rl_actor_is_alive(actor)) {
       // actor is dead
       continue;
@@ -56,6 +62,8 @@ update_actors(struct rl_world* world,
     struct rl_command cmd = rl_next_ai_command(actor, world, distances);
     rl_apply_command(world, &cmd, fov, events, rng);
 
+    // the rogue lives in world->actors, which may have been reallocated
+    rogue = rl_get_actor(world, RL_ROGUE_ID);
     if (!rl_actor_is_alive(rogue)) {
       // the player is dead
       return;
@@ -109,8 +117,13 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
 {
   rand_seed(&game->rng, seed);
 
-  // the main character
-  game->world.rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
+  // the main character is always the first actor
+  SDL_assert(alist_len(&game->world.actors) == RL_ROGUE_ID);
+  struct rl_actor* rogue_slot = alist_push(&game->world.actors);
+  if (rogue_slot == NULL) {
+    return false;
+  }
+  *rogue_slot = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
 
   struct rl_level* level = alist_push(&game->world.levels);
   if (level == NULL) {

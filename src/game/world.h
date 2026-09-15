@@ -14,7 +14,8 @@
 struct rand_state;
 
 /**
- * The identifier for the rogue player in any world.
+ * The identifier for the rogue player in any world. It is also the rogue's
+ * index.
  */
 #define RL_ROGUE_ID 0
 
@@ -25,9 +26,7 @@ struct rl_world
 {
   /** The levels visited so far. */
   alist(rl_level) levels;
-  /** The player. */
-  struct rl_actor rogue;
-  /** All actors except the rogue. */
+  /** All actors. The rogue is always at index RL_ROGUE_ID. */
   alist(rl_actor) actors;
   /** All items. */
   alist(rl_item) items;

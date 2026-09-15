@@ -134,7 +134,7 @@ add_actor(alist(rl_actor) * actors, enum rl_actor_type type, SDL_Point pos)
     return false;
   }
 
-  *new_actor = rl_create_actor(type, (int)alist_len(actors));
+  *new_actor = rl_create_actor(type, (int)alist_len(actors) - 1);
   new_actor->pos = pos;
 
   return true;

@@ -46,37 +46,27 @@ rl_free_world(struct rl_world* world)
 struct rl_actor const*
 rl_get_actor(struct rl_world const* world, int id)
 {
-  if (id == RL_ROGUE_ID) {
-    return &world->rogue;
-  }
-
-  int const index = id - 1;
-  if (index < 0 || index >= alist_len(&world->actors)) {
+  if (id < 0 || id >= alist_len(&world->actors)) {
     return NULL;
   }
 
-  return alist_at(&world->actors, index);
+  return alist_at(&world->actors, id);
 }
 
 struct rl_actor*
 rl_edit_actor(struct rl_world* world, int id)
 {
-  if (id == RL_ROGUE_ID) {
-    return &world->rogue;
-  }
-
-  int const index = id - 1;
-  if (index < 0 || index >= alist_len(&world->actors)) {
+  if (id < 0 || id >= alist_len(&world->actors)) {
     return NULL;
   }
 
-  return alist_at(&world->actors, index);
+  return alist_at(&world->actors, id);
 }
 
 int
 rl_actor_count(struct rl_world const* world)
 {
-  return 1 + (int)alist_len(&world->actors);
+  return (int)alist_len(&world->actors);
 }
 
 struct rl_item const*
@@ -138,7 +128,12 @@ rl_find_item(struct rl_world* world, SDL_Point pos)
 struct rl_level const*
 rl_get_current_level(struct rl_world const* world)
 {
-  int const index = world->rogue.level;
+  struct rl_actor const* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  if (rogue == NULL) {
+    return NULL;
+  }
+
+  int const index = rogue->level;
   if (index < 0 || index >= alist_len(&world->levels)) {
     return NULL;
   }
@@ -149,7 +144,12 @@ rl_get_current_level(struct rl_world const* world)
 struct rl_level*
 rl_edit_current_level(struct rl_world* world)
 {
-  int const index = world->rogue.level;
+  struct rl_actor const* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  if (rogue == NULL) {
+    return NULL;
+  }
+
+  int const index = rogue->level;
   if (index < 0 || index >= alist_len(&world->levels)) {
     return NULL;
   }
