@@ -1,6 +1,8 @@
 #include "client/screen.h"
 
 #include <SDL3/SDL_assert.h>
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_log.h>
 
 #include "game/game.h"
 #include "game/mechanics.h"
@@ -56,6 +58,7 @@ struct screen_state
 
   // Model state
   struct rl_game_log log;
+  alist(rl_event) events;
 
   // View state
   struct rl_view views[RL_VIEW_COUNT];
@@ -154,6 +157,11 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
     return false;
   }
 
+  if (!alist_alloc(&s->events, 8)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
+    return false;
+  }
+
   s->repeat_cooldown = 0.0f;
   s->font = font;
 
@@ -176,6 +184,7 @@ free_screen(void* data)
     rl_free_view(&s->views[i]);
   }
 
+  alist_free(&s->events);
   rl_free_game_log(&s->log);
   rl_free_game(&s->game);
   SDL_free(s);
@@ -229,11 +238,12 @@ show_log(struct screen_state* s)
 static bool
 submit_command(struct screen_state* s, struct rl_command const* cmd)
 {
-  bool const handled = rl_update_game(&s->game, cmd);
+  alist_clear(&s->events);
+  bool const handled = rl_update_game(&s->game, cmd, &s->events);
 
   // Consume this update's events exactly once, after submitting a command.
-  for (int i = 0; i < alist_len(&s->game.events); i++) {
-    struct rl_event const* event = alist_at(&s->game.events, i);
+  for (int i = 0; i < alist_len(&s->events); i++) {
+    struct rl_event const* event = alist_at(&s->events, i);
     rl_log_event(&s->log, event, &s->game.world);
   }
 

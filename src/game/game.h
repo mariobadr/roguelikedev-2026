@@ -31,8 +31,6 @@ struct rl_game
   grid(int) distances;
   /** Player's field-of-view */
   struct rl_fov fov;
-  /** Events triggered during updates. */
-  alist(rl_event) events;
 };
 
 bool
@@ -45,9 +43,15 @@ bool
 rl_new_game(struct rl_game* game, int width, int height, Uint64 seed);
 
 /**
+ * Applies a command and, if it consumes a turn, advances the rest of the game.
+ *
+ * Events triggered by the update are appended to the events list.
+ *
  * @return whether applying the command consumes a turn.
  */
 bool
-rl_update_game(struct rl_game* game, struct rl_command const* cmd);
+rl_update_game(struct rl_game* game,
+               struct rl_command const* cmd,
+               alist(rl_event)* events);
 
 #endif // GINC_ROGUELIKE_GAME_H

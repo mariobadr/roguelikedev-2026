@@ -104,11 +104,6 @@ alloc_map_buffers(struct rl_game* game, int width, int height)
 bool
 rl_alloc_game(struct rl_game* game)
 {
-  if (!alist_alloc(&game->events, 8)) {
-    SDL_Log("alist_alloc failed: %s", SDL_GetError());
-    return false;
-  }
-
   if (!rl_alloc_world(&game->world)) {
     return false;
   }
@@ -172,17 +167,15 @@ rl_free_game(struct rl_game* game)
   rl_free_fov(&game->fov);
   grid_free(&game->distances);
   rl_free_world(&game->world);
-  alist_free(&game->events);
 }
 
 bool
-rl_update_game(struct rl_game* game, struct rl_command const* cmd)
+rl_update_game(struct rl_game* game,
+               struct rl_command const* cmd,
+               alist(rl_event) * events)
 {
-  // clear the last update's events
-  alist_clear(&game->events);
-
   bool turn_taken =
-    rl_apply_command(&game->world, cmd, &game->fov, &game->events, &game->rng);
+    rl_apply_command(&game->world, cmd, &game->fov, events, &game->rng);
 
   if (turn_taken) {
     struct rl_actor const* rogue =
@@ -193,7 +186,7 @@ rl_update_game(struct rl_game* game, struct rl_command const* cmd)
     update_explored(level, &game->fov);
 
     update_actors(
-      &game->world, &game->distances, &game->fov, &game->events, &game->rng);
+      &game->world, &game->distances, &game->fov, events, &game->rng);
   }
 
   return turn_taken;
