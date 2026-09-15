@@ -21,7 +21,7 @@ are_adjacent(SDL_Point a, SDL_Point b)
 static struct rl_actor*
 get_living_actor(struct rl_world* world, handle(rl_actor) actor_handle)
 {
-  struct rl_actor* actor = rl_edit_actor(world, actor_handle);
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   if (actor == NULL) {
     return NULL;
   }
@@ -46,7 +46,7 @@ can_move(struct rl_world const* world, SDL_Point dst)
     return false;
   }
 
-  if (rl_find_actor(world, dst) != NULL) {
+  if (handle_is_nonnull(rl_find_actor(world, level, dst))) {
     // note: rl_find_actor already ignores dead actors.
     return false;
   }
@@ -77,7 +77,7 @@ static void
 enqueue_attack_event(struct rl_actor const* attacker,
                      struct rl_actor const* defender,
                      int damage,
-                     alist(rl_event) * events)
+                     alist(rl_event)* events)
 {
   struct rl_event event = { 0 };
   event.type = RL_EVENT_ATTACK;
@@ -90,7 +90,7 @@ enqueue_attack_event(struct rl_actor const* attacker,
 static void
 enqueue_death_event(struct rl_actor const* actor,
                     struct rl_actor const* killer,
-                    alist(rl_event) * events)
+                    alist(rl_event)* events)
 {
   struct rl_event event = { 0 };
   event.type = RL_EVENT_DEATH;
@@ -111,7 +111,7 @@ static bool
 use_item_heal(struct rl_actor* actor,
               struct rl_item* item,
               int power,
-              alist(rl_event) * events,
+              alist(rl_event)* events,
               struct rand_state* rng)
 {
   if (actor->hp >= actor->max_hp) {
@@ -148,11 +148,13 @@ use_item_damage_area(struct rl_world* world,
                      struct rl_item* item,
                      SDL_Point origin,
                      int power,
-                     alist(rl_event) * events,
+                     alist(rl_event)* events,
                      struct rand_state* rng)
 {
-  for (int i = 0; i < rl_actor_count(world); i++) {
-    struct rl_actor* defender = rl_edit_actor_at(world, i);
+  struct rl_level const* level = rl_get_current_level(world);
+  for (size_t i = 0; i < alist_len(&level->actors); i++) {
+    struct rl_actor* defender =
+      rl_borrow_mut_actor(world, *alist_at(&level->actors, i));
     if (defender == NULL || !rl_actor_is_alive(defender)) {
       continue;
     }
@@ -182,14 +184,16 @@ use_item_lightning(struct rl_actor* actor,
                    struct rl_item* item,
                    struct rl_fov const* fov,
                    int power,
-                   alist(rl_event) * events,
+                   alist(rl_event)* events,
                    struct rand_state* rng)
 {
   struct rl_actor* nearest = NULL;
   int nearest_dist_sq = 0;
 
-  for (int i = 0; i < rl_actor_count(world); i++) {
-    struct rl_actor* candidate = rl_edit_actor_at(world, i);
+  struct rl_level const* level = rl_get_current_level(world);
+  for (size_t i = 0; i < alist_len(&level->actors); i++) {
+    struct rl_actor* candidate =
+      rl_borrow_mut_actor(world, *alist_at(&level->actors, i));
     if (candidate == NULL || handle_equal(candidate->handle, actor->handle)) {
       continue;
     }
@@ -258,7 +262,7 @@ bool
 rl_attack_melee(struct rl_world* world,
                 handle(rl_actor) attacker_handle,
                 handle(rl_actor) defender_handle,
-                alist(rl_event) * events,
+                alist(rl_event)* events,
                 struct rand_state* rng)
 {
   if (handle_equal(attacker_handle, defender_handle)) {
@@ -299,7 +303,7 @@ bool
 rl_pick_up_item(struct rl_world* world,
                 handle(rl_actor) actor_handle,
                 SDL_Point dst,
-                alist(rl_event) * events)
+                alist(rl_event)* events)
 {
   struct rl_actor* actor = get_living_actor(world, actor_handle);
   if (actor == NULL) {
@@ -335,7 +339,7 @@ rl_use_item(struct rl_world* world,
             int item_id,
             SDL_Point target,
             struct rl_fov const* fov,
-            alist(rl_event) * events,
+            alist(rl_event)* events,
             struct rand_state* rng)
 {
   struct rl_actor* actor = get_living_actor(world, actor_handle);

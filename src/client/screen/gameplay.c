@@ -245,8 +245,8 @@ begin_target_select(struct screen_state* s,
                     int item_id,
                     struct rl_item_def const* def)
 {
-  handle(rl_actor) const rogue_handle = rl_rogue_handle(&s->game.world);
-  struct rl_actor const* rogue = rl_get_actor(&s->game.world, rogue_handle);
+  handle(rl_actor) const rogue_handle = rl_get_rogue(&s->game.world);
+  struct rl_actor const* rogue = rl_borrow_actor(&s->game.world, rogue_handle);
 
   s->pending_target_cmd = (struct rl_command){ 0 };
   s->pending_target_cmd.actor = rogue_handle;
@@ -306,7 +306,7 @@ handle_item_selection(struct screen_state* s, int item_id)
     case RL_ITEM_TARGET_CLOSEST: {
       // use item
       struct rl_command cmd = { 0 };
-      cmd.actor = rl_rogue_handle(&s->game.world);
+      cmd.actor = rl_get_rogue(&s->game.world);
       cmd.type = RL_COMMAND_USE_ITEM;
       cmd.use_item.item_id = item_id;
       handled = submit_command(s, &cmd);

@@ -9,7 +9,13 @@
 
 #include "container/alist.h"
 
+#include "game/handles.h"
 #include "game/tile.h"
+
+/**
+ * A growable array of actor handles.
+ */
+alist_define_as(handle(rl_actor), rl_actor_handle);
 
 struct rl_level
 {
@@ -19,6 +25,8 @@ struct rl_level
   grid(rl_tile) map;
   /** Cells the player has seen before */
   grid(boolean) explored;
+  /** Actors on this level, in turn order. */
+  alist(rl_actor_handle) actors;
 };
 
 /**
@@ -31,6 +39,15 @@ rl_alloc_level(struct rl_level* level, int depth, int width, int height);
 
 void
 rl_free_level(struct rl_level* level);
+
+/**
+ * Append actor to the end of level's turn order. The actor must not already be
+ * on this level.
+ *
+ * @return whether the actor was added.
+ */
+bool
+rl_add_actor(struct rl_level* level, handle(rl_actor) actor);
 
 /**
  * @return whether p has been explored.

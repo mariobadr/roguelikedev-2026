@@ -41,6 +41,9 @@ set(GAME_SOURCES
     container/alist.h
     container/array.h
     container/grid.h
+    container/pool.c
+    container/pool.h
+    core/handle.h
     game/actor.c
     game/actor.h
     game/ai.c
@@ -54,6 +57,7 @@ set(GAME_SOURCES
     game/game.h
     game/generate.c
     game/generate.h
+    game/handles.h
     game/item.c
     game/item.h
     game/level.c

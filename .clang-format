@@ -1,0 +1,2 @@
+BasedOnStyle: Mozilla
+TypenameMacros: ['handle', 'pool', 'alist']

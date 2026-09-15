@@ -1,5 +1,6 @@
 #include "level.h"
 
+#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
@@ -16,6 +17,11 @@ rl_alloc_level(struct rl_level* level, int depth, int width, int height)
     return false;
   }
 
+  if (!alist_alloc(&level->actors, 16)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
+    return false;
+  }
+
   level->depth = depth;
 
   return true;
@@ -28,6 +34,24 @@ rl_free_level(struct rl_level* level)
     return;
   }
 
+  alist_free(&level->actors);
   grid_free(&level->explored);
   grid_free(&level->map);
+}
+
+bool
+rl_add_actor(struct rl_level* level, handle(rl_actor) actor)
+{
+  for (size_t i = 0; i < alist_len(&level->actors); i++) {
+    // a duplicate handle would give the actor more than one turn
+    SDL_assert(!handle_equal(*alist_at(&level->actors, i), actor));
+  }
+
+  handle(rl_actor)* entry = alist_push(&level->actors);
+  if (entry == NULL) {
+    return false;
+  }
+
+  *entry = actor;
+  return true;
 }

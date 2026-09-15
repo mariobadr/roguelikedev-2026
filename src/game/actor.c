@@ -22,7 +22,7 @@ static struct rl_actor const actor_table[] = {
 };
 
 struct rl_actor
-rl_create_actor(enum rl_actor_type type)
+rl_make_actor(enum rl_actor_type type)
 {
   return actor_table[type];
 }

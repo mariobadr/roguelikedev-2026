@@ -248,8 +248,10 @@ draw_actors(struct view_state const* s,
             SDL_Renderer* renderer,
             struct rl_font const* font)
 {
-  for (int i = 0; i < rl_actor_count(s->world); i++) {
-    struct rl_actor const* actor = rl_get_actor_at(s->world, i);
+  struct rl_level const* level = rl_get_current_level(s->world);
+  for (size_t i = 0; i < alist_len(&level->actors); i++) {
+    struct rl_actor const* actor =
+      rl_borrow_actor(s->world, *alist_at(&level->actors, i));
 
     if (actor == NULL || !rl_actor_is_alive(actor)) {
       continue;
@@ -344,7 +346,7 @@ static bool
 update_move(struct view_state* s, struct inpt_state const* istate)
 {
   struct rl_actor const* rogue =
-    rl_get_actor(s->world, rl_rogue_handle(s->world));
+    rl_borrow_actor(s->world, rl_get_rogue(s->world));
   if (rogue == NULL) {
     return false;
   }
@@ -430,7 +432,7 @@ prepare_view(void* data)
   SDL_assert(s != NULL);
 
   struct rl_actor const* rogue =
-    rl_get_actor(s->world, rl_rogue_handle(s->world));
+    rl_borrow_actor(s->world, rl_get_rogue(s->world));
   grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
 
   SDL_Point const origin = s->mode == MAP_MODE_SELECT ? s->cursor : rogue->pos;

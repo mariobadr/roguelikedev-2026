@@ -47,7 +47,7 @@ init_view_state(struct view_state* s,
 static int
 held_item_count(struct rl_world const* world)
 {
-  handle(rl_actor) const rogue = rl_rogue_handle(world);
+  handle(rl_actor) const rogue = rl_get_rogue(world);
 
   int len = 0;
   for (int id = 0; id < alist_len(&world->items); ++id) {
@@ -99,7 +99,7 @@ scroll_down(struct view_state* view)
 static int
 get_selected_item(struct view_state const* view)
 {
-  handle(rl_actor) const rogue = rl_rogue_handle(view->world);
+  handle(rl_actor) const rogue = rl_get_rogue(view->world);
   int index = 0;
 
   for (int id = 0; id < alist_len(&view->world->items); ++id) {
@@ -174,7 +174,7 @@ render_view(void const* data,
   struct view_state const* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
-  handle(rl_actor) const rogue = rl_rogue_handle(s->world);
+  handle(rl_actor) const rogue = rl_get_rogue(s->world);
   int const len = (int)alist_len(&s->world->items);
   int const first = ui_list_offset(&s->list, held_item_count(s->world));
   int skipped = 0;

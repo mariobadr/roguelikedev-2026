@@ -7,8 +7,6 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
-#include "container/alist.h"
-
 #include "game/handles.h"
 
 // forward declarations
@@ -38,8 +36,6 @@ struct rl_actor
   SDL_Point pos;
   /** Whether the actor is "active". */
   bool awake;
-  /** The current level. */
-  int level;
   /** The current number of hit points. */
   int hp;
   /** The maximum number of hit points. */
@@ -51,16 +47,11 @@ struct rl_actor
 };
 
 /**
- * A growable array of actors.
- */
-alist_define_as(struct rl_actor, rl_actor);
-
-/**
  * Create a new actor. Its handle is invalid until the actor is added to a
- * world (see rl_add_actor).
+ * world (see rl_create_actor).
  */
 struct rl_actor
-rl_create_actor(enum rl_actor_type type);
+rl_make_actor(enum rl_actor_type type);
 
 /**
  * Heal an actor's hit points by up to amount.

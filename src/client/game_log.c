@@ -20,8 +20,8 @@ static struct rl_text
 build_attack_log(struct rl_world const* world,
                  struct rl_event_attack const* event)
 {
-  struct rl_actor const* attacker = rl_get_actor(world, event->attacker);
-  struct rl_actor const* defender = rl_get_actor(world, event->defender);
+  struct rl_actor const* attacker = rl_borrow_actor(world, event->attacker);
+  struct rl_actor const* defender = rl_borrow_actor(world, event->defender);
   SDL_FColor const attacker_colour = actor_colour(attacker);
   SDL_FColor const defender_colour = actor_colour(defender);
 
@@ -46,8 +46,8 @@ static struct rl_text
 build_death_log(struct rl_world const* world,
                 struct rl_event_death const* event)
 {
-  struct rl_actor const* actor = rl_get_actor(world, event->actor);
-  struct rl_actor const* killer = rl_get_actor(world, event->killer);
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
+  struct rl_actor const* killer = rl_borrow_actor(world, event->killer);
   SDL_FColor const killer_colour = actor_colour(killer);
   SDL_FColor const actor_colour_ = actor_colour(actor);
 
@@ -66,7 +66,7 @@ static struct rl_text
 build_awaken_log(struct rl_world const* world,
                  struct rl_event_awaken const* event)
 {
-  struct rl_actor const* actor = rl_get_actor(world, event->actor);
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
   SDL_FColor const colour = actor_colour(actor);
 
   struct rl_text msg = { 0 };
@@ -82,7 +82,7 @@ static struct rl_text
 build_pickup_log(struct rl_world const* world,
                  struct rl_event_pickup const* event)
 {
-  struct rl_actor const* actor = rl_get_actor(world, event->actor);
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
   struct rl_item const* item = rl_get_item(world, event->item);
   struct rl_item_def const* idef = rl_get_item_def(item->itype);
   SDL_FColor const actor_colour_ = actor_colour(actor);
@@ -100,7 +100,7 @@ build_pickup_log(struct rl_world const* world,
 static struct rl_text
 build_heal_log(struct rl_world const* world, struct rl_event_heal const* event)
 {
-  struct rl_actor const* actor = rl_get_actor(world, event->actor);
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
   SDL_FColor const colour = actor_colour(actor);
 
   struct rl_text msg = { 0 };

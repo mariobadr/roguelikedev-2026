@@ -61,7 +61,7 @@ populate_level(struct rl_world* world,
   // put the rogue at the centre of the first room
   int const rogue_room = 0;
   SDL_Rect const* room = array_at(&layout->rooms, rogue_room);
-  struct rl_actor* rogue = rl_edit_actor(world, rl_rogue_handle(world));
+  struct rl_actor* rogue = rl_borrow_mut_actor(world, rl_get_rogue(world));
   rogue->pos.x = room->x + room->w / 2;
   rogue->pos.y = room->y + room->h / 2;
 

@@ -32,10 +32,10 @@ rl_new_bump_command(struct rl_actor const* actor,
     return cmd;
   }
 
-  struct rl_actor const* target = rl_find_actor(world, dst);
-  if (target != NULL) {
+  handle(rl_actor) const target = rl_find_actor(world, level, dst);
+  if (handle_is_nonnull(target)) {
     cmd.type = RL_COMMAND_ATTACK;
-    cmd.target_actor = target->handle;
+    cmd.target_actor = target;
   } else if (rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
     cmd.type = RL_COMMAND_MOVE;
     cmd.dst = dst;
@@ -55,7 +55,7 @@ rl_apply_command(struct rl_world* world,
     return false;
   }
 
-  if (rl_get_actor(world, cmd->actor) == NULL) {
+  if (rl_borrow_actor(world, cmd->actor) == NULL) {
     return false;
   }
 

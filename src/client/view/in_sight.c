@@ -28,14 +28,12 @@ struct wrapped_line
   char const* next;
 };
 
-alist_define_as(handle(rl_actor), visible_actor);
-
 struct view_state
 {
   struct rl_world const* world;
   struct rl_fov const* fov;
   SDL_FRect viewport;
-  alist(visible_actor) monsters;
+  alist(rl_actor_handle) monsters;
   int item_count;
 };
 
@@ -257,10 +255,12 @@ prepare_view(void* data)
   s->item_count = visible_item_count(s);
   alist_clear(&s->monsters);
 
-  handle(rl_actor) const rogue = rl_rogue_handle(s->world);
+  handle(rl_actor) const rogue = rl_get_rogue(s->world);
+  struct rl_level const* level = rl_get_current_level(s->world);
 
-  for (int i = 0; i < rl_actor_count(s->world); ++i) {
-    struct rl_actor const* actor = rl_get_actor_at(s->world, i);
+  for (size_t i = 0; i < alist_len(&level->actors); ++i) {
+    struct rl_actor const* actor =
+      rl_borrow_actor(s->world, *alist_at(&level->actors, i));
     if (actor == NULL || handle_equal(actor->handle, rogue) ||
         !rl_actor_is_alive(actor) || !rl_is_tile_visible(s->fov, actor->pos)) {
       continue;
@@ -291,7 +291,7 @@ render_view(void const* data,
   }
 
   struct rl_actor const* rogue =
-    rl_get_actor(s->world, rl_rogue_handle(s->world));
+    rl_borrow_actor(s->world, rl_get_rogue(s->world));
   draw_actor(renderer, font, rogue, ui_cut_top(&remaining, actor_height));
   ui_cut_top(&remaining, SDL_min(remaining.h, line_height));
 
@@ -316,7 +316,7 @@ render_view(void const* data,
   int const drawn = SDL_min(monster_count, capacity);
   for (int row = 0; row < drawn; ++row) {
     handle(rl_actor) const monster = *alist_at(&s->monsters, row);
-    struct rl_actor const* actor = rl_get_actor(s->world, monster);
+    struct rl_actor const* actor = rl_borrow_actor(s->world, monster);
     draw_actor(renderer, font, actor, ui_cut_top(&remaining, actor_height));
     ui_cut_top(&remaining, SDL_min(remaining.h, line_height));
   }

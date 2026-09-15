@@ -15,7 +15,7 @@ struct rl_layout;
 struct rl_world;
 
 bool
-rl_spawn_actors(struct rl_level const* level,
+rl_spawn_actors(struct rl_level* level,
                 struct rl_layout const* layout,
                 struct rl_world* world,
                 int reserved_room,

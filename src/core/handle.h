@@ -37,7 +37,7 @@
 /**
  * @return whether the handle has a nonzero generation.
  */
-#define handle_is_set(h) ((h).generation != 0)
+#define handle_is_nonnull(h) ((h).generation != 0)
 
 /**
  * @return whether two handles have the same index and generation.

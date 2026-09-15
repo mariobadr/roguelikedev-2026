@@ -17,8 +17,8 @@ update_actors(struct rl_world* world,
               alist(rl_event) * events,
               struct rand_state* rng)
 {
-  handle(rl_actor) const rogue_handle = rl_rogue_handle(world);
-  struct rl_actor const* rogue = rl_get_actor(world, rogue_handle);
+  handle(rl_actor) const rogue_handle = rl_get_rogue(world);
+  struct rl_actor const* rogue = rl_borrow_actor(world, rogue_handle);
   if (!rl_actor_is_alive(rogue)) {
     // the player is dead
     return;
@@ -32,8 +32,9 @@ update_actors(struct rl_world* world,
 
   // wake up actors in the player's field-of-view and/or
   // move actors closer to the player
-  for (int i = 0; i < rl_actor_count(world); i++) {
-    struct rl_actor* actor = rl_edit_actor_at(world, i);
+  for (size_t i = 0; i < alist_len(&level->actors); i++) {
+    handle(rl_actor) const actor_handle = *alist_at(&level->actors, i);
+    struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
     if (actor == NULL) {
       continue;
     }
@@ -66,7 +67,7 @@ update_actors(struct rl_world* world,
     rl_apply_command(world, &cmd, fov, events, rng);
 
     // the rogue lives in world->actors, which may have been reallocated
-    rogue = rl_get_actor(world, rogue_handle);
+    rogue = rl_borrow_actor(world, rogue_handle);
     if (!rl_actor_is_alive(rogue)) {
       // the player is dead
       return;
@@ -121,7 +122,9 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
   rand_seed(&game->rng, seed);
 
   // create the main character
-  struct rl_actor* rogue_slot = rl_add_actor(&game->world, RL_ACTOR_ROGUE);
+  handle(rl_actor) rogue_handle =
+    rl_create_actor(&game->world, RL_ACTOR_ROGUE);
+  struct rl_actor* rogue_slot = rl_borrow_mut_actor(&game->world, rogue_handle);
   if (rogue_slot == NULL) {
     return false;
   }
@@ -135,6 +138,12 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
   if (!rl_alloc_level(level, 1, width, height)) {
     return false;
   }
+  game->world.current_level = (int)alist_len(&game->world.levels) - 1;
+
+  // the rogue takes the first turn on its level
+  if (!rl_add_actor(level, game->world.rogue)) {
+    return false;
+  }
 
   if (!rl_gen_level(&game->world, level, &game->rng)) {
     return false;
@@ -146,7 +155,7 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
 
   // make sure the rogue has an initial field-of-view
   struct rl_actor const* rogue =
-    rl_get_actor(&game->world, rl_rogue_handle(&game->world));
+    rl_borrow_actor(&game->world, rl_get_rogue(&game->world));
   rl_update_fov(&game->fov, &level->map, rogue->pos);
   update_explored(level, &game->fov);
 
@@ -177,7 +186,7 @@ rl_update_game(struct rl_game* game, struct rl_command const* cmd)
 
   if (turn_taken) {
     struct rl_actor const* rogue =
-      rl_get_actor(&game->world, rl_rogue_handle(&game->world));
+      rl_borrow_actor(&game->world, rl_get_rogue(&game->world));
 
     struct rl_level* level = rl_edit_current_level(&game->world);
     rl_update_fov(&game->fov, &level->map, rogue->pos);

@@ -5,6 +5,7 @@
 #define GINC_ROGUELIKE_WORLD_H
 
 #include "container/alist.h"
+#include "container/pool.h"
 
 #include "game/actor.h"
 #include "game/handles.h"
@@ -15,14 +16,24 @@
 struct rand_state;
 
 /**
+ * A pool of actors, addressed by handle(rl_actor).
+ */
+pool_define_as(struct rl_actor, rl_actor);
+
+/**
  * The game world.
  */
 struct rl_world
 {
   /** The levels visited so far. */
   alist(rl_level) levels;
+  /**
+   * Index into levels of the level the rogue is on; -1 until a new game
+   * creates one.
+   */
+  int current_level;
   /** All actors, including the rogue. */
-  alist(rl_actor) actors;
+  pool(rl_actor) actors;
   /** All items. */
   alist(rl_item) items;
   /** The rogue (player). Invalid until a new game creates it. */
@@ -42,57 +53,39 @@ void
 rl_free_world(struct rl_world* world);
 
 /**
- * Add a new actor of the given type to the world and assign its handle.
- *
- * Warning: the pointer is only valid until the next actor is added.
- *
- * @return the new actor, or NULL if allocation failed.
+ * @return the rogue's handle.
  */
-struct rl_actor*
-rl_add_actor(struct rl_world* world, enum rl_actor_type type);
+handle(rl_actor)
+rl_get_rogue(struct rl_world const* world);
 
 /**
- * @return the rogue's handle (invalid until a new game creates the rogue).
+ * Add a new actor of the given type to the world.
+ *
+ * @return the new actor's handle, or an invalid handle if allocation failed.
  */
-handle(rl_actor) rl_rogue_handle(struct rl_world const* world);
+handle(rl_actor)
+rl_create_actor(struct rl_world* world, enum rl_actor_type type);
+
+/**
+ * @return the handle of the (alive) actor at position on level, or an
+ * invalid handle if no actor was found.
+ */
+handle(rl_actor)
+rl_find_actor(struct rl_world const* world,
+              struct rl_level const* level,
+              SDL_Point position);
 
 /**
  * @return the actor referred to by actor_handle (NULL if not found)
  */
 struct rl_actor const*
-rl_get_actor(struct rl_world const* world, handle(rl_actor) actor_handle);
+rl_borrow_actor(struct rl_world const* world, handle(rl_actor) actor_handle);
 
 /**
  * @return the actor for modification (NULL if not found).
  */
 struct rl_actor*
-rl_edit_actor(struct rl_world* world, handle(rl_actor) actor_handle);
-
-/**
- * @return the number of actor indices; valid indices for rl_get_actor_at and
- * rl_edit_actor_at are in [0, count).
- */
-int
-rl_actor_count(struct rl_world const* world);
-
-/**
- * @return the actor at index, or NULL if there is no actor there.
- */
-struct rl_actor const*
-rl_get_actor_at(struct rl_world const* world, int index);
-
-/**
- * @return the actor at index for modification, or NULL if there is no actor
- * there.
- */
-struct rl_actor*
-rl_edit_actor_at(struct rl_world* world, int index);
-
-/**
- * @return the (alive) actor at position, or NULL if no actor was found.
- */
-struct rl_actor const*
-rl_find_actor(struct rl_world const* world, SDL_Point position);
+rl_borrow_mut_actor(struct rl_world* world, handle(rl_actor) actor_handle);
 
 /**
  * @return the item corresponding to the given ID (NULL if not found)
