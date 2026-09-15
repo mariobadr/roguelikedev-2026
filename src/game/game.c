@@ -1,4 +1,4 @@
-#include "game_state.h"
+#include "game.h"
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
@@ -74,15 +74,15 @@ update_explored(struct rl_level* level, struct rl_fov const* fov)
 }
 
 static bool
-alloc_map_buffers(struct rl_game_state* game_state, int width, int height)
+alloc_map_buffers(struct rl_game* game, int width, int height)
 {
   // allocate space for the distance map
-  if (!grid_alloc(&game_state->distances, width, height)) {
+  if (!grid_alloc(&game->distances, width, height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());
     return false;
   }
 
-  if (!rl_alloc_fov(&game_state->fov, width, height, FOV_RADIUS)) {
+  if (!rl_alloc_fov(&game->fov, width, height, FOV_RADIUS)) {
     return false;
   }
 
@@ -90,14 +90,14 @@ alloc_map_buffers(struct rl_game_state* game_state, int width, int height)
 }
 
 bool
-rl_alloc_game_state(struct rl_game_state* game_state)
+rl_alloc_game(struct rl_game* game)
 {
-  if (!alist_alloc(&game_state->events, 8)) {
+  if (!alist_alloc(&game->events, 8)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
     return false;
   }
 
-  if (!rl_alloc_world(&game_state->world)) {
+  if (!rl_alloc_world(&game->world)) {
     return false;
   }
 
@@ -105,17 +105,14 @@ rl_alloc_game_state(struct rl_game_state* game_state)
 }
 
 bool
-rl_new_game(struct rl_game_state* game_state,
-            int width,
-            int height,
-            Uint64 seed)
+rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
 {
-  rand_seed(&game_state->rng, seed);
+  rand_seed(&game->rng, seed);
 
   // the main character
-  game_state->world.rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
+  game->world.rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
 
-  struct rl_level* level = alist_push(&game_state->world.levels);
+  struct rl_level* level = alist_push(&game->world.levels);
   if (level == NULL) {
     return false;
   }
@@ -124,61 +121,53 @@ rl_new_game(struct rl_game_state* game_state,
     return false;
   }
 
-  if (!rl_gen_level(&game_state->world, level, &game_state->rng)) {
+  if (!rl_gen_level(&game->world, level, &game->rng)) {
     return false;
   }
 
-  if (!alloc_map_buffers(game_state, width, height)) {
+  if (!alloc_map_buffers(game, width, height)) {
     return false;
   }
 
   // make sure the rogue has an initial field-of-view
-  struct rl_actor const* rogue = rl_get_actor(&game_state->world, RL_ROGUE_ID);
-  rl_update_fov(&game_state->fov, &level->map, rogue->pos);
-  update_explored(level, &game_state->fov);
+  struct rl_actor const* rogue = rl_get_actor(&game->world, RL_ROGUE_ID);
+  rl_update_fov(&game->fov, &level->map, rogue->pos);
+  update_explored(level, &game->fov);
 
   return true;
 }
 
 void
-rl_free_game_state(struct rl_game_state* game_state)
+rl_free_game(struct rl_game* game)
 {
-  if (game_state == NULL) {
+  if (game == NULL) {
     return;
   }
 
-  rl_free_fov(&game_state->fov);
-  grid_free(&game_state->distances);
-  rl_free_world(&game_state->world);
-  alist_free(&game_state->events);
+  rl_free_fov(&game->fov);
+  grid_free(&game->distances);
+  rl_free_world(&game->world);
+  alist_free(&game->events);
 }
 
 bool
-rl_update_game_state(struct rl_game_state* game_state,
-                     struct rl_command const* cmd)
+rl_update_game(struct rl_game* game, struct rl_command const* cmd)
 {
   // clear the last update's events
-  alist_clear(&game_state->events);
+  alist_clear(&game->events);
 
-  bool turn_taken = rl_apply_command(&game_state->world,
-                                     cmd,
-                                     &game_state->fov,
-                                     &game_state->events,
-                                     &game_state->rng);
+  bool turn_taken =
+    rl_apply_command(&game->world, cmd, &game->fov, &game->events, &game->rng);
 
   if (turn_taken) {
-    struct rl_actor const* rogue =
-      rl_get_actor(&game_state->world, RL_ROGUE_ID);
+    struct rl_actor const* rogue = rl_get_actor(&game->world, RL_ROGUE_ID);
 
-    struct rl_level* level = rl_edit_current_level(&game_state->world);
-    rl_update_fov(&game_state->fov, &level->map, rogue->pos);
-    update_explored(level, &game_state->fov);
+    struct rl_level* level = rl_edit_current_level(&game->world);
+    rl_update_fov(&game->fov, &level->map, rogue->pos);
+    update_explored(level, &game->fov);
 
-    update_actors(&game_state->world,
-                  &game_state->distances,
-                  &game_state->fov,
-                  &game_state->events,
-                  &game_state->rng);
+    update_actors(
+      &game->world, &game->distances, &game->fov, &game->events, &game->rng);
   }
 
   return turn_taken;

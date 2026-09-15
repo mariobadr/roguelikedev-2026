@@ -50,8 +50,8 @@ set(GAME_SOURCES
     game/event.h
     game/fov.c
     game/fov.h
-    game/game_state.c
-    game/game_state.h
+    game/game.c
+    game/game.h
     game/generate.c
     game/generate.h
     game/item.c

@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL_assert.h>
 
-#include "game/game_state.h"
+#include "game/game.h"
 #include "game/mechanics.h"
 
 #include "ui/rectcut.h"
@@ -51,7 +51,7 @@ struct screen_state
   enum panel_id focused_panel;
 
   // Game state
-  struct rl_game_state game_state;
+  struct rl_game game;
   struct rl_command pending_target_cmd; // RL_COMMAND_NONE when idle
 
   // Model state
@@ -109,8 +109,8 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
 
   if (!rl_alloc_in_sight_view(&s->views[RL_VIEW_IN_SIGHT],
-                              &s->game_state.world,
-                              &s->game_state.fov,
+                              &s->game.world,
+                              &s->game.fov,
                               &s->panel_bounds[PANEL_RIGHT])) {
     return false;
   }
@@ -123,7 +123,7 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   }
 
   if (!rl_alloc_inv_view(&s->views[RL_VIEW_INVENTORY],
-                         &s->game_state.world,
+                         &s->game.world,
                          &s->panel_bounds[PANEL_BOTTOM],
                          (float)font->glyph_height)) {
     return false;
@@ -131,8 +131,8 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
 
   // the map is only designed to work in the main panel right now
   if (!rl_alloc_map_view(&s->views[RL_VIEW_MAP],
-                         &s->game_state.world,
-                         &s->game_state.fov,
+                         &s->game.world,
+                         &s->game.fov,
                          &s->panel_bounds[PANEL_MAIN],
                          font->glyph_width,
                          font->glyph_height)) {
@@ -142,11 +142,11 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   // ribbon
   rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP]);
 
-  if (!rl_alloc_game_state(&s->game_state)) {
+  if (!rl_alloc_game(&s->game)) {
     return false;
   }
 
-  if (!rl_new_game(&s->game_state, RL_WORLD_WIDTH, RL_WORLD_HEIGHT, 1234)) {
+  if (!rl_new_game(&s->game, RL_WORLD_WIDTH, RL_WORLD_HEIGHT, 1234)) {
     return false;
   }
 
@@ -177,7 +177,7 @@ free_screen(void* data)
   }
 
   rl_free_game_log(&s->log);
-  rl_free_game_state(&s->game_state);
+  rl_free_game(&s->game);
   SDL_free(s);
 }
 
@@ -229,12 +229,12 @@ show_log(struct screen_state* s)
 static bool
 submit_command(struct screen_state* s, struct rl_command const* cmd)
 {
-  bool const handled = rl_update_game_state(&s->game_state, cmd);
+  bool const handled = rl_update_game(&s->game, cmd);
 
   // Consume this update's events exactly once, after submitting a command.
-  for (int i = 0; i < alist_len(&s->game_state.events); i++) {
-    struct rl_event const* event = alist_at(&s->game_state.events, i);
-    rl_log_event(&s->log, event, &s->game_state.world);
+  for (int i = 0; i < alist_len(&s->game.events); i++) {
+    struct rl_event const* event = alist_at(&s->game.events, i);
+    rl_log_event(&s->log, event, &s->game.world);
   }
 
   return handled;
@@ -245,8 +245,7 @@ begin_target_select(struct screen_state* s,
                     int item_id,
                     struct rl_item_def const* def)
 {
-  struct rl_actor const* rogue =
-    rl_get_actor(&s->game_state.world, RL_ROGUE_ID);
+  struct rl_actor const* rogue = rl_get_actor(&s->game.world, RL_ROGUE_ID);
 
   s->pending_target_cmd = (struct rl_command){ 0 };
   s->pending_target_cmd.actor = RL_ROGUE_ID;
@@ -293,7 +292,7 @@ handle_item_selection(struct screen_state* s, int item_id)
     return false;
   }
 
-  struct rl_item const* item = rl_get_item(&s->game_state.world, item_id);
+  struct rl_item const* item = rl_get_item(&s->game.world, item_id);
   if (item == NULL) {
     return false;
   }

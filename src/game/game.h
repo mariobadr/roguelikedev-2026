@@ -1,8 +1,8 @@
 /**
- * @file game_state.h
+ * @file game.h
  */
-#ifndef GINC_ROGUELIKE_GAME_STATE_H
-#define GINC_ROGUELIKE_GAME_STATE_H
+#ifndef GINC_ROGUELIKE_GAME_H
+#define GINC_ROGUELIKE_GAME_H
 
 #include <SDL3/SDL_stdinc.h>
 
@@ -19,9 +19,9 @@
 /**
  * The state of a game.
  *
- * A game state represents one run of the roguelike game.
+ * A game represents one run of the roguelike game.
  */
-struct rl_game_state
+struct rl_game
 {
   /** The random number generator */
   struct rand_state rng;
@@ -36,22 +36,18 @@ struct rl_game_state
 };
 
 bool
-rl_alloc_game_state(struct rl_game_state* game_state);
+rl_alloc_game(struct rl_game* game);
 
 void
-rl_free_game_state(struct rl_game_state* game_state);
+rl_free_game(struct rl_game* game);
 
 bool
-rl_new_game(struct rl_game_state* game_state,
-            int width,
-            int height,
-            Uint64 seed);
+rl_new_game(struct rl_game* game, int width, int height, Uint64 seed);
 
 /**
  * @return whether applying the command consumes a turn.
  */
 bool
-rl_update_game_state(struct rl_game_state* game_state,
-                     struct rl_command const* cmd);
+rl_update_game(struct rl_game* game, struct rl_command const* cmd);
 
-#endif // GINC_ROGUELIKE_GAME_STATE_H
+#endif // GINC_ROGUELIKE_GAME_H
