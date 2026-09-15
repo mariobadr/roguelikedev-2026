@@ -9,6 +9,7 @@
 #include "actor.h"
 #include "level.h"
 #include "tile.h"
+#include "world.h"
 
 /**
  * @return how many actors should populate a level at depth.
@@ -58,15 +59,19 @@ rl_gen_item_type(int depth, struct rand_state* rng)
 
 static bool
 is_tile_free(grid(rl_tile) const* map,
-             alist(rl_actor) const* actors,
+             struct rl_world const* world,
              SDL_Point pos)
 {
   if (!rl_is_walkable(*grid_at(map, pos.x, pos.y))) {
     return false;
   }
 
-  for (size_t i = 0; i < alist_len(actors); i++) {
-    struct rl_actor const* actor = alist_at(actors, i);
+  for (int i = 0; i < rl_actor_count(world); i++) {
+    struct rl_actor const* actor = rl_get_actor_at(world, i);
+    if (actor == NULL) {
+      continue;
+    }
+
     if (actor->pos.x == pos.x && actor->pos.y == pos.y) {
       return false;
     }
@@ -79,7 +84,7 @@ static bool
 pick_free_tile(SDL_Point* out,
                SDL_Rect const* room,
                grid(rl_tile) const* map,
-               alist(rl_actor) const* actors,
+               struct rl_world const* world,
                struct rand_state* rng)
 {
   int seen = 0;
@@ -87,7 +92,7 @@ pick_free_tile(SDL_Point* out,
   for (int y = room->y; y < room->y + room->h; y++) {
     for (int x = room->x; x < room->x + room->w; x++) {
       SDL_Point const pos = { x, y };
-      if (!is_tile_free(map, actors, pos)) {
+      if (!is_tile_free(map, world, pos)) {
         continue;
       }
 
@@ -106,7 +111,7 @@ find_spawn_point(SDL_Point* out,
                  array(int) * eligible,
                  struct rl_level const* level,
                  struct rl_layout const* layout,
-                 alist(rl_actor) const* actors,
+                 struct rl_world const* world,
                  struct rand_state* rng)
 {
   while (!array_empty(eligible)) {
@@ -114,7 +119,7 @@ find_spawn_point(SDL_Point* out,
     int const room_index = *array_at(eligible, slot);
     SDL_Rect const* room = array_at(&layout->rooms, room_index);
 
-    if (pick_free_tile(out, room, &level->map, actors, rng)) {
+    if (pick_free_tile(out, room, &level->map, world, rng)) {
       return true;
     }
 
@@ -126,24 +131,10 @@ find_spawn_point(SDL_Point* out,
   return false;
 }
 
-static bool
-add_actor(alist(rl_actor) * actors, enum rl_actor_type type, SDL_Point pos)
-{
-  struct rl_actor* new_actor = alist_push(actors);
-  if (new_actor == NULL) {
-    return false;
-  }
-
-  *new_actor = rl_create_actor(type, (int)alist_len(actors) - 1);
-  new_actor->pos = pos;
-
-  return true;
-}
-
 bool
 rl_spawn_actors(struct rl_level const* level,
                 struct rl_layout const* layout,
-                alist(rl_actor) * actors,
+                struct rl_world* world,
                 int reserved_room,
                 struct rand_state* rng)
 {
@@ -164,16 +155,19 @@ rl_spawn_actors(struct rl_level const* level,
   int const total = rl_gen_total_actors(level->depth, rng);
   for (int i = 0; i < total && !array_empty(&eligible); i++) {
     SDL_Point pos = { 0 };
-    if (!find_spawn_point(&pos, &eligible, level, layout, actors, rng)) {
+    if (!find_spawn_point(&pos, &eligible, level, layout, world, rng)) {
       ok = false;
       break;
     }
 
     enum rl_actor_type const type = rl_gen_actor_type(level->depth, rng);
-    if (!add_actor(actors, type, pos)) {
+    struct rl_actor* actor = rl_add_actor(world, type);
+    if (actor == NULL) {
       ok = false;
       break;
     }
+
+    actor->pos = pos;
   }
 
   array_free(&eligible);

@@ -25,9 +25,10 @@ enum rl_action
 
 /**
  * @return a command that corresponds to the given action.
+ * Returns RL_COMMAND_NONE if actor is NULL.
  */
 struct rl_command
-rl_build_command(int actor_id,
+rl_build_command(struct rl_actor const* actor,
                  enum rl_action action,
                  struct rl_world const* world);
 

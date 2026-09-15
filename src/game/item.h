@@ -8,6 +8,8 @@
 
 #include "container/alist.h"
 
+#include "game/handles.h"
+
 /** Item categories. */
 enum rl_item_class
 {
@@ -74,7 +76,7 @@ struct rl_item
     /** When ltype is map. */
     SDL_Point map;
     /** When ltype is held. */
-    int actor;
+    handle(rl_actor) actor;
   } on;
 };
 

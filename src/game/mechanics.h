@@ -8,6 +8,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "game/event.h"
+#include "game/handles.h"
 
 // forward declarations
 struct rl_world;
@@ -18,12 +19,12 @@ struct rand_state;
 #define RL_DAMAGE_AREA_RADIUS 3
 
 /**
- * Try to move the actor in world with actor_id to dst.
+ * Try to move the actor in world to dst.
  *
  * @return whether world was updated (i.e., move succeeded).
  */
 bool
-rl_move(struct rl_world* world, int actor_id, SDL_Point dst);
+rl_move(struct rl_world* world, handle(rl_actor) actor_handle, SDL_Point dst);
 
 /**
  * Try a melee attack between two actors in world.
@@ -32,8 +33,8 @@ rl_move(struct rl_world* world, int actor_id, SDL_Point dst);
  */
 bool
 rl_attack_melee(struct rl_world* world,
-                int attacker_id,
-                int defender_id,
+                handle(rl_actor) attacker_handle,
+                handle(rl_actor) defender_handle,
                 alist(rl_event) * events,
                 struct rand_state* rng);
 
@@ -44,7 +45,7 @@ rl_attack_melee(struct rl_world* world,
  */
 bool
 rl_pick_up_item(struct rl_world* world,
-                int actor_id,
+                handle(rl_actor) actor_handle,
                 SDL_Point dst,
                 alist(rl_event) * events);
 
@@ -55,7 +56,7 @@ rl_pick_up_item(struct rl_world* world,
  */
 bool
 rl_use_item(struct rl_world* world,
-            int actor_id,
+            handle(rl_actor) actor_handle,
             int item_id,
             SDL_Point target,
             struct rl_fov const* fov,

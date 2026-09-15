@@ -9,6 +9,8 @@
 
 #include "container/alist.h"
 
+#include "game/handles.h"
+
 // forward declarations
 struct rand_state;
 
@@ -28,8 +30,8 @@ struct rl_actor
 {
   /** The type of actor. */
   enum rl_actor_type type;
-  /** A unique identifier. */
-  int id;
+  /** This actor's handle, so code holding a pointer can refer to it. */
+  handle(rl_actor) handle;
   /** Dispalyed name. */
   char const* name;
   /** Location in tile coordinates. */
@@ -54,18 +56,19 @@ struct rl_actor
 alist_define_as(struct rl_actor, rl_actor);
 
 /**
- * Create a new actor.
+ * Create a new actor. Its handle is invalid until the actor is added to a
+ * world (see rl_add_actor).
  */
 struct rl_actor
-rl_create_actor(enum rl_actor_type type, int id);
+rl_create_actor(enum rl_actor_type type);
 
 /**
  * Heal an actor's hit points by up to amount.
- * 
+ *
  * @return the amount hp actually increased by.
  */
 int
-rl_heal_actor(struct rl_actor *actor, int amount);
+rl_heal_actor(struct rl_actor* actor, int amount);
 
 /**
  * @return whether actor is alive.

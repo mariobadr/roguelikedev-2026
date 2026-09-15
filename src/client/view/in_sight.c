@@ -28,14 +28,14 @@ struct wrapped_line
   char const* next;
 };
 
-alist_define_as(int, visible_actor_id);
+alist_define_as(handle(rl_actor), visible_actor);
 
 struct view_state
 {
   struct rl_world const* world;
   struct rl_fov const* fov;
   SDL_FRect viewport;
-  alist(visible_actor_id) monsters;
+  alist(visible_actor) monsters;
   int item_count;
 };
 
@@ -257,18 +257,20 @@ prepare_view(void* data)
   s->item_count = visible_item_count(s);
   alist_clear(&s->monsters);
 
-  for (int id = 0; id < rl_actor_count(s->world); ++id) {
-    struct rl_actor const* actor = rl_get_actor(s->world, id);
-    if (id == RL_ROGUE_ID || !rl_actor_is_alive(actor) ||
-        !rl_is_tile_visible(s->fov, actor->pos)) {
+  handle(rl_actor) const rogue = rl_rogue_handle(s->world);
+
+  for (int i = 0; i < rl_actor_count(s->world); ++i) {
+    struct rl_actor const* actor = rl_get_actor_at(s->world, i);
+    if (actor == NULL || handle_equal(actor->handle, rogue) ||
+        !rl_actor_is_alive(actor) || !rl_is_tile_visible(s->fov, actor->pos)) {
       continue;
     }
 
-    int* entry = alist_push(&s->monsters);
+    handle(rl_actor)* entry = alist_push(&s->monsters);
     if (entry == NULL) {
       return;
     }
-    *entry = id;
+    *entry = actor->handle;
   }
 }
 
@@ -288,7 +290,8 @@ render_view(void const* data,
     return;
   }
 
-  struct rl_actor const* rogue = rl_get_actor(s->world, RL_ROGUE_ID);
+  struct rl_actor const* rogue =
+    rl_get_actor(s->world, rl_rogue_handle(s->world));
   draw_actor(renderer, font, rogue, ui_cut_top(&remaining, actor_height));
   ui_cut_top(&remaining, SDL_min(remaining.h, line_height));
 
@@ -312,8 +315,8 @@ render_view(void const* data,
 
   int const drawn = SDL_min(monster_count, capacity);
   for (int row = 0; row < drawn; ++row) {
-    int const id = *alist_at(&s->monsters, row);
-    struct rl_actor const* actor = rl_get_actor(s->world, id);
+    handle(rl_actor) const monster = *alist_at(&s->monsters, row);
+    struct rl_actor const* actor = rl_get_actor(s->world, monster);
     draw_actor(renderer, font, actor, ui_cut_top(&remaining, actor_height));
     ui_cut_top(&remaining, SDL_min(remaining.h, line_height));
   }

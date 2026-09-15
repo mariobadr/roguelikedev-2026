@@ -1,6 +1,5 @@
 #include "game.h"
 
-#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
@@ -18,7 +17,8 @@ update_actors(struct rl_world* world,
               alist(rl_event) * events,
               struct rand_state* rng)
 {
-  struct rl_actor const* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  handle(rl_actor) const rogue_handle = rl_rogue_handle(world);
+  struct rl_actor const* rogue = rl_get_actor(world, rogue_handle);
   if (!rl_actor_is_alive(rogue)) {
     // the player is dead
     return;
@@ -32,10 +32,13 @@ update_actors(struct rl_world* world,
 
   // wake up actors in the player's field-of-view and/or
   // move actors closer to the player
-  for (int i = 0; i < alist_len(&world->actors); i++) {
-    struct rl_actor* actor = alist_at(&world->actors, i);
+  for (int i = 0; i < rl_actor_count(world); i++) {
+    struct rl_actor* actor = rl_edit_actor_at(world, i);
+    if (actor == NULL) {
+      continue;
+    }
 
-    if (actor->id == RL_ROGUE_ID) {
+    if (handle_equal(actor->handle, rogue_handle)) {
       // the player is not controlled by the AI
       continue;
     }
@@ -54,7 +57,7 @@ update_actors(struct rl_world* world,
     if (!was_awake) {
       struct rl_event event = { 0 };
       event.type = RL_EVENT_AWAKEN;
-      event.as.awaken.actor = actor->id;
+      event.as.awaken.actor = actor->handle;
       *alist_push(events) = event;
     }
 
@@ -63,7 +66,7 @@ update_actors(struct rl_world* world,
     rl_apply_command(world, &cmd, fov, events, rng);
 
     // the rogue lives in world->actors, which may have been reallocated
-    rogue = rl_get_actor(world, RL_ROGUE_ID);
+    rogue = rl_get_actor(world, rogue_handle);
     if (!rl_actor_is_alive(rogue)) {
       // the player is dead
       return;
@@ -117,13 +120,12 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
 {
   rand_seed(&game->rng, seed);
 
-  // the main character is always the first actor
-  SDL_assert(alist_len(&game->world.actors) == RL_ROGUE_ID);
-  struct rl_actor* rogue_slot = alist_push(&game->world.actors);
+  // create the main character
+  struct rl_actor* rogue_slot = rl_add_actor(&game->world, RL_ACTOR_ROGUE);
   if (rogue_slot == NULL) {
     return false;
   }
-  *rogue_slot = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
+  game->world.rogue = rogue_slot->handle;
 
   struct rl_level* level = alist_push(&game->world.levels);
   if (level == NULL) {
@@ -143,7 +145,8 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
   }
 
   // make sure the rogue has an initial field-of-view
-  struct rl_actor const* rogue = rl_get_actor(&game->world, RL_ROGUE_ID);
+  struct rl_actor const* rogue =
+    rl_get_actor(&game->world, rl_rogue_handle(&game->world));
   rl_update_fov(&game->fov, &level->map, rogue->pos);
   update_explored(level, &game->fov);
 
@@ -173,7 +176,8 @@ rl_update_game(struct rl_game* game, struct rl_command const* cmd)
     rl_apply_command(&game->world, cmd, &game->fov, &game->events, &game->rng);
 
   if (turn_taken) {
-    struct rl_actor const* rogue = rl_get_actor(&game->world, RL_ROGUE_ID);
+    struct rl_actor const* rogue =
+      rl_get_actor(&game->world, rl_rogue_handle(&game->world));
 
     struct rl_level* level = rl_edit_current_level(&game->world);
     rl_update_fov(&game->fov, &level->map, rogue->pos);

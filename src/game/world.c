@@ -6,6 +6,8 @@
 bool
 rl_alloc_world(struct rl_world* world)
 {
+  world->rogue = handle_invalid(rl_actor);
+
   // allocate space for the levels
   if (!alist_alloc(&world->levels, 4)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
@@ -43,30 +45,72 @@ rl_free_world(struct rl_world* world)
   alist_free(&world->levels);
 }
 
-struct rl_actor const*
-rl_get_actor(struct rl_world const* world, int id)
+struct rl_actor*
+rl_add_actor(struct rl_world* world, enum rl_actor_type type)
 {
-  if (id < 0 || id >= alist_len(&world->actors)) {
+  struct rl_actor* actor = alist_push(&world->actors);
+  if (actor == NULL) {
     return NULL;
   }
 
-  return alist_at(&world->actors, id);
+  Uint32 const index = (Uint32)(alist_len(&world->actors) - 1);
+  *actor = rl_create_actor(type);
+  actor->handle = (handle(rl_actor)){ index, 1 };
+
+  return actor;
+}
+
+handle(rl_actor) rl_rogue_handle(struct rl_world const* world)
+{
+  return world->rogue;
+}
+
+struct rl_actor const*
+rl_get_actor(struct rl_world const* world, handle(rl_actor) actor_handle)
+{
+  if (actor_handle.index >= alist_len(&world->actors)) {
+    return NULL;
+  }
+
+  struct rl_actor const* actor = alist_at(&world->actors, actor_handle.index);
+  return handle_equal(actor->handle, actor_handle) ? actor : NULL;
 }
 
 struct rl_actor*
-rl_edit_actor(struct rl_world* world, int id)
+rl_edit_actor(struct rl_world* world, handle(rl_actor) actor_handle)
 {
-  if (id < 0 || id >= alist_len(&world->actors)) {
+  if (actor_handle.index >= alist_len(&world->actors)) {
     return NULL;
   }
 
-  return alist_at(&world->actors, id);
+  struct rl_actor* actor = alist_at(&world->actors, actor_handle.index);
+  return handle_equal(actor->handle, actor_handle) ? actor : NULL;
 }
 
 int
 rl_actor_count(struct rl_world const* world)
 {
   return (int)alist_len(&world->actors);
+}
+
+struct rl_actor const*
+rl_get_actor_at(struct rl_world const* world, int index)
+{
+  if (index < 0 || index >= alist_len(&world->actors)) {
+    return NULL;
+  }
+
+  return alist_at(&world->actors, index);
+}
+
+struct rl_actor*
+rl_edit_actor_at(struct rl_world* world, int index)
+{
+  if (index < 0 || index >= alist_len(&world->actors)) {
+    return NULL;
+  }
+
+  return alist_at(&world->actors, index);
 }
 
 struct rl_item const*
@@ -92,10 +136,10 @@ rl_edit_item(struct rl_world* world, int id)
 struct rl_actor const*
 rl_find_actor(struct rl_world const* world, SDL_Point pos)
 {
-  for (int id = 0; id < rl_actor_count(world); id++) {
-    struct rl_actor const* actor = rl_get_actor(world, id);
-    if (!rl_actor_is_alive(actor)) {
-      // ignore dead actors
+  for (int i = 0; i < rl_actor_count(world); i++) {
+    struct rl_actor const* actor = rl_get_actor_at(world, i);
+    if (actor == NULL || !rl_actor_is_alive(actor)) {
+      // ignore empty slots and dead actors
       continue;
     }
 
@@ -128,7 +172,7 @@ rl_find_item(struct rl_world* world, SDL_Point pos)
 struct rl_level const*
 rl_get_current_level(struct rl_world const* world)
 {
-  struct rl_actor const* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  struct rl_actor const* rogue = rl_get_actor(world, rl_rogue_handle(world));
   if (rogue == NULL) {
     return NULL;
   }
@@ -144,7 +188,7 @@ rl_get_current_level(struct rl_world const* world)
 struct rl_level*
 rl_edit_current_level(struct rl_world* world)
 {
-  struct rl_actor const* rogue = rl_get_actor(world, RL_ROGUE_ID);
+  struct rl_actor const* rogue = rl_get_actor(world, rl_rogue_handle(world));
   if (rogue == NULL) {
     return NULL;
   }

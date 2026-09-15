@@ -19,9 +19,9 @@ are_adjacent(SDL_Point a, SDL_Point b)
 }
 
 static struct rl_actor*
-get_living_actor(struct rl_world* world, int actor_id)
+get_living_actor(struct rl_world* world, handle(rl_actor) actor_handle)
 {
-  struct rl_actor* actor = rl_edit_actor(world, actor_id);
+  struct rl_actor* actor = rl_edit_actor(world, actor_handle);
   if (actor == NULL) {
     return NULL;
   }
@@ -74,26 +74,28 @@ attack_actor(int power, struct rl_actor* defender, struct rand_state* rng)
 }
 
 static void
-enqueue_attack_event(int attacker_id,
-                     int defender_id,
+enqueue_attack_event(struct rl_actor const* attacker,
+                     struct rl_actor const* defender,
                      int damage,
                      alist(rl_event) * events)
 {
   struct rl_event event = { 0 };
   event.type = RL_EVENT_ATTACK;
-  event.as.attack.attacker = attacker_id;
-  event.as.attack.defender = defender_id;
+  event.as.attack.attacker = attacker->handle;
+  event.as.attack.defender = defender->handle;
   event.as.attack.damage = damage;
   *alist_push(events) = event;
 }
 
 static void
-enqueue_death_event(int actor_id, int killer_id, alist(rl_event) * events)
+enqueue_death_event(struct rl_actor const* actor,
+                    struct rl_actor const* killer,
+                    alist(rl_event) * events)
 {
   struct rl_event event = { 0 };
   event.type = RL_EVENT_DEATH;
-  event.as.death.actor = actor_id;
-  event.as.death.killer = killer_id;
+  event.as.death.actor = actor->handle;
+  event.as.death.killer = killer->handle;
   *alist_push(events) = event;
 }
 
@@ -129,7 +131,7 @@ use_item_heal(struct rl_actor* actor,
   // communicate the event
   struct rl_event event = { 0 };
   event.type = RL_EVENT_HEAL;
-  event.as.heal.actor = actor->id;
+  event.as.heal.actor = actor->handle;
   event.as.heal.total = amount;
   event.as.heal.effective = effective;
   *alist_push(events) = event;
@@ -149,9 +151,9 @@ use_item_damage_area(struct rl_world* world,
                      alist(rl_event) * events,
                      struct rand_state* rng)
 {
-  for (int id = 0; id < rl_actor_count(world); id++) {
-    struct rl_actor* defender = rl_edit_actor(world, id);
-    if (!rl_actor_is_alive(defender)) {
+  for (int i = 0; i < rl_actor_count(world); i++) {
+    struct rl_actor* defender = rl_edit_actor_at(world, i);
+    if (defender == NULL || !rl_actor_is_alive(defender)) {
       continue;
     }
 
@@ -161,10 +163,10 @@ use_item_damage_area(struct rl_world* world,
     }
 
     int const damage = attack_actor(power, defender, rng);
-    enqueue_attack_event(actor->id, defender->id, damage, events);
+    enqueue_attack_event(actor, defender, damage, events);
 
     if (defender->hp <= 0) {
-      enqueue_death_event(defender->id, actor->id, events);
+      enqueue_death_event(defender, actor, events);
     }
   }
 
@@ -186,12 +188,12 @@ use_item_lightning(struct rl_actor* actor,
   struct rl_actor* nearest = NULL;
   int nearest_dist_sq = 0;
 
-  for (int id = 0; id < rl_actor_count(world); id++) {
-    if (id == actor->id) {
+  for (int i = 0; i < rl_actor_count(world); i++) {
+    struct rl_actor* candidate = rl_edit_actor_at(world, i);
+    if (candidate == NULL || handle_equal(candidate->handle, actor->handle)) {
       continue;
     }
 
-    struct rl_actor* candidate = rl_edit_actor(world, id);
     if (!rl_actor_is_alive(candidate)) {
       continue;
     }
@@ -221,9 +223,9 @@ use_item_lightning(struct rl_actor* actor,
   }
 
   int const damage = attack_actor(power, nearest, rng);
-  enqueue_attack_event(actor->id, nearest->id, damage, events);
+  enqueue_attack_event(actor, nearest, damage, events);
   if (nearest->hp <= 0) {
-    enqueue_death_event(nearest->id, actor->id, events);
+    enqueue_death_event(nearest, actor, events);
   }
 
   // mark the item as consumed
@@ -233,9 +235,9 @@ use_item_lightning(struct rl_actor* actor,
 }
 
 bool
-rl_move(struct rl_world* world, int actor_id, SDL_Point dst)
+rl_move(struct rl_world* world, handle(rl_actor) actor_handle, SDL_Point dst)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_id);
+  struct rl_actor* actor = get_living_actor(world, actor_handle);
   if (actor == NULL) {
     return false;
   }
@@ -254,25 +256,25 @@ rl_move(struct rl_world* world, int actor_id, SDL_Point dst)
 
 bool
 rl_attack_melee(struct rl_world* world,
-                int attacker_id,
-                int defender_id,
+                handle(rl_actor) attacker_handle,
+                handle(rl_actor) defender_handle,
                 alist(rl_event) * events,
                 struct rand_state* rng)
 {
-  if (attacker_id == defender_id) {
+  if (handle_equal(attacker_handle, defender_handle)) {
     // can't attack yourself (?)
     return false;
   }
 
-  struct rl_actor* attacker = get_living_actor(world, attacker_id);
+  struct rl_actor* attacker = get_living_actor(world, attacker_handle);
   if (attacker == NULL) {
-    // attacker_id is not valid
+    // attacker_handle is not valid
     return false;
   }
 
-  struct rl_actor* defender = get_living_actor(world, defender_id);
+  struct rl_actor* defender = get_living_actor(world, defender_handle);
   if (defender == NULL) {
-    // defender_id is not valid
+    // defender_handle is not valid
     return false;
   }
 
@@ -284,10 +286,10 @@ rl_attack_melee(struct rl_world* world,
   // from the good old WoW days
   int const ap = 2 * attacker->strength;
   int const damage = attack_actor(ap, defender, rng);
-  enqueue_attack_event(attacker->id, defender->id, damage, events);
+  enqueue_attack_event(attacker, defender, damage, events);
 
   if (defender->hp <= 0) {
-    enqueue_death_event(defender->id, attacker->id, events);
+    enqueue_death_event(defender, attacker, events);
   }
 
   return true;
@@ -295,11 +297,11 @@ rl_attack_melee(struct rl_world* world,
 
 bool
 rl_pick_up_item(struct rl_world* world,
-                int actor_id,
+                handle(rl_actor) actor_handle,
                 SDL_Point dst,
                 alist(rl_event) * events)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_id);
+  struct rl_actor* actor = get_living_actor(world, actor_handle);
   if (actor == NULL) {
     return false;
   }
@@ -316,11 +318,11 @@ rl_pick_up_item(struct rl_world* world,
   }
 
   item->ltype = RL_ITEM_LOCATION_HELD;
-  item->on.actor = actor_id;
+  item->on.actor = actor->handle;
 
   struct rl_event event = { 0 };
   event.type = RL_EVENT_PICKUP;
-  event.as.pickup.actor = actor_id;
+  event.as.pickup.actor = actor->handle;
   event.as.pickup.item = item->id;
   *alist_push(events) = event;
 
@@ -329,14 +331,14 @@ rl_pick_up_item(struct rl_world* world,
 
 bool
 rl_use_item(struct rl_world* world,
-            int actor_id,
+            handle(rl_actor) actor_handle,
             int item_id,
             SDL_Point target,
             struct rl_fov const* fov,
             alist(rl_event) * events,
             struct rand_state* rng)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_id);
+  struct rl_actor* actor = get_living_actor(world, actor_handle);
   if (actor == NULL) {
     return false;
   }
@@ -346,7 +348,8 @@ rl_use_item(struct rl_world* world,
     return false;
   }
 
-  if (item->ltype != RL_ITEM_LOCATION_HELD || item->on.actor != actor_id) {
+  if (item->ltype != RL_ITEM_LOCATION_HELD ||
+      !handle_equal(item->on.actor, actor->handle)) {
     return false;
   }
 

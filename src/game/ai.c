@@ -13,6 +13,7 @@ pick_direction(SDL_Point* direction,
 {
   int best_distance = RL_INFINITE_DISTANCE;
 
+  handle(rl_actor) const rogue = rl_rogue_handle(world);
   struct rl_level const* level = rl_get_current_level(world);
   for (size_t i = 0; i < SDL_arraysize(RL_PATH_DIRS); i++) {
     SDL_Point next = { 0 };
@@ -30,7 +31,7 @@ pick_direction(SDL_Point* direction,
     }
 
     struct rl_actor const* occupant = rl_find_actor(world, next);
-    if (occupant != NULL && occupant->id != RL_ROGUE_ID) {
+    if (occupant != NULL && !handle_equal(occupant->handle, rogue)) {
       // the tile is occupied by a non-rogue actor
       continue;
     }
@@ -70,11 +71,11 @@ rl_next_ai_command(struct rl_actor const* actor,
 {
   SDL_Point dir;
   if (pick_direction(&dir, actor, world, distances)) {
-    return rl_new_bump_command(actor->id, dir, world);
+    return rl_new_bump_command(actor, dir, world);
   }
 
   return (struct rl_command){
-    .actor = actor->id,
+    .actor = actor->handle,
     .type = RL_COMMAND_NONE,
   };
 }

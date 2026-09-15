@@ -7,8 +7,10 @@
 #include <SDL3/SDL_rect.h>
 
 #include "game/event.h"
+#include "game/handles.h"
 
 // forward declarations
+struct rl_actor;
 struct rl_world;
 struct rl_fov;
 struct rand_state;
@@ -38,7 +40,7 @@ struct rl_item_use
 struct rl_command
 {
   /** The actor performing this command. */
-  int actor;
+  handle(rl_actor) actor;
   /** The kind of command. */
   enum rl_command_type type;
 
@@ -47,17 +49,22 @@ struct rl_command
     /** MOVE, PICK UP */
     SDL_Point dst;
     /** ATTACK */
-    int target_actor;
+    handle(rl_actor) target_actor;
     /** USE ITEM */
     struct rl_item_use use_item;
   };
 };
 
 /**
+ * Borrows actor from world for this call; the command stores actor handles.
+ *
  * @return a move or attack command.
+ * Returns RL_COMMAND_NONE if actor is NULL, dead, or cannot move or attack.
  */
 struct rl_command
-rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world);
+rl_new_bump_command(struct rl_actor const* actor,
+                    SDL_Point dir,
+                    struct rl_world const* world);
 
 /**
  * @return whether applying the command consumes a turn.

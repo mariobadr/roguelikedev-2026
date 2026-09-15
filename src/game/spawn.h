@@ -6,18 +6,18 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/actor.h"
 #include "game/item.h"
 
 // forward declarations
 struct rand_state;
 struct rl_level;
 struct rl_layout;
+struct rl_world;
 
 bool
 rl_spawn_actors(struct rl_level const* level,
                 struct rl_layout const* layout,
-                alist(rl_actor) * actors,
+                struct rl_world* world,
                 int reserved_room,
                 struct rand_state* rng);
 

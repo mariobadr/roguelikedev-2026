@@ -248,10 +248,10 @@ draw_actors(struct view_state const* s,
             SDL_Renderer* renderer,
             struct rl_font const* font)
 {
-  for (int id = 0; id < rl_actor_count(s->world); id++) {
-    struct rl_actor const* actor = rl_get_actor(s->world, id);
+  for (int i = 0; i < rl_actor_count(s->world); i++) {
+    struct rl_actor const* actor = rl_get_actor_at(s->world, i);
 
-    if (!rl_actor_is_alive(actor)) {
+    if (actor == NULL || !rl_actor_is_alive(actor)) {
       continue;
     }
 
@@ -343,11 +343,16 @@ update_ribbon(void const* data, struct rl_ribbon* ribbon)
 static bool
 update_move(struct view_state* s, struct inpt_state const* istate)
 {
+  struct rl_actor const* rogue =
+    rl_get_actor(s->world, rl_rogue_handle(s->world));
+  if (rogue == NULL) {
+    return false;
+  }
+
   enum rl_action action = rl_handle_keyboard_input(istate);
   if (action == RL_ACTION_NONE) {
     SDL_Point target;
     if (cell_at(s, istate->mouse.position, &target)) {
-      struct rl_actor const* rogue = rl_get_actor(s->world, RL_ROGUE_ID);
       action = rl_handle_mouse_input(istate, rogue->pos, target);
     }
   }
@@ -359,7 +364,7 @@ update_move(struct view_state* s, struct inpt_state const* istate)
     case RL_ACTION_MOVE_RIGHT:
     case RL_ACTION_SELECT:
     case RL_ACTION_WAIT:
-      s->pending_command = rl_build_command(RL_ROGUE_ID, action, s->world);
+      s->pending_command = rl_build_command(rogue, action, s->world);
       return true;
     default:
       return false;
@@ -424,7 +429,8 @@ prepare_view(void* data)
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
-  struct rl_actor const* rogue = rl_get_actor(s->world, RL_ROGUE_ID);
+  struct rl_actor const* rogue =
+    rl_get_actor(s->world, rl_rogue_handle(s->world));
   grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
 
   SDL_Point const origin = s->mode == MAP_MODE_SELECT ? s->cursor : rogue->pos;

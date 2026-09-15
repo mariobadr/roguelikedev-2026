@@ -8,6 +8,8 @@
 
 #include "container/alist.h"
 
+#include "game/handles.h"
+
 /**
  * The different types of events.
  */
@@ -26,10 +28,10 @@ enum rl_event_type
  */
 struct rl_event_attack
 {
-  /** Identifier of the attacking actor. */
-  int attacker;
-  /** Identifier of the defending actor. */
-  int defender;
+  /** Handle of the attacking actor. */
+  handle(rl_actor) attacker;
+  /** Handle of the defending actor. */
+  handle(rl_actor) defender;
   /** Amount of damage done; -1 is a miss. */
   int damage;
 };
@@ -39,10 +41,10 @@ struct rl_event_attack
  */
 struct rl_event_death
 {
-  /** Identifier of the dying actor. */
-  int actor;
-  /** Identifier of the killing actor. */
-  int killer;
+  /** Handle of the dying actor. */
+  handle(rl_actor) actor;
+  /** Handle of the killing actor. */
+  handle(rl_actor) killer;
 };
 
 /**
@@ -50,8 +52,8 @@ struct rl_event_death
  */
 struct rl_event_awaken
 {
-  /** Identifier of the now awake actor. */
-  int actor;
+  /** Handle of the now awake actor. */
+  handle(rl_actor) actor;
 };
 
 /**
@@ -59,8 +61,8 @@ struct rl_event_awaken
  */
 struct rl_event_pickup
 {
-  /** Identifier of the actor. */
-  int actor;
+  /** Handle of the actor. */
+  handle(rl_actor) actor;
   /** Identifier of the item. */
   int item;
 };
@@ -70,8 +72,8 @@ struct rl_event_pickup
  */
 struct rl_event_heal
 {
-  /** Identifier of the actor being healed. */
-  int actor;
+  /** Handle of the actor being healed. */
+  handle(rl_actor) actor;
   /** Maximum amount of healing. */
   int total;
   /** Actual amount of healing. */

@@ -6,14 +6,19 @@
 #include "world.h"
 
 struct rl_command
-rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world)
+rl_new_bump_command(struct rl_actor const* actor,
+                    SDL_Point dir,
+                    struct rl_world const* world)
 {
   struct rl_command cmd = { 0 };
-  cmd.actor = actor_id;
   cmd.type = RL_COMMAND_NONE;
 
-  struct rl_actor const* actor = rl_get_actor(world, actor_id);
-  if (actor == NULL || !rl_actor_is_alive(actor)) {
+  if (actor == NULL) {
+    return cmd;
+  }
+
+  cmd.actor = actor->handle;
+  if (!rl_actor_is_alive(actor)) {
     return cmd;
   }
 
@@ -30,7 +35,7 @@ rl_new_bump_command(int actor_id, SDL_Point dir, struct rl_world const* world)
   struct rl_actor const* target = rl_find_actor(world, dst);
   if (target != NULL) {
     cmd.type = RL_COMMAND_ATTACK;
-    cmd.target_actor = target->id;
+    cmd.target_actor = target->handle;
   } else if (rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
     cmd.type = RL_COMMAND_MOVE;
     cmd.dst = dst;
@@ -50,21 +55,20 @@ rl_apply_command(struct rl_world* world,
     return false;
   }
 
-  struct rl_actor* actor = rl_edit_actor(world, cmd->actor);
-  if (actor == NULL) {
+  if (rl_get_actor(world, cmd->actor) == NULL) {
     return false;
   }
 
   switch (cmd->type) {
     case RL_COMMAND_MOVE:
-      return rl_move(world, actor->id, cmd->dst);
+      return rl_move(world, cmd->actor, cmd->dst);
     case RL_COMMAND_ATTACK:
-      return rl_attack_melee(world, actor->id, cmd->target_actor, events, rng);
+      return rl_attack_melee(world, cmd->actor, cmd->target_actor, events, rng);
     case RL_COMMAND_PICK_UP:
-      return rl_pick_up_item(world, actor->id, cmd->dst, events);
+      return rl_pick_up_item(world, cmd->actor, cmd->dst, events);
     case RL_COMMAND_USE_ITEM:
       return rl_use_item(world,
-                         actor->id,
+                         cmd->actor,
                          cmd->use_item.item_id,
                          cmd->use_item.dst,
                          fov,
