@@ -22,6 +22,11 @@ rl_alloc_level(struct rl_level* level, int depth, int width, int height)
     return false;
   }
 
+  if (!alist_alloc(&level->items, 8)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
+    return false;
+  }
+
   level->depth = depth;
 
   return true;
@@ -34,6 +39,7 @@ rl_free_level(struct rl_level* level)
     return;
   }
 
+  alist_free(&level->items);
   alist_free(&level->actors);
   grid_free(&level->explored);
   grid_free(&level->map);
@@ -54,4 +60,29 @@ rl_add_actor(struct rl_level* level, handle(rl_actor) actor)
 
   *entry = actor;
   return true;
+}
+
+bool
+rl_add_item(struct rl_level* level, handle(rl_item) item)
+{
+  handle(rl_item)* entry = alist_push(&level->items);
+  if (entry == NULL) {
+    return false;
+  }
+
+  *entry = item;
+  return true;
+}
+
+bool
+rl_remove_item(struct rl_level* level, handle(rl_item) item)
+{
+  for (size_t i = 0; i < alist_len(&level->items); ++i) {
+    if (handle_equal(*alist_at(&level->items, i), item)) {
+      *alist_at(&level->items, i) = *alist_pop(&level->items);
+      return true;
+    }
+  }
+
+  return false;
 }

@@ -35,7 +35,7 @@ bool
 rl_attack_melee(struct rl_world* world,
                 handle(rl_actor) attacker_handle,
                 handle(rl_actor) defender_handle,
-                alist(rl_event) * events,
+                alist(rl_event)* events,
                 struct rand_state* rng);
 
 /**
@@ -47,7 +47,7 @@ bool
 rl_pick_up_item(struct rl_world* world,
                 handle(rl_actor) actor_handle,
                 SDL_Point dst,
-                alist(rl_event) * events);
+                alist(rl_event)* events);
 
 /**
  * Try to use an item.
@@ -57,10 +57,10 @@ rl_pick_up_item(struct rl_world* world,
 bool
 rl_use_item(struct rl_world* world,
             handle(rl_actor) actor_handle,
-            int item_id,
+            handle(rl_item) item_handle,
             SDL_Point target,
             struct rl_fov const* fov,
-            alist(rl_event) * events,
+            alist(rl_event)* events,
             struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_MECHANICS_H

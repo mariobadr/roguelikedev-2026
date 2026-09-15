@@ -195,25 +195,32 @@ rl_spawn_actors(struct rl_level* level,
 }
 
 static bool
-add_item(alist(rl_item) * items, enum rl_item_type type, SDL_Point pos)
+spawn_item(struct rl_world* world,
+           struct rl_level* level,
+           enum rl_item_type type,
+           SDL_Point pos)
 {
-  struct rl_item* new_item = alist_push(items);
-  if (new_item == NULL) {
+  handle(rl_item) const item_handle = rl_create_item(world, type);
+  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
+  if (item == NULL) {
     return false;
   }
 
-  new_item->itype = type;
-  new_item->ltype = RL_ITEM_LOCATION_MAP;
-  new_item->on.map = pos;
-  new_item->id = (int)alist_len(items) - 1;
+  item->ltype = RL_ITEM_LOCATION_MAP;
+  item->on.map = pos;
+
+  if (!rl_add_item(level, item_handle)) {
+    pool_release(&world->items, item_handle);
+    return false;
+  }
 
   return true;
 }
 
 bool
-rl_spawn_items(struct rl_level const* level,
+rl_spawn_items(struct rl_level* level,
                struct rl_layout const* layout,
-               alist(rl_item) * items,
+               struct rl_world* world,
                struct rand_state* rng)
 {
   int const room_count = (int)array_len(&layout->rooms);
@@ -229,7 +236,7 @@ rl_spawn_items(struct rl_level const* level,
     pos.y = (int)rand_next_between(rng, room->y, room->y + room->h - 1);
 
     enum rl_item_type const type = rl_gen_item_type(level->depth, rng);
-    if (!add_item(items, type, pos)) {
+    if (!spawn_item(world, level, type, pos)) {
       ok = false;
       break;
     }

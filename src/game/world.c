@@ -22,8 +22,8 @@ rl_alloc_world(struct rl_world* world)
   }
 
   // allocate space for the items
-  if (!alist_alloc(&world->items, 8)) {
-    SDL_Log("alist_alloc failed: %s", SDL_GetError());
+  if (!pool_alloc(&world->items, 8)) {
+    SDL_Log("pool_alloc failed: %s", SDL_GetError());
     return false;
   }
 
@@ -37,7 +37,7 @@ rl_free_world(struct rl_world* world)
     return;
   }
 
-  alist_free(&world->items);
+  pool_free(&world->items);
   pool_free(&world->actors);
 
   for (size_t i = 0; i < alist_len(&world->levels); i++) {
@@ -66,7 +66,8 @@ rl_create_actor(struct rl_world* world, enum rl_actor_type type)
   return actor_handle;
 }
 
-handle(rl_actor) rl_get_rogue(struct rl_world const* world)
+handle(rl_actor)
+rl_get_rogue(struct rl_world const* world)
 {
   return world->rogue;
 }
@@ -83,24 +84,36 @@ rl_borrow_mut_actor(struct rl_world* world, handle(rl_actor) actor_handle)
   return pool_get(&world->actors, actor_handle);
 }
 
-struct rl_item const*
-rl_get_item(struct rl_world const* world, int id)
+handle(rl_item)
+rl_create_item(struct rl_world* world, enum rl_item_type type)
 {
-  if (id < 0 || id >= alist_len(&world->items)) {
-    return NULL;
+  if (pool_full(&world->items) &&
+      !pool_reserve(&world->items, (size_t)pool_cap(&world->items) * 2)) {
+    return handle_invalid(rl_item);
   }
 
-  return alist_at(&world->items, id);
+  handle(rl_item) item_handle;
+  struct rl_item* item = pool_acquire(&world->items, &item_handle);
+  if (item == NULL) {
+    return handle_invalid(rl_item);
+  }
+
+  *item = rl_make_item(type);
+  item->handle = item_handle;
+
+  return item_handle;
+}
+
+struct rl_item const*
+rl_borrow_item(struct rl_world const* world, handle(rl_item) item_handle)
+{
+  return pool_get(&world->items, item_handle);
 }
 
 struct rl_item*
-rl_edit_item(struct rl_world* world, int id)
+rl_borrow_mut_item(struct rl_world* world, handle(rl_item) item_handle)
 {
-  if (id < 0 || id >= alist_len(&world->items)) {
-    return NULL;
-  }
-
-  return alist_at(&world->items, id);
+  return pool_get(&world->items, item_handle);
 }
 
 handle(rl_actor)
@@ -128,22 +141,68 @@ rl_find_actor(struct rl_world const* world,
   return handle_invalid(rl_actor);
 }
 
-struct rl_item*
-rl_find_item(struct rl_world* world, SDL_Point pos)
+handle(rl_item)
+rl_find_item(struct rl_world const* world,
+             struct rl_level const* level,
+             SDL_Point pos)
 {
-  for (int id = 0; id < alist_len(&world->items); id++) {
-    struct rl_item* item = alist_at(&world->items, id);
-    if (item->ltype != RL_ITEM_LOCATION_MAP) {
-      // ignore items not on the map
+  if (level == NULL) {
+    return handle_invalid(rl_item);
+  }
+
+  for (size_t i = 0; i < alist_len(&level->items); i++) {
+    handle(rl_item) const item_handle = *alist_at(&level->items, i);
+    struct rl_item const* item = rl_borrow_item(world, item_handle);
+    if (item == NULL) {
+      // ignore stale handles
       continue;
     }
 
     if (item->on.map.x == pos.x && item->on.map.y == pos.y) {
-      return item;
+      return item_handle;
     }
   }
 
-  return NULL;
+  return handle_invalid(rl_item);
+}
+
+static bool
+is_held_by(struct rl_item const* item, handle(rl_actor) holder)
+{
+  return item != NULL && item->ltype == RL_ITEM_LOCATION_HELD &&
+         handle_equal(item->on.actor, holder);
+}
+
+int
+rl_count_held_items(struct rl_world const* world, handle(rl_actor) holder)
+{
+  int count = 0;
+  for (Uint32 i = 0; i < pool_cap(&world->items); i++) {
+    if (is_held_by(pool_at_index(&world->items, i), holder)) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+handle(rl_item)
+rl_find_held_item(struct rl_world const* world, handle(rl_actor) holder, int n)
+{
+  int seen = 0;
+  for (Uint32 i = 0; i < pool_cap(&world->items); i++) {
+    struct rl_item const* item = pool_at_index(&world->items, i);
+    if (!is_held_by(item, holder)) {
+      continue;
+    }
+
+    if (seen == n) {
+      return item->handle;
+    }
+    seen++;
+  }
+
+  return handle_invalid(rl_item);
 }
 
 struct rl_level const*

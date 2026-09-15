@@ -11,4 +11,9 @@
  */
 handle_define(rl_actor);
 
+/**
+ * Refers to an item in a world.
+ */
+handle_define(rl_item);
+
 #endif // GINC_ROGUELIKE_HANDLES_H

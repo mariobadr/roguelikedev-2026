@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "game/handles.h"
+
 // forward declarations
 struct rl_view;
 struct rl_world;
@@ -17,7 +19,7 @@ rl_alloc_inv_view(struct rl_view* view,
                   SDL_FRect const* viewport,
                   float line_height);
 
-int
+handle(rl_item)
 rl_inv_view_take_selection(struct rl_view* view);
 
 #endif // GINC_ROGUELIKE_INVENTORY_VIEW_H

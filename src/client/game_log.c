@@ -83,7 +83,7 @@ build_pickup_log(struct rl_world const* world,
                  struct rl_event_pickup const* event)
 {
   struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
-  struct rl_item const* item = rl_get_item(world, event->item);
+  struct rl_item const* item = rl_borrow_item(world, event->item);
   struct rl_item_def const* idef = rl_get_item_def(item->itype);
   SDL_FColor const actor_colour_ = actor_colour(actor);
   SDL_FColor const item_colour = rl_get_item_gfx(item).fg;

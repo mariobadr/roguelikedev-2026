@@ -63,8 +63,8 @@ struct rl_event_pickup
 {
   /** Handle of the actor. */
   handle(rl_actor) actor;
-  /** Identifier of the item. */
-  int item;
+  /** Handle of the item. */
+  handle(rl_item) item;
 };
 
 /**

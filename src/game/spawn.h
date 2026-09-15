@@ -6,8 +6,6 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/item.h"
-
 // forward declarations
 struct rand_state;
 struct rl_level;
@@ -22,9 +20,9 @@ rl_spawn_actors(struct rl_level* level,
                 struct rand_state* rng);
 
 bool
-rl_spawn_items(struct rl_level const* level,
+rl_spawn_items(struct rl_level* level,
                struct rl_layout const* layout,
-               alist(rl_item) * items,
+               struct rl_world* world,
                struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_SPAWN_H

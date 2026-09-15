@@ -21,21 +21,23 @@ struct rand_state;
 pool_define_as(struct rl_actor, rl_actor);
 
 /**
+ * A pool of items, addressed by handle(rl_item).
+ */
+pool_define_as(struct rl_item, rl_item);
+
+/**
  * The game world.
  */
 struct rl_world
 {
   /** The levels visited so far. */
   alist(rl_level) levels;
-  /**
-   * Index into levels of the level the rogue is on; -1 until a new game
-   * creates one.
-   */
+  /** Index of the current level. */
   int current_level;
   /** All actors, including the rogue. */
   pool(rl_actor) actors;
-  /** All items. */
-  alist(rl_item) items;
+  /** All items, wherever they are. */
+  pool(rl_item) items;
   /** The rogue (player). Invalid until a new game creates it. */
   handle(rl_actor) rogue;
 };
@@ -88,22 +90,46 @@ struct rl_actor*
 rl_borrow_mut_actor(struct rl_world* world, handle(rl_actor) actor_handle);
 
 /**
- * @return the item corresponding to the given ID (NULL if not found)
+ * Add a new, unplaced item of the given type to the world.
+ *
+ * @return the new item's handle, or an invalid handle if allocation failed.
+ */
+handle(rl_item)
+rl_create_item(struct rl_world* world, enum rl_item_type type);
+
+/**
+ * @return the handle of an item on level's floor at position, or an invalid
+ * handle if no item was found.
+ */
+handle(rl_item)
+rl_find_item(struct rl_world const* world,
+             struct rl_level const* level,
+             SDL_Point position);
+
+/**
+ * @return the handle of the nth item holder is holding, or an invalid handle
+ * if n is out of range.
+ */
+handle(rl_item)
+rl_find_held_item(struct rl_world const* world, handle(rl_actor) holder, int n);
+
+/**
+ * @return how many items holder is holding.
+ */
+int
+rl_count_held_items(struct rl_world const* world, handle(rl_actor) holder);
+
+/**
+ * @return the item referred to by item_handle (NULL if not found)
  */
 struct rl_item const*
-rl_get_item(struct rl_world const* world, int id);
+rl_borrow_item(struct rl_world const* world, handle(rl_item) item_handle);
 
 /**
  * @return the item for modification (NULL if not found).
  */
 struct rl_item*
-rl_edit_item(struct rl_world* world, int id);
-
-/**
- * @return the item at the position, or NULL if no item was found.
- */
-struct rl_item*
-rl_find_item(struct rl_world* world, SDL_Point position);
+rl_borrow_mut_item(struct rl_world* world, handle(rl_item) item_handle);
 
 /**
  * @return the level the rogue is currently on.

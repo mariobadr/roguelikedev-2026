@@ -70,11 +70,13 @@ free_view(void* data)
 static int
 visible_item_count(struct view_state const* s)
 {
+  struct rl_level const* level = rl_get_current_level(s->world);
+
   int count = 0;
-  for (int id = 0; id < alist_len(&s->world->items); ++id) {
-    struct rl_item const* item = rl_get_item(s->world, id);
-    if (item->ltype == RL_ITEM_LOCATION_MAP &&
-        rl_is_tile_visible(s->fov, item->on.map)) {
+  for (size_t i = 0; i < alist_len(&level->items); ++i) {
+    struct rl_item const* item =
+      rl_borrow_item(s->world, *alist_at(&level->items, i));
+    if (item != NULL && rl_is_tile_visible(s->fov, item->on.map)) {
       ++count;
     }
   }

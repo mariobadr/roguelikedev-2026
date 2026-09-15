@@ -48,7 +48,7 @@ bool
 rl_apply_command(struct rl_world* world,
                  struct rl_command const* cmd,
                  struct rl_fov const* fov,
-                 alist(rl_event) * events,
+                 alist(rl_event)* events,
                  struct rand_state* rng)
 {
   if (cmd->type == RL_COMMAND_NONE) {
@@ -69,7 +69,7 @@ rl_apply_command(struct rl_world* world,
     case RL_COMMAND_USE_ITEM:
       return rl_use_item(world,
                          cmd->actor,
-                         cmd->use_item.item_id,
+                         cmd->use_item.item,
                          cmd->use_item.dst,
                          fov,
                          events,

@@ -17,6 +17,11 @@
  */
 alist_define_as(handle(rl_actor), rl_actor_handle);
 
+/**
+ * A growable array of item handles.
+ */
+alist_define_as(handle(rl_item), rl_item_handle);
+
 struct rl_level
 {
   /** How deep this level is in the overall dungeon. */
@@ -27,6 +32,8 @@ struct rl_level
   grid(boolean) explored;
   /** Actors on this level, in turn order. */
   alist(rl_actor_handle) actors;
+  /** Items on this level's floor. */
+  alist(rl_item_handle) items;
 };
 
 /**
@@ -48,6 +55,23 @@ rl_free_level(struct rl_level* level);
  */
 bool
 rl_add_actor(struct rl_level* level, handle(rl_actor) actor);
+
+/**
+ * Add item to level's floor. The item must not already be on this level.
+ *
+ * @return whether the item was added.
+ */
+bool
+rl_add_item(struct rl_level* level, handle(rl_item) item);
+
+/**
+ * Remove item from level's floor. The order of the remaining items is
+ * unspecified.
+ *
+ * @return whether the item was on this level.
+ */
+bool
+rl_remove_item(struct rl_level* level, handle(rl_item) item);
 
 /**
  * @return whether p has been explored.

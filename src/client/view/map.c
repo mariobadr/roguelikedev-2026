@@ -219,10 +219,11 @@ draw_items(struct view_state const* s,
            SDL_Renderer* renderer,
            struct rl_font const* font)
 {
-  for (int id = 0; id < alist_len(&s->world->items); id++) {
-    struct rl_item const* item = rl_get_item(s->world, id);
-
-    if (item->ltype != RL_ITEM_LOCATION_MAP) {
+  struct rl_level const* level = rl_get_current_level(s->world);
+  for (size_t i = 0; i < alist_len(&level->items); i++) {
+    struct rl_item const* item =
+      rl_borrow_item(s->world, *alist_at(&level->items, i));
+    if (item == NULL) {
       continue;
     }
 

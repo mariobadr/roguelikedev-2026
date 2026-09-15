@@ -242,7 +242,7 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
 
 static void
 begin_target_select(struct screen_state* s,
-                    int item_id,
+                    handle(rl_item) item,
                     struct rl_item_def const* def)
 {
   handle(rl_actor) const rogue_handle = rl_get_rogue(&s->game.world);
@@ -251,7 +251,7 @@ begin_target_select(struct screen_state* s,
   s->pending_target_cmd = (struct rl_command){ 0 };
   s->pending_target_cmd.actor = rogue_handle;
   s->pending_target_cmd.type = RL_COMMAND_USE_ITEM;
-  s->pending_target_cmd.use_item.item_id = item_id;
+  s->pending_target_cmd.use_item.item = item;
 
   int const radius =
     def->effect == RL_ITEM_EFFECT_DAMAGE_AREA ? RL_DAMAGE_AREA_RADIUS : 0;
@@ -287,13 +287,9 @@ resolve_pending_target(struct screen_state* s)
 }
 
 static bool
-handle_item_selection(struct screen_state* s, int item_id)
+handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
 {
-  if (item_id < 0) {
-    return false;
-  }
-
-  struct rl_item const* item = rl_get_item(&s->game.world, item_id);
+  struct rl_item const* item = rl_borrow_item(&s->game.world, item_handle);
   if (item == NULL) {
     return false;
   }
@@ -308,13 +304,13 @@ handle_item_selection(struct screen_state* s, int item_id)
       struct rl_command cmd = { 0 };
       cmd.actor = rl_get_rogue(&s->game.world);
       cmd.type = RL_COMMAND_USE_ITEM;
-      cmd.use_item.item_id = item_id;
+      cmd.use_item.item = item_handle;
       handled = submit_command(s, &cmd);
       cancel_focus(s);
       break;
     }
     case RL_ITEM_TARGET_TILE:
-      begin_target_select(s, item_id, def);
+      begin_target_select(s, item_handle, def);
       handled = true;
       break;
   }
@@ -332,8 +328,8 @@ handle_action(struct screen_state* s, struct inpt_state const* istate)
 
   switch (view_id) {
     case RL_VIEW_INVENTORY: {
-      int item_id = rl_inv_view_take_selection(view);
-      handled = handle_item_selection(s, item_id) || handled;
+      handle(rl_item) const item = rl_inv_view_take_selection(view);
+      handled = handle_item_selection(s, item) || handled;
       break;
     }
     case RL_VIEW_MAP: {

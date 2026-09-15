@@ -109,7 +109,6 @@ in_blast_radius_euclidean(SDL_Point origin, SDL_Point pos, int radius)
 
 static bool
 use_item_heal(struct rl_actor* actor,
-              struct rl_item* item,
               int power,
               alist(rl_event)* events,
               struct rand_state* rng)
@@ -136,16 +135,12 @@ use_item_heal(struct rl_actor* actor,
   event.as.heal.effective = effective;
   *alist_push(events) = event;
 
-  // mark the item as consumed
-  item->ltype = RL_ITEM_LOCATION_NONE;
-
   return true;
 }
 
 static bool
 use_item_damage_area(struct rl_world* world,
                      struct rl_actor* actor,
-                     struct rl_item* item,
                      SDL_Point origin,
                      int power,
                      alist(rl_event)* events,
@@ -172,16 +167,12 @@ use_item_damage_area(struct rl_world* world,
     }
   }
 
-  // mark the item as consumed
-  item->ltype = RL_ITEM_LOCATION_NONE;
-
   return true;
 }
 
 static bool
 use_item_lightning(struct rl_actor* actor,
                    struct rl_world* world,
-                   struct rl_item* item,
                    struct rl_fov const* fov,
                    int power,
                    alist(rl_event)* events,
@@ -231,9 +222,6 @@ use_item_lightning(struct rl_actor* actor,
   if (nearest->hp <= 0) {
     enqueue_death_event(nearest, actor, events);
   }
-
-  // mark the item as consumed
-  item->ltype = RL_ITEM_LOCATION_NONE;
 
   return true;
 }
@@ -315,9 +303,15 @@ rl_pick_up_item(struct rl_world* world,
     return false;
   }
 
-  struct rl_item* item = rl_find_item(world, dst);
+  struct rl_level* level = rl_edit_current_level(world);
+  handle(rl_item) const item_handle = rl_find_item(world, level, dst);
+  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
   if (item == NULL) {
     // no item at dst
+    return false;
+  }
+
+  if (!rl_remove_item(level, item_handle)) {
     return false;
   }
 
@@ -327,7 +321,7 @@ rl_pick_up_item(struct rl_world* world,
   struct rl_event event = { 0 };
   event.type = RL_EVENT_PICKUP;
   event.as.pickup.actor = actor->handle;
-  event.as.pickup.item = item->id;
+  event.as.pickup.item = item_handle;
   *alist_push(events) = event;
 
   return true;
@@ -336,7 +330,7 @@ rl_pick_up_item(struct rl_world* world,
 bool
 rl_use_item(struct rl_world* world,
             handle(rl_actor) actor_handle,
-            int item_id,
+            handle(rl_item) item_handle,
             SDL_Point target,
             struct rl_fov const* fov,
             alist(rl_event)* events,
@@ -347,7 +341,7 @@ rl_use_item(struct rl_world* world,
     return false;
   }
 
-  struct rl_item* item = rl_edit_item(world, item_id);
+  struct rl_item const* item = rl_borrow_item(world, item_handle);
   if (item == NULL) {
     return false;
   }
@@ -357,19 +351,27 @@ rl_use_item(struct rl_world* world,
     return false;
   }
 
+  bool used = false;
   struct rl_item_def const* idef = rl_get_item_def(item->itype);
   switch (idef->effect) {
     case RL_ITEM_EFFECT_HEAL:
-      return use_item_heal(actor, item, idef->power, events, rng);
+      used = use_item_heal(actor, idef->power, events, rng);
+      break;
     case RL_ITEM_EFFECT_DAMAGE_AREA:
-      return use_item_damage_area(
-        world, actor, item, target, idef->power, events, rng);
+      used =
+        use_item_damage_area(world, actor, target, idef->power, events, rng);
+      break;
     case RL_ITEM_EFFECT_DAMAGE_NEAREST:
-      return use_item_lightning(
-        actor, world, item, fov, idef->power, events, rng);
+      used = use_item_lightning(actor, world, fov, idef->power, events, rng);
+      break;
     default:
       break;
   }
 
-  return false;
+  if (used) {
+    // the item is consumed
+    pool_release(&world->items, item_handle);
+  }
+
+  return used;
 }

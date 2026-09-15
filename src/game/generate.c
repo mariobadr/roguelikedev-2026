@@ -71,7 +71,7 @@ populate_level(struct rl_world* world,
   }
 
   // spawn items
-  if (!rl_spawn_items(level, layout, &world->items, rng)) {
+  if (!rl_spawn_items(level, layout, world, rng)) {
     return false;
   }
 

@@ -30,7 +30,7 @@ enum rl_command_type
 
 struct rl_item_use
 {
-  int item_id;
+  handle(rl_item) item;
   SDL_Point dst;
 };
 
@@ -73,7 +73,7 @@ bool
 rl_apply_command(struct rl_world* world,
                  struct rl_command const* cmd,
                  struct rl_fov const* fov,
-                 alist(rl_event) * events,
+                 alist(rl_event)* events,
                  struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_COMMAND_H

@@ -27,7 +27,7 @@ struct view_state
   // selected item index in the filtered inventory
   int selected;
   // the selected item, waiting to be "pulled"
-  int pending_item_id;
+  handle(rl_item) pending_item;
 };
 
 static void
@@ -38,26 +38,10 @@ init_view_state(struct view_state* s,
 {
   s->world = world;
   s->selected = 0;
-  s->pending_item_id = -1;
+  s->pending_item = handle_invalid(rl_item);
 
   ui_list_init(
     &s->list, viewport, s->slots, SDL_arraysize(s->slots), line_height, 2.0f);
-}
-
-static int
-held_item_count(struct rl_world const* world)
-{
-  handle(rl_actor) const rogue = rl_get_rogue(world);
-
-  int len = 0;
-  for (int id = 0; id < alist_len(&world->items); ++id) {
-    struct rl_item const* item = rl_get_item(world, id);
-    if (item->ltype == RL_ITEM_LOCATION_HELD &&
-        handle_equal(item->on.actor, rogue)) {
-      ++len;
-    }
-  }
-  return len;
 }
 
 static struct rl_text
@@ -75,7 +59,7 @@ item_text(struct rl_item const* item, bool selected)
 static void
 scroll_to(struct view_state* view, int selected)
 {
-  int const count = held_item_count(view->world);
+  int const count = rl_count_held_items(view->world, rl_get_rogue(view->world));
   view->selected = SDL_clamp(selected, 0, SDL_max(0, count - 1));
   ui_list_ensure_visible(&view->list, count, view->selected);
 }
@@ -83,7 +67,8 @@ scroll_to(struct view_state* view, int selected)
 static void
 scroll_up(struct view_state* view)
 {
-  int const last = SDL_max(0, held_item_count(view->world) - 1);
+  int const count = rl_count_held_items(view->world, rl_get_rogue(view->world));
+  int const last = SDL_max(0, count - 1);
   int const selected = SDL_clamp(view->selected, 0, last);
   scroll_to(view, selected - 1);
 }
@@ -91,32 +76,10 @@ scroll_up(struct view_state* view)
 static void
 scroll_down(struct view_state* view)
 {
-  int const last = SDL_max(0, held_item_count(view->world) - 1);
+  int const count = rl_count_held_items(view->world, rl_get_rogue(view->world));
+  int const last = SDL_max(0, count - 1);
   int const selected = SDL_clamp(view->selected, 0, last);
   scroll_to(view, selected + 1);
-}
-
-static int
-get_selected_item(struct view_state const* view)
-{
-  handle(rl_actor) const rogue = rl_get_rogue(view->world);
-  int index = 0;
-
-  for (int id = 0; id < alist_len(&view->world->items); ++id) {
-    struct rl_item const* item = rl_get_item(view->world, id);
-    if (item->ltype != RL_ITEM_LOCATION_HELD ||
-        !handle_equal(item->on.actor, rogue)) {
-      continue;
-    }
-
-    if (index == view->selected) {
-      return item->id;
-    }
-
-    ++index;
-  }
-
-  return -1;
 }
 
 static void
@@ -147,8 +110,9 @@ update_view(void* data, struct inpt_state const* istate)
       scroll_down(s);
       return true;
     case RL_ACTION_SELECT:
-      s->pending_item_id = get_selected_item(s);
-      return s->pending_item_id >= 0;
+      s->pending_item =
+        rl_find_held_item(s->world, rl_get_rogue(s->world), s->selected);
+      return handle_is_nonnull(s->pending_item);
     default:
       break;
   }
@@ -175,21 +139,15 @@ render_view(void const* data,
   SDL_assert(s != NULL);
 
   handle(rl_actor) const rogue = rl_get_rogue(s->world);
-  int const len = (int)alist_len(&s->world->items);
-  int const first = ui_list_offset(&s->list, held_item_count(s->world));
-  int skipped = 0;
-  int row = 0;
+  int const count = rl_count_held_items(s->world, rogue);
+  int const first = ui_list_offset(&s->list, count);
 
-  for (int id = 0; id < len && row < s->list.slot_count; ++id) {
-    struct rl_item const* item = rl_get_item(s->world, id);
-    if (item->ltype != RL_ITEM_LOCATION_HELD ||
-        !handle_equal(item->on.actor, rogue)) {
-      continue;
-    }
-
-    if (skipped < first) {
-      ++skipped;
-      continue;
+  for (int row = 0; row < s->list.slot_count && first + row < count; ++row) {
+    handle(rl_item) const item_handle =
+      rl_find_held_item(s->world, rogue, first + row);
+    struct rl_item const* item = rl_borrow_item(s->world, item_handle);
+    if (item == NULL) {
+      break;
     }
 
     struct rl_text const text = item_text(item, first + row == s->selected);
@@ -199,8 +157,6 @@ render_view(void const* data,
       s->slots[row].y,
     };
     rl_draw_text(renderer, font, &text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
-
-    ++row;
   }
 }
 
@@ -226,14 +182,14 @@ rl_alloc_inv_view(struct rl_view* view,
   return true;
 }
 
-int
+handle(rl_item)
 rl_inv_view_take_selection(struct rl_view* view)
 {
   struct view_state* s = view->state;
   SDL_assert(s != NULL);
 
-  int const item_id = s->pending_item_id;
-  s->pending_item_id = -1;
+  handle(rl_item) const item = s->pending_item;
+  s->pending_item = handle_invalid(rl_item);
 
-  return item_id;
+  return item;
 }

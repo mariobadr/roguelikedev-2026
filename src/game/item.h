@@ -6,8 +6,6 @@
 
 #include <SDL3/SDL_rect.h>
 
-#include "container/alist.h"
-
 #include "game/handles.h"
 
 /** Item categories. */
@@ -56,16 +54,16 @@ struct rl_item_def
 /** Where an item can be found. */
 enum rl_item_location
 {
-  RL_ITEM_LOCATION_NONE,
-  RL_ITEM_LOCATION_MAP,
-  RL_ITEM_LOCATION_HELD,
+  RL_ITEM_LOCATION_NONE, //< not placed yet
+  RL_ITEM_LOCATION_MAP,  //< on a level's floor
+  RL_ITEM_LOCATION_HELD, //< held by an actor
 };
 
 /** An instance of an item. */
 struct rl_item
 {
-  /** A unique identifier. */
-  int id;
+  /** This item's handle, so code holding a pointer can refer to it. */
+  handle(rl_item) handle;
   /** For getting the item definition. */
   enum rl_item_type itype;
   /** For distinguishing where the item is found. */
@@ -81,9 +79,11 @@ struct rl_item
 };
 
 /**
- * A growable array of items.
+ * Create a new, unplaced item. Its handle is invalid until the item is added
+ * to a world (see rl_create_item).
  */
-alist_define_as(struct rl_item, rl_item);
+struct rl_item
+rl_make_item(enum rl_item_type type);
 
 /**
  * @return the item definition that corresponds to type.
