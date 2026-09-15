@@ -73,27 +73,16 @@ update_explored(struct rl_level* level, struct rl_fov const* fov)
   }
 }
 
-bool
-rl_alloc_game_state(struct rl_game_state* game_state,
-                    int map_width,
-                    int map_height)
+static bool
+alloc_map_buffers(struct rl_game_state* game_state, int width, int height)
 {
-  if (!alist_alloc(&game_state->events, 8)) {
-    SDL_Log("alist_alloc failed: %s", SDL_GetError());
-    return false;
-  }
-
-  if (!rl_alloc_world(&game_state->world, map_width, map_height)) {
-    return false;
-  }
-
   // allocate space for the distance map
-  if (!grid_alloc(&game_state->distances, map_width, map_height)) {
+  if (!grid_alloc(&game_state->distances, width, height)) {
     SDL_Log("grid_alloc failed: %s", SDL_GetError());
     return false;
   }
 
-  if (!rl_alloc_fov(&game_state->fov, map_width, map_height, FOV_RADIUS)) {
+  if (!rl_alloc_fov(&game_state->fov, width, height, FOV_RADIUS)) {
     return false;
   }
 
@@ -101,16 +90,47 @@ rl_alloc_game_state(struct rl_game_state* game_state,
 }
 
 bool
-rl_new_game(struct rl_game_state* game_state, Uint64 seed)
+rl_alloc_game_state(struct rl_game_state* game_state)
 {
-  rand_seed(&game_state->rng, seed);
-
-  if (!rl_gen_level(
-        &game_state->world, &game_state->world.level, &game_state->rng)) {
+  if (!alist_alloc(&game_state->events, 8)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
     return false;
   }
 
-  struct rl_level* level = rl_edit_current_level(&game_state->world);
+  if (!rl_alloc_world(&game_state->world)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool
+rl_new_game(struct rl_game_state* game_state,
+            int width,
+            int height,
+            Uint64 seed)
+{
+  rand_seed(&game_state->rng, seed);
+
+  // the main character
+  game_state->world.rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
+
+  struct rl_level* level = alist_push(&game_state->world.levels);
+  if (level == NULL) {
+    return false;
+  }
+
+  if (!rl_alloc_level(level, 1, width, height)) {
+    return false;
+  }
+
+  if (!rl_gen_level(&game_state->world, level, &game_state->rng)) {
+    return false;
+  }
+
+  if (!alloc_map_buffers(game_state, width, height)) {
+    return false;
+  }
 
   // make sure the rogue has an initial field-of-view
   struct rl_actor const* rogue = rl_get_actor(&game_state->world, RL_ROGUE_ID);

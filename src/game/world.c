@@ -3,13 +3,12 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
-#include "spawn.h"
-
 bool
-rl_alloc_world(struct rl_world* world, int width, int height)
+rl_alloc_world(struct rl_world* world)
 {
-  // TODO: need an alist of levels
-  if (!rl_alloc_level(&world->level, 1, width, height)) {
+  // allocate space for the levels
+  if (!alist_alloc(&world->levels, 4)) {
+    SDL_Log("alist_alloc failed: %s", SDL_GetError());
     return false;
   }
 
@@ -25,9 +24,6 @@ rl_alloc_world(struct rl_world* world, int width, int height)
     return false;
   }
 
-  // the main character
-  world->rogue = rl_create_actor(RL_ACTOR_ROGUE, RL_ROGUE_ID);
-
   return true;
 }
 
@@ -40,7 +36,11 @@ rl_free_world(struct rl_world* world)
 
   alist_free(&world->items);
   alist_free(&world->actors);
-  rl_free_level(&world->level);
+
+  for (size_t i = 0; i < alist_len(&world->levels); i++) {
+    rl_free_level(alist_at(&world->levels, i));
+  }
+  alist_free(&world->levels);
 }
 
 struct rl_actor const*
@@ -138,11 +138,21 @@ rl_find_item(struct rl_world* world, SDL_Point pos)
 struct rl_level const*
 rl_get_current_level(struct rl_world const* world)
 {
-  return &world->level;
+  int const index = world->rogue.level;
+  if (index < 0 || index >= alist_len(&world->levels)) {
+    return NULL;
+  }
+
+  return alist_at(&world->levels, index);
 }
 
 struct rl_level*
 rl_edit_current_level(struct rl_world* world)
 {
-  return &world->level;
+  int const index = world->rogue.level;
+  if (index < 0 || index >= alist_len(&world->levels)) {
+    return NULL;
+  }
+
+  return alist_at(&world->levels, index);
 }

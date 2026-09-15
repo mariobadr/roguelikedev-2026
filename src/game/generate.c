@@ -92,7 +92,5 @@ rl_gen_level(struct rl_world* world,
 
   rl_free_layout(&layout);
 
-  // TODO: push level into world
-
   return ok;
 }

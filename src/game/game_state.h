@@ -25,7 +25,7 @@ struct rl_game_state
 {
   /** The random number generator */
   struct rand_state rng;
-  /** One map (for now) */
+  /** The world, including the levels visited so far. */
   struct rl_world world;
   /** A map of distances to reach the player. */
   grid(int) distances;
@@ -36,15 +36,16 @@ struct rl_game_state
 };
 
 bool
-rl_alloc_game_state(struct rl_game_state* game_state,
-                    int map_width,
-                    int map_height);
+rl_alloc_game_state(struct rl_game_state* game_state);
 
 void
 rl_free_game_state(struct rl_game_state* game_state);
 
 bool
-rl_new_game(struct rl_game_state* game_state, Uint64 seed);
+rl_new_game(struct rl_game_state* game_state,
+            int width,
+            int height,
+            Uint64 seed);
 
 /**
  * @return whether applying the command consumes a turn.

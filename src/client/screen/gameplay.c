@@ -142,11 +142,11 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   // ribbon
   rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP]);
 
-  if (!rl_alloc_game_state(&s->game_state, RL_WORLD_WIDTH, RL_WORLD_HEIGHT)) {
+  if (!rl_alloc_game_state(&s->game_state)) {
     return false;
   }
 
-  if (!rl_new_game(&s->game_state, 1234)) {
+  if (!rl_new_game(&s->game_state, RL_WORLD_WIDTH, RL_WORLD_HEIGHT, 1234)) {
     return false;
   }
 

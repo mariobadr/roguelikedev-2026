@@ -23,8 +23,8 @@ struct rand_state;
  */
 struct rl_world
 {
-  /** The current level (currently only one level). */
-  struct rl_level level;
+  /** The levels visited so far. */
+  alist(rl_level) levels;
   /** The player. */
   struct rl_actor rogue;
   /** All actors except the rogue. */
@@ -37,7 +37,7 @@ struct rl_world
  * Allocate a new world.
  */
 bool
-rl_alloc_world(struct rl_world* world, int width, int height);
+rl_alloc_world(struct rl_world* world);
 
 /**
  * Free the resources used by world.

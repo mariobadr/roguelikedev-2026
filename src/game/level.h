@@ -7,6 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "container/alist.h"
+
 #include "game/tile.h"
 
 struct rl_level
@@ -18,6 +20,11 @@ struct rl_level
   /** Cells the player has seen before */
   grid(boolean) explored;
 };
+
+/**
+ * A growable array of levels.
+ */
+alist_define_as(struct rl_level, rl_level);
 
 bool
 rl_alloc_level(struct rl_level* level, int depth, int width, int height);
