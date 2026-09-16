@@ -1,6 +1,6 @@
 #include "combat.h"
 
-#include "procgen/rand.h"
+#include "core/rand.h"
 
 #include "actor.h"
 #include "world.h"

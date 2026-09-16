@@ -1,8 +1,8 @@
 /**
  * @file rand.h
  */
-#ifndef GINC_ROGUELIKE_RAND_H
-#define GINC_ROGUELIKE_RAND_H
+#ifndef GINC_CORE_RAND_H
+#define GINC_CORE_RAND_H
 
 #include <SDL3/SDL_stdinc.h>
 
@@ -77,4 +77,4 @@ rand_next_between(struct rand_state* state, Sint64 lo, Sint64 hi);
 void
 rand_jump(struct rand_state* state);
 
-#endif // GINC_ROGUELIKE_RAND_H
+#endif // GINC_CORE_RAND_H

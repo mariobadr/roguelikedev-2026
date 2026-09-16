@@ -1,7 +1,6 @@
 #include "generate.h"
 
-#include "procgen/layout.h"
-
+#include "layout.h"
 #include "level.h"
 #include "spawn.h"
 #include "world.h"

@@ -1,136 +1,44 @@
 ###############################################################################
-# Source files
+# CMake functions
 ###############################################################################
-set(GAME_SOURCES
-    client/screen/gameplay.c
-    client/view/in_sight.c
-    client/view/in_sight.h
-    client/view/inventory.c
-    client/view/inventory.h
-    client/view/log.c
-    client/view/log.h
-    client/view/map.c
-    client/view/map.h
-    client/view/ribbon.c
-    client/view/ribbon.h
-    client/action.c
-    client/action.h
-    client/camera.c
-    client/camera.h
-    client/client.c
-    client/client.h
-    client/controls.c
-    client/controls.h
-    client/font.c
-    client/font.h
-    client/game_log.c
-    client/game_log.h
-    client/graphics.c
-    client/graphics.h
-    client/lighting.c
-    client/lighting.h
-    client/palette.h
-    client/render.c
-    client/render.h
-    client/screen.h
-    client/text.c
-    client/text.h
-    client/ui.c
-    client/ui.h
-    container/alist.c
-    container/alist.h
-    container/array.h
-    container/grid.h
-    container/pool.c
-    container/pool.h
-    core/handle.h
-    game/actor.c
-    game/actor.h
-    game/actor_def.c
-    game/actor_def.h
-    game/ai.c
-    game/ai.h
-    game/combat.c
-    game/combat.h
-    game/command.c
-    game/command.h
-    game/event.h
-    game/fov.c
-    game/fov.h
-    game/game.c
-    game/game.h
-    game/generate.c
-    game/generate.h
-    game/handles.h
-    game/item.c
-    game/item.h
-    game/item_def.c
-    game/item_def.h
-    game/level.c
-    game/level.h
-    game/mechanics.c
-    game/mechanics.h
-    game/pathfinding.c
-    game/pathfinding.h
-    game/spawn.c
-    game/spawn.h
-    game/targeting.c
-    game/targeting.h
-    game/tile.c
-    game/tile.h
-    game/world.c
-    game/world.h
-    input/input.c
-    input/input.h
-    input/input_event.c
-    input/input_event.h
-    procgen/bsp.c
-    procgen/bsp.h
-    procgen/layout.c
-    procgen/layout.h
-    procgen/rand.c
-    procgen/rand.h
-    ui/anchor.c
-    ui/anchor.h
-    ui/layout.c
-    ui/layout.h
-    ui/list.c
-    ui/list.h
-    ui/rectcut.h
-    ui/str_wrap.c
-    ui/str_wrap.h
-    main.c
-)
+function(rl_configure_target target)
+    set_target_properties(${target} PROPERTIES
+        C_STANDARD 11
+        C_STANDARD_REQUIRED ON
+        COMPILE_WARNING_AS_ERROR ON
+    )
+
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall)
+    endif()
+endfunction()
+
+
+###############################################################################
+# Libraries
+###############################################################################
+set(RL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_subdirectory(game)
+add_subdirectory(client)
 
 
 ###############################################################################
 # Game target
 ###############################################################################
 set(GAME_TARGET ${PROJECT_NAME})
-add_executable(${GAME_TARGET} ${GAME_SOURCES})
-
-target_include_directories(${GAME_TARGET}
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
+add_executable(${GAME_TARGET} main.c)
 
 target_link_libraries(${GAME_TARGET}
     PRIVATE
+        rl::client
+        ginc::input
         SDL3::SDL3
 )
 
-target_compile_options(${GAME_TARGET}
-    PRIVATE
-        $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
-        $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wall -Werror>
-)
-
-set_target_properties(${GAME_TARGET}
-    PROPERTIES
-        C_STANDARD 11
-        C_STANDARD_REQUIRED ON
-)
-
+rl_configure_target(${GAME_TARGET})
 
 ###############################################################################
 # Platform-specific build rules

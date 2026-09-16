@@ -1,8 +1,7 @@
 /**
  * @file str_wrap.h
  *
- * Line-breaking (word-wrap) for fixed-width byte-glyph text, independent of
- * rendering, allocation, and geometry.
+ * Line-breaking (word-wrap) for fixed-width text.
  */
 #ifndef GINC_UI_STR_WRAP_H
 #define GINC_UI_STR_WRAP_H

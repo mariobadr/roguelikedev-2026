@@ -8,11 +8,11 @@
 
 #include "container/alist.h"
 #include "container/grid.h"
+#include "core/rand.h"
 
 #include "command.h"
 #include "event.h"
 #include "fov.h"
-#include "procgen/rand.h"
 #include "world.h"
 
 /**

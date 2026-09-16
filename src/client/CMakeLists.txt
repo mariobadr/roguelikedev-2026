@@ -1,0 +1,61 @@
+###############################################################################
+# Client library
+###############################################################################
+add_library(rl_client STATIC
+    screen/gameplay.c
+    view/in_sight.c
+    view/in_sight.h
+    view/inventory.c
+    view/inventory.h
+    view/log.c
+    view/log.h
+    view/map.c
+    view/map.h
+    view/ribbon.c
+    view/ribbon.h
+    action.c
+    action.h
+    camera.c
+    camera.h
+    client.c
+    client.h
+    controls.c
+    controls.h
+    font.c
+    font.h
+    game_log.c
+    game_log.h
+    graphics.c
+    graphics.h
+    lighting.c
+    lighting.h
+    palette.h
+    render.c
+    render.h
+    screen.h
+    text.c
+    text.h
+    ui.c
+    ui.h
+    view.h
+)
+
+add_library(rl::client ALIAS rl_client)
+
+rl_configure_target(rl_client)
+
+target_include_directories(rl_client
+    PUBLIC
+        "${RL_SOURCE_DIR}"
+)
+
+target_link_libraries(rl_client
+    PUBLIC
+        rl::game
+        ginc::core
+        ginc::container
+        SDL3::SDL3
+    PRIVATE
+        ginc::input
+        ginc::ui
+)

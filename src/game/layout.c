@@ -3,8 +3,9 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
+#include "core/rand.h"
+
 #include "bsp.h"
-#include "rand.h"
 
 /* Room generation */
 

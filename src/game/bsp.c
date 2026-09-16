@@ -3,7 +3,7 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
-#include "rand.h"
+#include "core/rand.h"
 
 bool
 rl_bsp_tree_init(struct rl_bsp_tree* tree, int max_depth, SDL_Rect rect)

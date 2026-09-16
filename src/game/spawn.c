@@ -2,13 +2,12 @@
 
 #include "container/array.h"
 #include "container/grid.h"
-
-#include "procgen/layout.h"
-#include "procgen/rand.h"
+#include "core/rand.h"
 
 #include "actor.h"
 #include "actor_def.h"
 #include "item_def.h"
+#include "layout.h"
 #include "level.h"
 #include "tile.h"
 #include "world.h"
