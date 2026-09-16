@@ -48,6 +48,8 @@ set(GAME_SOURCES
     game/actor.h
     game/ai.c
     game/ai.h
+    game/combat.c
+    game/combat.h
     game/command.c
     game/command.h
     game/event.h

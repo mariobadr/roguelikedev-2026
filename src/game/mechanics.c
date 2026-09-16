@@ -3,12 +3,10 @@
 #include "procgen/rand.h"
 
 #include "actor.h"
+#include "combat.h"
 #include "fov.h"
 #include "targeting.h"
 #include "world.h"
-
-#define MISS_CHANCE 5
-#define ARMOR_SCALING 20
 
 static bool
 are_adjacent(SDL_Point a, SDL_Point b)
@@ -53,51 +51,6 @@ can_move(struct rl_world const* world, SDL_Point dst)
   }
 
   return true;
-}
-
-static int
-attack_actor(int power, struct rl_actor* defender, struct rand_state* rng)
-{
-  if (rand_next_up_to(rng, 100) < MISS_CHANCE) {
-    return -1;
-  }
-
-  // integer division truncates, but we avoid floating point (yay!)
-  int const base = (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
-  // our random base damage is then mitigated by armor
-  int const damage =
-    base - (base * defender->armor / (defender->armor + ARMOR_SCALING));
-
-  // don't let HP dip below 0
-  defender->hp = SDL_max(0, defender->hp - damage);
-
-  return damage;
-}
-
-static void
-enqueue_attack_event(struct rl_actor const* attacker,
-                     struct rl_actor const* defender,
-                     int damage,
-                     alist(rl_event)* events)
-{
-  struct rl_event event = { 0 };
-  event.type = RL_EVENT_ATTACK;
-  event.as.attack.attacker = attacker->handle;
-  event.as.attack.defender = defender->handle;
-  event.as.attack.damage = damage;
-  *alist_push(events) = event;
-}
-
-static void
-enqueue_death_event(struct rl_actor const* actor,
-                    struct rl_actor const* killer,
-                    alist(rl_event)* events)
-{
-  struct rl_event event = { 0 };
-  event.type = RL_EVENT_DEATH;
-  event.as.death.actor = actor->handle;
-  event.as.death.killer = killer->handle;
-  *alist_push(events) = event;
 }
 
 static bool
@@ -151,12 +104,7 @@ use_item_damage_area(struct rl_world* world,
       continue;
     }
 
-    int const damage = attack_actor(idef->power, defender, rng);
-    enqueue_attack_event(actor, defender, damage, events);
-
-    if (defender->hp <= 0) {
-      enqueue_death_event(defender, actor, events);
-    }
+    rl_resolve_attack(actor, defender, idef->power, events, rng);
   }
 
   return true;
@@ -209,11 +157,7 @@ use_item_lightning(struct rl_actor* actor,
     return false;
   }
 
-  int const damage = attack_actor(power, nearest, rng);
-  enqueue_attack_event(actor, nearest, damage, events);
-  if (nearest->hp <= 0) {
-    enqueue_death_event(nearest, actor, events);
-  }
+  rl_resolve_attack(actor, nearest, power, events, rng);
 
   return true;
 }
@@ -235,47 +179,6 @@ rl_move(struct rl_world* world, handle(rl_actor) actor_handle, SDL_Point dst)
   }
 
   actor->pos = dst;
-  return true;
-}
-
-bool
-rl_attack_melee(struct rl_world* world,
-                handle(rl_actor) attacker_handle,
-                handle(rl_actor) defender_handle,
-                alist(rl_event)* events,
-                struct rand_state* rng)
-{
-  if (handle_equal(attacker_handle, defender_handle)) {
-    // can't attack yourself (?)
-    return false;
-  }
-
-  struct rl_actor* attacker = get_living_actor(world, attacker_handle);
-  if (attacker == NULL) {
-    // attacker_handle is not valid
-    return false;
-  }
-
-  struct rl_actor* defender = get_living_actor(world, defender_handle);
-  if (defender == NULL) {
-    // defender_handle is not valid
-    return false;
-  }
-
-  if (!are_adjacent(attacker->pos, defender->pos)) {
-    // only allow melee attacks
-    return false;
-  }
-
-  // from the good old WoW days
-  int const ap = 2 * attacker->strength;
-  int const damage = attack_actor(ap, defender, rng);
-  enqueue_attack_event(attacker, defender, damage, events);
-
-  if (defender->hp <= 0) {
-    enqueue_death_event(defender, attacker, events);
-  }
-
   return true;
 }
 

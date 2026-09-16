@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_assert.h>
 
+#include "combat.h"
 #include "mechanics.h"
 #include "world.h"
 
