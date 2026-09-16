@@ -59,6 +59,8 @@ struct view_state
   int cell_height;
   /** A "camera" of what's currently visible. */
   SDL_Rect camera;
+  /** Terrain cells for the current level, indexed by world tile position. */
+  grid(gfx_console) terrain;
 
   // for the MOVE mode
   struct rl_command pending_command;
@@ -136,12 +138,27 @@ cell_at(struct view_state const* s, SDL_FPoint pos, SDL_Point* cell)
 }
 
 static void
-draw_level(struct view_state const* s,
-           SDL_Renderer* renderer,
-           struct gfx_tileset const* font)
+sync_terrain_size(struct view_state* s, grid(rl_tile) const* map)
+{
+  int const w = grid_width(map);
+  int const h = grid_height(map);
+  if (grid_width(&s->terrain) == w && grid_height(&s->terrain) == h) {
+    return;
+  }
+
+  grid_free(&s->terrain);
+  if (!grid_alloc(&s->terrain, w, h)) {
+    SDL_Log("grid_alloc failed: %s", SDL_GetError());
+  }
+}
+
+static void
+populate_terrain(struct view_state* s)
 {
   struct rl_level const* level = rl_get_current_level(s->world);
   grid(rl_tile) const* map = &level->map;
+
+  sync_terrain_size(s, map);
 
   SDL_Rect const visible =
     rl_visible_world(&s->camera, grid_width(map), grid_height(map));
@@ -149,25 +166,34 @@ draw_level(struct view_state const* s,
   for (int y = visible.y; y < visible.y + visible.h; y++) {
     for (int x = visible.x; x < visible.x + visible.w; x++) {
       SDL_Point const p = { x, y };
+      struct gfx_console_cell cell = { 0 };
 
-      if (!rl_is_tile_explored(level, p)) {
-        // don't draw anything for unexplored tiles
-        continue;
+      if (rl_is_tile_explored(level, p)) {
+        enum rl_tile const tile = *grid_at(map, p.x, p.y);
+        cell = rl_get_tile_gfx(tile);
+
+        if (!rl_is_tile_visible(s->fov, p)) {
+          // dim explored but not visible tiles
+          cell.fg = rl_lerp_colour(cell.fg, RL_COLOUR_BLACK, 0.4f);
+        }
       }
 
-      enum rl_tile const tile = *grid_at(map, p.x, p.y);
-      struct gfx_console_cell cell = rl_get_tile_gfx(tile);
-
-      if (!rl_is_tile_visible(s->fov, p)) {
-        // dim explored but not visible tiles
-        cell.fg = rl_lerp_colour(cell.fg, RL_COLOUR_BLACK, 0.4f);
-      }
-
-      SDL_FPoint const at = cell_to_pixels(s, p);
-      SDL_FRect dst = gfx_tileset_dst(font, at, 1);
-      gfx_draw_cell(renderer, font, &cell, &dst);
+      *grid_at(&s->terrain, p.x, p.y) = cell;
     }
   }
+}
+
+static void
+draw_level(struct view_state const* s,
+           SDL_Renderer* renderer,
+           struct gfx_tileset const* font)
+{
+  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
+
+  SDL_Rect const visible =
+    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
+
+  gfx_draw_grid(renderer, font, &s->terrain, &visible, cell_origin(&s->viewport));
 }
 
 static void
@@ -496,6 +522,8 @@ prepare_view(void* data)
   SDL_Point const origin =
     s->mode == MAP_MODE_SELECT ? s->selection.cursor : rogue->pos;
   rl_centre_camera_on(&s->camera, origin, grid_width(map), grid_height(map));
+
+  populate_terrain(s);
 }
 
 static void
@@ -526,6 +554,7 @@ free_view(void* data)
   }
 
   grid_free(&s->selection.mask);
+  grid_free(&s->terrain);
   SDL_free(s);
 }
 
