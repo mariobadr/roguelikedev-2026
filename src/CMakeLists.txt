@@ -97,6 +97,8 @@ set(GAME_SOURCES
     ui/list.c
     ui/list.h
     ui/rectcut.h
+    ui/str_wrap.c
+    ui/str_wrap.h
     main.c
 )
 

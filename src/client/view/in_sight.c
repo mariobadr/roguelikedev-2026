@@ -9,24 +9,13 @@
 #include "game/world.h"
 
 #include "ui/rectcut.h"
+#include "ui/str_wrap.h"
 
 #include "client/font.h"
 #include "client/palette.h"
 #include "client/render.h"
 #include "client/ui.h"
 #include "client/view.h"
-
-struct text_span
-{
-  char const* data;
-  int length;
-};
-
-struct wrapped_line
-{
-  struct text_span text;
-  char const* next;
-};
 
 struct view_state
 {
@@ -139,49 +128,10 @@ draw_actor(SDL_Renderer* renderer,
   draw_health_bar(renderer, bounds, actor->hp, actor->max_hp);
 }
 
-static struct wrapped_line
-next_wrapped_line(char const* text, int columns)
-{
-  int length = 0;
-
-  /* Take as many characters as will fit. */
-  while (text[length] != '\0' && length < columns) {
-    ++length;
-  }
-
-  /* If more text remains, prefer breaking at a space. */
-  if (text[length] != '\0') {
-    int split = length;
-
-    while (split > 0 && text[split] != ' ') {
-      --split;
-    }
-
-    if (split > 0) {
-      length = split;
-    }
-  }
-
-  char const* next = text + length;
-
-  /* Skip spaces before the next line. */
-  while (*next == ' ') {
-    ++next;
-  }
-
-  return (struct wrapped_line){
-    .text = {
-      .data = text,
-      .length = length,
-    },
-    .next = next,
-  };
-}
-
 static void
 draw_text_span(SDL_Renderer* renderer,
                struct rl_font const* font,
-               struct text_span text,
+               struct ui_string_span text,
                SDL_FPoint at)
 {
   struct rl_cell cell = {
@@ -208,14 +158,13 @@ draw_wrapped_string(SDL_Renderer* renderer,
   }
 
   char const* cursor = text;
-  while (*cursor != '\0' && remaining->h >= font->glyph_height) {
-    struct wrapped_line const line = next_wrapped_line(cursor, columns);
-
+  struct ui_string_span span;
+  while (remaining->h >= font->glyph_height) {
+    if (!ui_wrap_next(&cursor, columns, &span)) {
+      break;
+    }
     SDL_FRect const row = ui_cut_top(remaining, (float)font->glyph_height);
-
-    draw_text_span(renderer, font, line.text, (SDL_FPoint){ row.x, row.y });
-
-    cursor = line.next;
+    draw_text_span(renderer, font, span, (SDL_FPoint){ row.x, row.y });
   }
 }
 
