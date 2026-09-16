@@ -61,6 +61,8 @@ struct view_state
   SDL_Rect camera;
   /** Terrain cells for the current level, indexed by world tile position. */
   grid(gfx_console) terrain;
+  /** Light glow cells for the current level, indexed by world tile position. */
+  grid(gfx_console) light;
 
   // for the MOVE mode
   struct rl_command pending_command;
@@ -153,6 +155,21 @@ sync_terrain_size(struct view_state* s, grid(rl_tile) const* map)
 }
 
 static void
+sync_light_size(struct view_state* s, grid(rl_tile) const* map)
+{
+  int const w = grid_width(map);
+  int const h = grid_height(map);
+  if (grid_width(&s->light) == w && grid_height(&s->light) == h) {
+    return;
+  }
+
+  grid_free(&s->light);
+  if (!grid_alloc(&s->light, w, h)) {
+    SDL_Log("grid_alloc failed: %s", SDL_GetError());
+  }
+}
+
+static void
 populate_terrain(struct view_state* s)
 {
   struct rl_level const* level = rl_get_current_level(s->world);
@@ -184,6 +201,38 @@ populate_terrain(struct view_state* s)
 }
 
 static void
+populate_light(struct view_state* s)
+{
+  struct rl_level const* level = rl_get_current_level(s->world);
+  grid(rl_tile) const* map = &level->map;
+
+  sync_light_size(s, map);
+
+  // the colour of the light source - make this an argument?
+  SDL_FColor const light = RL_COLOUR_GRAY[6];
+
+  SDL_Rect const visible =
+    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
+
+  for (int y = visible.y; y < visible.y + visible.h; y++) {
+    for (int x = visible.x; x < visible.x + visible.w; x++) {
+      SDL_Point const p = { x, y };
+      struct gfx_console_cell cell = { 0 };
+
+      if (rl_is_tile_visible(s->fov, p)) {
+        float const brightness =
+          rl_calculate_brightness(s->fov->origin, p, (float)s->fov->radius);
+        float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
+
+        cell.bg = (SDL_FColor){ light.r, light.g, light.b, alpha };
+      }
+
+      *grid_at(&s->light, p.x, p.y) = cell;
+    }
+  }
+}
+
+static void
 draw_level(struct view_state const* s,
            SDL_Renderer* renderer,
            struct gfx_tileset const* font)
@@ -197,48 +246,20 @@ draw_level(struct view_state const* s,
 }
 
 static void
-draw_light(struct view_state const* s, SDL_Renderer* renderer)
+draw_light(struct view_state const* s,
+           SDL_Renderer* renderer,
+           struct gfx_tileset const* font)
 {
   SDL_BlendMode prev;
   SDL_GetRenderDrawBlendMode(renderer, &prev);
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
 
-  struct rl_level const* level = rl_get_current_level(s->world);
-  grid(rl_tile) const* map = &level->map;
-
-  // the colour of the light source - make this an argument?
-  SDL_FColor const light = RL_COLOUR_GRAY[6];
+  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
 
   SDL_Rect const visible =
     rl_visible_world(&s->camera, grid_width(map), grid_height(map));
 
-  for (int y = visible.y; y < visible.y + visible.h; y++) {
-    for (int x = visible.x; x < visible.x + visible.w; x++) {
-      SDL_Point const p = { x, y };
-
-      if (!rl_is_tile_visible(s->fov, p)) {
-        // not visible, so there's no "glow" to add
-        continue;
-      }
-
-      float const brightness =
-        rl_calculate_brightness(s->fov->origin, p, (float)s->fov->radius);
-      float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
-
-      SDL_FColor const colour = { light.r, light.g, light.b, alpha };
-      SDL_FPoint const at = cell_to_pixels(s, p);
-
-      SDL_FRect dst = { 0 };
-      dst.x = at.x;
-      dst.y = at.y;
-      dst.w = (float)s->cell_width;
-      dst.h = (float)s->cell_height;
-
-      SDL_SetRenderDrawColorFloat(
-        renderer, colour.r, colour.g, colour.b, colour.a);
-      SDL_RenderFillRect(renderer, &dst);
-    }
-  }
+  gfx_draw_grid(renderer, font, &s->light, &visible, cell_origin(&s->viewport));
 
   SDL_SetRenderDrawBlendMode(renderer, prev);
 }
@@ -524,6 +545,7 @@ prepare_view(void* data)
   rl_centre_camera_on(&s->camera, origin, grid_width(map), grid_height(map));
 
   populate_terrain(s);
+  populate_light(s);
 }
 
 static void
@@ -537,7 +559,7 @@ render_view(void const* data,
   draw_level(s, renderer, font);
   draw_items(s, renderer, font);
   draw_actors(s, renderer, font);
-  draw_light(s, renderer);
+  draw_light(s, renderer, font);
 
   if (s->mode == MAP_MODE_SELECT) {
     draw_target_area(s, renderer);
@@ -555,6 +577,7 @@ free_view(void* data)
 
   grid_free(&s->selection.mask);
   grid_free(&s->terrain);
+  grid_free(&s->light);
   SDL_free(s);
 }
 

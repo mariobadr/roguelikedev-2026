@@ -38,14 +38,16 @@ gfx_draw_cell(SDL_Renderer* renderer,
     SDL_RenderFillRect(renderer, dst);
   }
 
-  // tint the glyph (foreground)
-  SDL_SetTextureColorModFloat(
-    tileset->texture, cell->fg.r, cell->fg.g, cell->fg.b);
-  SDL_SetTextureAlphaModFloat(tileset->texture, cell->fg.a);
+  if (cell->fg.a > 0.0f) {
+    // tint the glyph (foreground)
+    SDL_SetTextureColorModFloat(
+      tileset->texture, cell->fg.r, cell->fg.g, cell->fg.b);
+    SDL_SetTextureAlphaModFloat(tileset->texture, cell->fg.a);
 
-  // draw the glyph
-  SDL_FRect src = gfx_tileset_src(tileset, cell->index);
-  SDL_RenderTexture(renderer, tileset->texture, &src, dst);
+    // draw the glyph
+    SDL_FRect src = gfx_tileset_src(tileset, cell->index);
+    SDL_RenderTexture(renderer, tileset->texture, &src, dst);
+  }
 }
 
 void
