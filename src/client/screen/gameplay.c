@@ -5,6 +5,7 @@
 #include <SDL3/SDL_log.h>
 
 #include "game/game.h"
+#include "game/item_def.h"
 
 #include "ui/rectcut.h"
 

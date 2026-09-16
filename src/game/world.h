@@ -10,6 +10,7 @@
 #include "game/actor.h"
 #include "game/handles.h"
 #include "game/item.h"
+#include "game/item_def.h"
 #include "game/level.h"
 
 // forward declarations

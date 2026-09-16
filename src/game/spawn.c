@@ -7,6 +7,7 @@
 #include "procgen/rand.h"
 
 #include "actor.h"
+#include "item_def.h"
 #include "level.h"
 #include "tile.h"
 #include "world.h"

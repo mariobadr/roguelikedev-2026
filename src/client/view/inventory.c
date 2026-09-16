@@ -3,6 +3,7 @@
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_render.h>
 
+#include "game/item_def.h"
 #include "game/world.h"
 
 #include "client/view/ribbon.h"

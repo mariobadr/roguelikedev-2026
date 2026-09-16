@@ -62,6 +62,8 @@ set(GAME_SOURCES
     game/handles.h
     game/item.c
     game/item.h
+    game/item_def.c
+    game/item_def.h
     game/level.c
     game/level.h
     game/mechanics.c

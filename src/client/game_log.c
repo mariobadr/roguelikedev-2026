@@ -5,6 +5,7 @@
 
 #include "game/event.h"
 #include "game/item.h"
+#include "game/item_def.h"
 #include "game/world.h"
 
 #include "client/graphics.h"

@@ -3,7 +3,7 @@
 #include <SDL3/SDL_assert.h>
 
 #include "fov.h"
-#include "item.h"
+#include "item_def.h"
 #include "world.h"
 
 handle(rl_actor)

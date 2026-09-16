@@ -4,7 +4,7 @@
 
 #include "actor.h"
 #include "combat.h"
-#include "fov.h"
+#include "item_def.h"
 #include "targeting.h"
 #include "world.h"
 
