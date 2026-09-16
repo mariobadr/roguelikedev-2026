@@ -68,6 +68,8 @@ set(GAME_SOURCES
     game/pathfinding.h
     game/spawn.c
     game/spawn.h
+    game/targeting.c
+    game/targeting.h
     game/tile.c
     game/tile.h
     game/world.c

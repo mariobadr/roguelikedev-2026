@@ -15,9 +15,6 @@ struct rl_world;
 struct rl_fov;
 struct rand_state;
 
-/** Radius, in tiles, of a damage-area item's blast (Euclidean). */
-#define RL_DAMAGE_AREA_RADIUS 3
-
 /**
  * Try to move the actor in world to dst.
  *

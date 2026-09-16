@@ -13,6 +13,7 @@ static struct rl_item_def const RL_ITEM_DEFS[] = {
     .target = RL_ITEM_TARGET_TILE,
     .name = "Scroll of Minor Fireball",
     .power = 8,
+    .area_radius = 3,
   },
   [RL_ITEM_SCROLL_LIGHTNING] = {
     .class = RL_ITEM_CLASS_SCROLL,

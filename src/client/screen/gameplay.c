@@ -5,7 +5,6 @@
 #include <SDL3/SDL_log.h>
 
 #include "game/game.h"
-#include "game/mechanics.h"
 
 #include "ui/rectcut.h"
 
@@ -250,7 +249,7 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
   return handled;
 }
 
-static void
+static bool
 begin_target_select(struct screen_state* s,
                     handle(rl_item) item,
                     struct rl_item_def const* def)
@@ -258,15 +257,17 @@ begin_target_select(struct screen_state* s,
   handle(rl_actor) const rogue_handle = rl_get_rogue(&s->game.world);
   struct rl_actor const* rogue = rl_borrow_actor(&s->game.world, rogue_handle);
 
+  if (!rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos, def)) {
+    return false;
+  }
+
   s->pending_target_cmd = (struct rl_command){ 0 };
   s->pending_target_cmd.actor = rogue_handle;
   s->pending_target_cmd.type = RL_COMMAND_USE_ITEM;
   s->pending_target_cmd.use_item.item = item;
 
-  int const radius =
-    def->effect == RL_ITEM_EFFECT_DAMAGE_AREA ? RL_DAMAGE_AREA_RADIUS : 0;
-  rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos, radius);
   s->focused_panel = PANEL_MAIN;
+  return true;
 }
 
 static void
@@ -320,8 +321,7 @@ handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
       break;
     }
     case RL_ITEM_TARGET_TILE:
-      begin_target_select(s, item_handle, def);
-      handled = true;
+      handled = begin_target_select(s, item_handle, def);
       break;
   }
 

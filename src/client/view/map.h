@@ -10,6 +10,7 @@
 // forward declarations
 struct rl_command;
 struct rl_fov;
+struct rl_item_def;
 struct rl_view;
 struct rl_world;
 
@@ -41,12 +42,15 @@ bool
 rl_map_view_take_command(struct rl_view* view, struct rl_command* out);
 
 /**
- * Enter cursor-selection mode, with the cursor starting at origin.
+ * Enter cursor-selection mode for the tile-targeted item def, with the cursor
+ * starting at origin.
  *
- * When radius > 0, draws a filled circle around origin.
+ * @return whether selection mode was entered.
  */
-void
-rl_map_view_begin_select(struct rl_view* view, SDL_Point origin, int radius);
+bool
+rl_map_view_begin_select(struct rl_view* view,
+                         SDL_Point origin,
+                         struct rl_item_def const* def);
 
 /**
  * Consume the result of a selection, if one is pending.

@@ -4,6 +4,7 @@
 
 #include "actor.h"
 #include "fov.h"
+#include "targeting.h"
 #include "world.h"
 
 #define MISS_CHANCE 5
@@ -100,14 +101,6 @@ enqueue_death_event(struct rl_actor const* actor,
 }
 
 static bool
-in_blast_radius_euclidean(SDL_Point origin, SDL_Point pos, int radius)
-{
-  int const dx = pos.x - origin.x;
-  int const dy = pos.y - origin.y;
-  return dx * dx + dy * dy <= radius * radius;
-}
-
-static bool
 use_item_heal(struct rl_actor* actor,
               int power,
               alist(rl_event)* events,
@@ -141,8 +134,8 @@ use_item_heal(struct rl_actor* actor,
 static bool
 use_item_damage_area(struct rl_world* world,
                      struct rl_actor* actor,
-                     SDL_Point origin,
-                     int power,
+                     struct rl_item_def const* idef,
+                     SDL_Point centre,
                      alist(rl_event)* events,
                      struct rand_state* rng)
 {
@@ -154,12 +147,11 @@ use_item_damage_area(struct rl_world* world,
       continue;
     }
 
-    if (!in_blast_radius_euclidean(
-          origin, defender->pos, RL_DAMAGE_AREA_RADIUS)) {
+    if (!rl_item_affects_tile(idef, world, centre, defender->pos)) {
       continue;
     }
 
-    int const damage = attack_actor(power, defender, rng);
+    int const damage = attack_actor(idef->power, defender, rng);
     enqueue_attack_event(actor, defender, damage, events);
 
     if (defender->hp <= 0) {
@@ -351,15 +343,19 @@ rl_use_item(struct rl_world* world,
     return false;
   }
 
-  bool used = false;
   struct rl_item_def const* idef = rl_get_item_def(item->itype);
+  if (idef->target == RL_ITEM_TARGET_TILE &&
+      !rl_is_valid_item_target(idef, world, fov, target)) {
+    return false;
+  }
+
+  bool used = false;
   switch (idef->effect) {
     case RL_ITEM_EFFECT_HEAL:
       used = use_item_heal(actor, idef->power, events, rng);
       break;
     case RL_ITEM_EFFECT_DAMAGE_AREA:
-      used =
-        use_item_damage_area(world, actor, target, idef->power, events, rng);
+      used = use_item_damage_area(world, actor, idef, target, events, rng);
       break;
     case RL_ITEM_EFFECT_DAMAGE_NEAREST:
       used = use_item_lightning(actor, world, fov, idef->power, events, rng);

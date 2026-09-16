@@ -1,11 +1,14 @@
 #include "map.h"
 
 #include <SDL3/SDL_assert.h>
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 
 #include "input/input.h"
 
 #include "game/fov.h"
+#include "game/targeting.h"
 #include "game/tile.h"
 #include "game/world.h"
 
@@ -29,6 +32,15 @@ enum map_mode
   MAP_MODE_SELECT, //< Move the cursor around
 };
 
+struct map_selection
+{
+  SDL_Point cursor;
+  struct rl_item_def const* def;
+  grid(boolean) mask;
+  size_t capacity;
+  SDL_Rect bounds;
+};
+
 struct view_state
 {
   // the "model" for this view
@@ -50,8 +62,7 @@ struct view_state
   struct rl_command pending_command;
 
   // for the SELECT mode
-  SDL_Point cursor;
-  int select_radius;
+  struct map_selection selection;
   enum rl_map_selection_result pending_select;
   SDL_Point pending_point;
 };
@@ -264,9 +275,55 @@ draw_actors(struct view_state const* s,
   }
 }
 
-static void
-draw_blast_radius(struct view_state const* s, SDL_Renderer* renderer)
+static bool
+reserve_area(struct map_selection* selection, int w, int h)
 {
+  size_t const count = (size_t)w * (size_t)h;
+  if (count > selection->capacity) {
+    bool* data = SDL_realloc(selection->mask.data, count * sizeof(*data));
+    if (data == NULL) {
+      SDL_Log("SDL_realloc failed: %s", SDL_GetError());
+      return false;
+    }
+
+    selection->mask.data = data;
+    selection->capacity = count;
+  }
+
+  selection->mask.width = w;
+  selection->mask.height = h;
+
+  return true;
+}
+
+/**
+ * Refresh after selecting an item or moving the cursor. The world cannot
+ * change while selecting, and moving the cursor does not change mask dimensions.
+ */
+static void
+refresh_area(struct view_state* s)
+{
+  struct map_selection* selection = &s->selection;
+  selection->bounds = rl_item_area_bounds(selection->def, selection->cursor);
+  rl_fill_item_area(
+    selection->def, s->world, selection->cursor, &selection->mask);
+}
+
+static void
+draw_target_area(struct view_state const* s, SDL_Renderer* renderer)
+{
+  struct map_selection const* selection = &s->selection;
+
+  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
+  SDL_Rect const visible =
+    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
+
+  SDL_Rect region;
+  if (!SDL_GetRectIntersection(&visible, &selection->bounds, &region)) {
+    // nothing on camera
+    return;
+  }
+
   SDL_BlendMode prev;
   SDL_GetRenderDrawBlendMode(renderer, &prev);
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -274,28 +331,14 @@ draw_blast_radius(struct view_state const* s, SDL_Renderer* renderer)
   SDL_FColor const colour = RL_COLOUR_RED[5];
   SDL_SetRenderDrawColorFloat(renderer, colour.r, colour.g, colour.b, 0.35f);
 
-  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
-  SDL_Rect const visible =
-    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
-
-  float const cx = (float)s->cursor.x;
-  float const cy = (float)s->cursor.y;
-  float const r = (float)s->select_radius;
-
-  int const top = (int)SDL_ceilf(cy - r);
-  int const bottom = (int)SDL_floorf(cy + r);
-  for (int y = top; y <= bottom; y++) {
-    float const dy = (float)y - cy;
-    float const dx = SDL_sqrtf(r * r - dy * dy);
-    int const left = (int)SDL_ceilf(cx - dx);
-    int const right = (int)SDL_floorf(cx + dx);
-    for (int x = left; x <= right; x++) {
-      SDL_Point const p = { x, y };
-      if (!SDL_PointInRect(&p, &visible)) {
-        // off-map or off-camera
+  for (int y = region.y; y < region.y + region.h; y++) {
+    for (int x = region.x; x < region.x + region.w; x++) {
+      if (!*grid_at(
+            &selection->mask, x - selection->bounds.x, y - selection->bounds.y)) {
         continue;
       }
 
+      SDL_Point const p = { x, y };
       SDL_FPoint const at = cell_to_pixels(s, p);
       SDL_FRect rect = { 0 };
       rect.x = at.x;
@@ -312,7 +355,7 @@ draw_blast_radius(struct view_state const* s, SDL_Renderer* renderer)
 static void
 draw_cursor(struct view_state const* s, SDL_Renderer* renderer)
 {
-  SDL_FPoint const at = cell_to_pixels(s, s->cursor);
+  SDL_FPoint const at = cell_to_pixels(s, s->selection.cursor);
   SDL_FRect rect = { 0 };
   rect.x = at.x;
   rect.y = at.y;
@@ -374,12 +417,20 @@ update_move(struct view_state* s, struct inpt_state const* istate)
   }
 }
 
+static void
+end_select(struct view_state* s, enum rl_map_selection_result result)
+{
+  s->pending_select = result;
+  s->mode = MAP_MODE_MOVE;
+  s->selection.def = NULL;
+}
+
 static bool
 update_select(struct view_state* s, struct inpt_state const* istate)
 {
   enum rl_action const action = rl_handle_keyboard_input(istate);
 
-  SDL_Point next = s->cursor;
+  SDL_Point next = s->selection.cursor;
   switch (action) {
     case RL_ACTION_MOVE_UP:
       next.y -= 1;
@@ -394,20 +445,19 @@ update_select(struct view_state* s, struct inpt_state const* istate)
       next.x += 1;
       break;
     case RL_ACTION_SELECT:
-      s->pending_select = RL_MAP_SELECTION_CONFIRMED;
-      s->pending_point = s->cursor;
-      s->mode = MAP_MODE_MOVE;
+      s->pending_point = s->selection.cursor;
+      end_select(s, RL_MAP_SELECTION_CONFIRMED);
       return true;
     case RL_ACTION_CANCEL:
-      s->pending_select = RL_MAP_SELECTION_CANCELLED;
-      s->mode = MAP_MODE_MOVE;
+      end_select(s, RL_MAP_SELECTION_CANCELLED);
       return true;
     default:
       return false;
   }
 
-  if (rl_is_tile_visible(s->fov, next)) {
-    s->cursor = next;
+  if (rl_is_valid_item_target(s->selection.def, s->world, s->fov, next)) {
+    s->selection.cursor = next;
+    refresh_area(s);
   }
 
   return true;
@@ -436,7 +486,8 @@ prepare_view(void* data)
     rl_borrow_actor(s->world, rl_get_rogue(s->world));
   grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
 
-  SDL_Point const origin = s->mode == MAP_MODE_SELECT ? s->cursor : rogue->pos;
+  SDL_Point const origin =
+    s->mode == MAP_MODE_SELECT ? s->selection.cursor : rogue->pos;
   rl_centre_camera_on(&s->camera, origin, grid_width(map), grid_height(map));
 }
 
@@ -454,11 +505,21 @@ render_view(void const* data,
   draw_light(s, renderer);
 
   if (s->mode == MAP_MODE_SELECT) {
-    if (s->select_radius > 0) {
-      draw_blast_radius(s, renderer);
-    }
+    draw_target_area(s, renderer);
     draw_cursor(s, renderer);
   }
+}
+
+static void
+free_view(void* data)
+{
+  struct view_state* s = (struct view_state*)data;
+  if (s == NULL) {
+    return;
+  }
+
+  grid_free(&s->selection.mask);
+  SDL_free(s);
 }
 
 bool
@@ -479,7 +540,7 @@ rl_alloc_map_view(struct rl_view* view,
 
   init_view_state(view->state, world, fov, viewport, cell_width, cell_height);
 
-  view->free = SDL_free;
+  view->free = free_view;
   view->update_ribbon = update_ribbon;
   view->update = update_view;
   view->prepare = prepare_view;
@@ -504,16 +565,29 @@ rl_map_view_take_command(struct rl_view* view, struct rl_command* out)
   return true;
 }
 
-void
-rl_map_view_begin_select(struct rl_view* view, SDL_Point origin, int radius)
+bool
+rl_map_view_begin_select(struct rl_view* view,
+                         SDL_Point origin,
+                         struct rl_item_def const* def)
 {
+  SDL_assert(def != NULL);
+
   struct view_state* s = (struct view_state*)view->state;
   SDL_assert(s != NULL);
 
-  s->mode = MAP_MODE_SELECT;
-  s->cursor = origin;
-  s->select_radius = radius;
+  // Reserve storage before entering selection mode.
+  SDL_Rect const bounds = rl_item_area_bounds(def, origin);
+  if (!reserve_area(&s->selection, bounds.w, bounds.h)) {
+    return false;
+  }
+
+  s->selection.cursor = origin;
+  s->selection.def = def;
+  refresh_area(s);
   s->pending_select = RL_MAP_SELECTION_NONE;
+  s->mode = MAP_MODE_SELECT;
+
+  return true;
 }
 
 enum rl_map_selection_result

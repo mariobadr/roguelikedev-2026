@@ -49,6 +49,8 @@ struct rl_item_def
 
   char const* name;
   int power;
+  /** Radius, in tiles, of the area a tile-targeted item affects (Euclidean). */
+  int area_radius;
 };
 
 /** Where an item can be found. */
