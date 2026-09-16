@@ -118,37 +118,9 @@ use_item_lightning(struct rl_actor* actor,
                    alist(rl_event)* events,
                    struct rand_state* rng)
 {
-  struct rl_actor* nearest = NULL;
-  int nearest_dist_sq = 0;
-
-  struct rl_level const* level = rl_get_current_level(world);
-  for (size_t i = 0; i < alist_len(&level->actors); i++) {
-    struct rl_actor* candidate =
-      rl_borrow_mut_actor(world, *alist_at(&level->actors, i));
-    if (candidate == NULL || handle_equal(candidate->handle, actor->handle)) {
-      continue;
-    }
-
-    if (!rl_actor_is_alive(candidate)) {
-      continue;
-    }
-
-    if (!rl_is_tile_visible(fov, candidate->pos)) {
-      continue;
-    }
-
-    int const dx = candidate->pos.x - actor->pos.x;
-    int const dy = candidate->pos.y - actor->pos.y;
-    int const dist_sq = dx * dx + dy * dy;
-
-    if (nearest != NULL && dist_sq >= nearest_dist_sq) {
-      continue;
-    }
-
-    nearest = candidate;
-    nearest_dist_sq = dist_sq;
-  }
-
+  handle(rl_actor) const target_handle =
+    rl_find_nearest_visible_actor(world, fov, actor->handle);
+  struct rl_actor* nearest = rl_borrow_mut_actor(world, target_handle);
   if (nearest == NULL) {
     struct rl_event event = { 0 };
     event.type = RL_EVENT_FEEDBACK;

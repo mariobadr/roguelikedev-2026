@@ -6,6 +6,50 @@
 #include "item.h"
 #include "world.h"
 
+handle(rl_actor)
+rl_find_nearest_visible_actor(struct rl_world const* world,
+                              struct rl_fov const* fov,
+                              handle(rl_actor) attacker)
+{
+  handle(rl_actor) nearest = handle_invalid(rl_actor);
+  int nearest_dist_sq = 0;
+
+  struct rl_actor const* self = rl_borrow_actor(world, attacker);
+  if (self == NULL) {
+    return nearest;
+  }
+
+  struct rl_level const* level = rl_get_current_level(world);
+  for (size_t i = 0; i < alist_len(&level->actors); i++) {
+    struct rl_actor const* candidate =
+      rl_borrow_actor(world, *alist_at(&level->actors, i));
+    if (candidate == NULL || handle_equal(candidate->handle, attacker)) {
+      continue;
+    }
+
+    if (!rl_actor_is_alive(candidate)) {
+      continue;
+    }
+
+    if (!rl_is_tile_visible(fov, candidate->pos)) {
+      continue;
+    }
+
+    int const dx = candidate->pos.x - self->pos.x;
+    int const dy = candidate->pos.y - self->pos.y;
+    int const dist_sq = dx * dx + dy * dy;
+
+    if (handle_is_nonnull(nearest) && dist_sq >= nearest_dist_sq) {
+      continue;
+    }
+
+    nearest = candidate->handle;
+    nearest_dist_sq = dist_sq;
+  }
+
+  return nearest;
+}
+
 bool
 rl_is_valid_item_target(struct rl_item_def const* def,
                         struct rl_world const* world,

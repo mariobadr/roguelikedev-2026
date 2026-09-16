@@ -9,10 +9,21 @@
 
 #include "container/grid.h"
 
+#include "game/handles.h"
+
 // forward declarations
 struct rl_fov;
 struct rl_item_def;
 struct rl_world;
+
+/**
+ * @return the nearest (visible) actor to attacker, or an invalid handle if none
+ * exists.
+ */
+handle(rl_actor)
+rl_find_nearest_visible_actor(struct rl_world const* world,
+                              struct rl_fov const* fov,
+                              handle(rl_actor) attacker);
 
 /**
  * @return whether dst is an acceptable centre for the tile-targeted item def,
@@ -40,6 +51,6 @@ void
 rl_fill_item_area(struct rl_item_def const* def,
                   struct rl_world const* world,
                   SDL_Point centre,
-                  grid(boolean)* mask);
+                  grid(boolean) * mask);
 
 #endif // GINC_ROGUELIKE_TARGETING_H
