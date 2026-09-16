@@ -1,8 +1,8 @@
 /**
  * @file input.h
  */
-#ifndef GINC_ROGUELIKE_INPUT_H
-#define GINC_ROGUELIKE_INPUT_H
+#ifndef GINC_INPUT_INPUT_H
+#define GINC_INPUT_INPUT_H
 
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_scancode.h>
@@ -93,4 +93,4 @@ inpt_init_state(struct inpt_state* istate);
 void
 inpt_reset_state(struct inpt_state* istate);
 
-#endif // GINC_ROGUELIKE_INPUT_H
+#endif // GINC_INPUT_INPUT_H
