@@ -6,21 +6,10 @@
 
 #include <SDL3/SDL_stdinc.h>
 
+#include "graphics/tileset.h"
+
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
-typedef struct SDL_Texture SDL_Texture;
-
-struct rl_font
-{
-  /** Texture holding the glyphs. */
-  SDL_Texture* texture;
-  /** The width of one glyph, in pixels. */
-  int glyph_width;
-  /** The height of one glyph, in pixels. */
-  int glyph_height;
-  /** The number of glyphs per row. */
-  int columns;
-};
 
 /**
  * Loads the bitmap font used to render the game.
@@ -28,18 +17,18 @@ struct rl_font
  * @return whether the font was loaded successfully.
  */
 bool
-rl_load_font(struct rl_font* font, SDL_Renderer* renderer);
+rl_load_font(struct gfx_tileset* font, SDL_Renderer* renderer);
 
 /**
  * Unload a previously loaded font.
  */
 void
-rl_unload_font(struct rl_font* font);
+rl_unload_font(struct gfx_tileset* font);
 
 /**
  * @return the width a string with glyph_count needs, in pixels.
  */
 float
-rl_font_width(struct rl_font const* font, size_t glyph_count);
+rl_font_width(struct gfx_tileset const* font, size_t glyph_count);
 
 #endif // GINC_ROGUELIKE_FONT_H

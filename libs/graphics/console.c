@@ -1,0 +1,67 @@
+#include "console.h"
+
+#include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_render.h>
+
+#include "tileset.h"
+
+static void
+draw_grid(SDL_Renderer* renderer,
+          struct gfx_tileset const* tileset,
+          grid(gfx_console) const* console,
+          SDL_Rect const* region,
+          SDL_FPoint origin)
+{
+  for (int y = 0; y < region->h; ++y) {
+    for (int x = 0; x < region->w; ++x) {
+      SDL_FPoint at = { 0 };
+      at.x = origin.x + x * tileset->tile_width;
+      at.y = origin.y + y * tileset->tile_height;
+      SDL_FRect dst = gfx_tileset_dst(tileset, at, 1);
+
+      struct gfx_console_cell const* cell =
+        grid_at(console, region->x + x, region->y + y);
+      gfx_draw_cell(renderer, tileset, cell, &dst);
+    }
+  }
+}
+
+void
+gfx_draw_cell(SDL_Renderer* renderer,
+              struct gfx_tileset const* tileset,
+              struct gfx_console_cell const* cell,
+              SDL_FRect const* dst)
+{
+  if (cell->bg.a > 0.0f) {
+    SDL_SetRenderDrawColorFloat(
+      renderer, cell->bg.r, cell->bg.g, cell->bg.b, cell->bg.a);
+    SDL_RenderFillRect(renderer, dst);
+  }
+
+  // tint the glyph (foreground)
+  SDL_SetTextureColorModFloat(
+    tileset->texture, cell->fg.r, cell->fg.g, cell->fg.b);
+  SDL_SetTextureAlphaModFloat(tileset->texture, cell->fg.a);
+
+  // draw the glyph
+  SDL_FRect src = gfx_tileset_src(tileset, cell->index);
+  SDL_RenderTexture(renderer, tileset->texture, &src, dst);
+}
+
+void
+gfx_draw_grid(SDL_Renderer* renderer,
+              struct gfx_tileset const* tileset,
+              grid(gfx_console) const* console,
+              SDL_Rect const* region,
+              SDL_FPoint at)
+{
+  SDL_Rect all = { 0 };
+  all.w = grid_width(console);
+  all.h = grid_height(console);
+
+  if (region == NULL) {
+    region = &all;
+  }
+
+  draw_grid(renderer, tileset, console, region, at);
+}

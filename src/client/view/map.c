@@ -17,6 +17,8 @@
 #include "client/action.h"
 #include "client/camera.h"
 #include "client/controls.h"
+#include "graphics/tileset.h"
+
 #include "client/graphics.h"
 #include "client/lighting.h"
 #include "client/palette.h"
@@ -136,7 +138,7 @@ cell_at(struct view_state const* s, SDL_FPoint pos, SDL_Point* cell)
 static void
 draw_level(struct view_state const* s,
            SDL_Renderer* renderer,
-           struct rl_font const* font)
+           struct gfx_tileset const* font)
 {
   struct rl_level const* level = rl_get_current_level(s->world);
   grid(rl_tile) const* map = &level->map;
@@ -154,7 +156,7 @@ draw_level(struct view_state const* s,
       }
 
       enum rl_tile const tile = *grid_at(map, p.x, p.y);
-      struct rl_cell cell = rl_get_tile_gfx(tile);
+      struct gfx_console_cell cell = rl_get_tile_gfx(tile);
 
       if (!rl_is_tile_visible(s->fov, p)) {
         // dim explored but not visible tiles
@@ -162,7 +164,8 @@ draw_level(struct view_state const* s,
       }
 
       SDL_FPoint const at = cell_to_pixels(s, p);
-      rl_draw_cell(renderer, font, &cell, at);
+      SDL_FRect dst = gfx_tileset_dst(font, at, 1);
+      gfx_draw_cell(renderer, font, &cell, &dst);
     }
   }
 }
@@ -217,18 +220,19 @@ draw_light(struct view_state const* s, SDL_Renderer* renderer)
 static void
 draw_item(struct view_state const* s,
           SDL_Renderer* renderer,
-          struct rl_font const* font,
+          struct gfx_tileset const* font,
           struct rl_item const* item)
 {
-  struct rl_cell const cell = rl_get_item_gfx(item);
+  struct gfx_console_cell const cell = rl_get_item_gfx(item);
   SDL_FPoint const at = cell_to_pixels(s, item->on.map);
-  rl_draw_cell(renderer, font, &cell, at);
+  SDL_FRect dst = gfx_tileset_dst(font, at, 1);
+  gfx_draw_cell(renderer, font, &cell, &dst);
 }
 
 static void
 draw_items(struct view_state const* s,
            SDL_Renderer* renderer,
-           struct rl_font const* font)
+           struct gfx_tileset const* font)
 {
   struct rl_level const* level = rl_get_current_level(s->world);
   for (size_t i = 0; i < alist_len(&level->items); i++) {
@@ -247,18 +251,19 @@ draw_items(struct view_state const* s,
 static void
 draw_actor(struct view_state const* s,
            SDL_Renderer* renderer,
-           struct rl_font const* font,
+           struct gfx_tileset const* font,
            struct rl_actor const* actor)
 {
-  struct rl_cell const cell = rl_get_actor_gfx(actor);
+  struct gfx_console_cell const cell = rl_get_actor_gfx(actor);
   SDL_FPoint const at = cell_to_pixels(s, actor->pos);
-  rl_draw_cell(renderer, font, &cell, at);
+  SDL_FRect dst = gfx_tileset_dst(font, at, 1);
+  gfx_draw_cell(renderer, font, &cell, &dst);
 }
 
 static void
 draw_actors(struct view_state const* s,
             SDL_Renderer* renderer,
-            struct rl_font const* font)
+            struct gfx_tileset const* font)
 {
   struct rl_level const* level = rl_get_current_level(s->world);
   for (size_t i = 0; i < alist_len(&level->actors); i++) {
@@ -298,7 +303,8 @@ reserve_area(struct map_selection* selection, int w, int h)
 
 /**
  * Refresh after selecting an item or moving the cursor. The world cannot
- * change while selecting, and moving the cursor does not change mask dimensions.
+ * change while selecting, and moving the cursor does not change mask
+ * dimensions.
  */
 static void
 refresh_area(struct view_state* s)
@@ -333,8 +339,9 @@ draw_target_area(struct view_state const* s, SDL_Renderer* renderer)
 
   for (int y = region.y; y < region.y + region.h; y++) {
     for (int x = region.x; x < region.x + region.w; x++) {
-      if (!*grid_at(
-            &selection->mask, x - selection->bounds.x, y - selection->bounds.y)) {
+      if (!*grid_at(&selection->mask,
+                    x - selection->bounds.x,
+                    y - selection->bounds.y)) {
         continue;
       }
 
@@ -494,7 +501,7 @@ prepare_view(void* data)
 static void
 render_view(void const* data,
             SDL_Renderer* renderer,
-            struct rl_font const* font)
+            struct gfx_tileset const* font)
 {
   struct view_state const* s = (struct view_state*)data;
   SDL_assert(s != NULL);

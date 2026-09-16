@@ -58,7 +58,7 @@ rl_set_ribbon_text(struct rl_ribbon* ribbon,
 void
 rl_draw_ribbon(struct rl_ribbon const* ribbon,
                SDL_Renderer* renderer,
-               struct rl_font const* font)
+               struct gfx_tileset const* font)
 {
   Uint8 const anchors[RL_RIBBON_SLOT_COUNT] = {
     UI_ANCHOR_MID_LEFT,
@@ -75,7 +75,7 @@ rl_draw_ribbon(struct rl_ribbon const* ribbon,
     SDL_FRect const* bounds = &ribbon->slots[slot];
     struct ui_position const pos = { .anchor = anchors[slot] };
     SDL_FRect const dst = ui_resolve(
-      pos, bounds, rl_font_width(font, text->length), (float)font->glyph_height);
+      pos, bounds, rl_font_width(font, text->length), (float)font->tile_height);
     SDL_FPoint const at = { dst.x, dst.y };
     SDL_Rect const clip = rl_panel_clip_rect(bounds);
 

@@ -30,5 +30,6 @@ endfunction()
 ###############################################################################
 add_subdirectory(core)
 add_subdirectory(container)
+add_subdirectory(graphics)
 add_subdirectory(input)
 add_subdirectory(ui)

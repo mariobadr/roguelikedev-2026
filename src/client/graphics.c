@@ -2,8 +2,8 @@
 
 #include "game/actor.h"
 #include "game/actor_def.h"
-#include "game/item_def.h"
 #include "game/item.h"
+#include "game/item_def.h"
 
 #include "palette.h"
 
@@ -16,13 +16,13 @@ struct tile_gfx_desc
   Uint8 bg_index;
 };
 
-static struct rl_cell
+static struct gfx_console_cell
 lookup_gfx_tile(struct tile_gfx_desc const* table, int index)
 {
   struct tile_gfx_desc const* desc = &table[index];
 
-  struct rl_cell cell = { 0 };
-  cell.glyph = desc->glyph;
+  struct gfx_console_cell cell = { 0 };
+  cell.index = desc->glyph;
 
   if (desc->fg_colour == NULL) {
     cell.fg = RL_COLOUR_BLACK;
@@ -54,7 +54,7 @@ static struct tile_gfx_desc const tile_gfx_table[] = {
   },
 };
 
-struct rl_cell
+struct gfx_console_cell
 rl_get_tile_gfx(enum rl_tile tile)
 {
   return lookup_gfx_tile(tile_gfx_table, tile);
@@ -81,7 +81,7 @@ static struct tile_gfx_desc const item_gfx_table[] = {
   },
 };
 
-struct rl_cell
+struct gfx_console_cell
 rl_get_item_gfx(struct rl_item const* item)
 {
   return lookup_gfx_tile(item_gfx_table, item->itype);
@@ -102,7 +102,7 @@ static struct tile_gfx_desc const actor_gfx_table[] = {
   },
 };
 
-struct rl_cell
+struct gfx_console_cell
 rl_get_actor_gfx(struct rl_actor const* actor)
 {
   return lookup_gfx_tile(actor_gfx_table, actor->type);

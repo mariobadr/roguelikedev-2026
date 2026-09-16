@@ -54,6 +54,7 @@ target_link_libraries(rl_client
         rl::game
         ginc::core
         ginc::container
+        ginc::graphics
         SDL3::SDL3
     PRIVATE
         ginc::input

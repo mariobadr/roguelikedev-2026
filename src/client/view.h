@@ -10,8 +10,8 @@
 typedef struct SDL_Renderer SDL_Renderer;
 
 // forward declarations
+struct gfx_tileset;
 struct inpt_state;
-struct rl_font;
 struct rl_ribbon;
 
 /**
@@ -44,7 +44,7 @@ struct rl_view
 
   void (*render)(void const* data,
                  SDL_Renderer* renderer,
-                 struct rl_font const* font);
+                 struct gfx_tileset const* font);
 };
 
 static inline void
@@ -90,7 +90,7 @@ rl_prepare_view(struct rl_view* view)
 static inline void
 rl_render_view(struct rl_view const* view,
                SDL_Renderer* renderer,
-               struct rl_font const* font)
+               struct gfx_tileset const* font)
 {
   if (view->render == NULL) {
     return;

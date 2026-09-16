@@ -11,6 +11,9 @@
 #include "ui/rectcut.h"
 #include "ui/str_wrap.h"
 
+#include "graphics/console.h"
+#include "graphics/tileset.h"
+
 #include "client/font.h"
 #include "client/palette.h"
 #include "client/render.h"
@@ -96,11 +99,11 @@ draw_health_bar(SDL_Renderer* renderer, SDL_FRect bounds, int hp, int max_hp)
 
 static void
 draw_actor(SDL_Renderer* renderer,
-           struct rl_font const* font,
+           struct gfx_tileset const* font,
            struct rl_actor const* actor,
            SDL_FRect bounds)
 {
-  float const line_height = (float)font->glyph_height;
+  float const line_height = (float)font->tile_height;
   SDL_FRect const name = ui_cut_top(&bounds, line_height);
   rl_draw_string(renderer,
                  font,
@@ -120,7 +123,7 @@ draw_actor(SDL_Renderer* renderer,
                  RL_COLOUR_BLACK,
                  (SDL_FPoint){ label.x, label.y });
 
-  ui_cut_right(&bounds, SDL_min(bounds.w, (float)font->glyph_width));
+  ui_cut_right(&bounds, SDL_min(bounds.w, (float)font->tile_width));
 
   // Leave a pixel above and below the bar on the HP line.
   bounds.y += 1.0f;
@@ -130,47 +133,48 @@ draw_actor(SDL_Renderer* renderer,
 
 static void
 draw_text_span(SDL_Renderer* renderer,
-               struct rl_font const* font,
+               struct gfx_tileset const* font,
                struct ui_string_span text,
                SDL_FPoint at)
 {
-  struct rl_cell cell = {
+  struct gfx_console_cell cell = {
     .fg = RL_COLOUR_GRAY[5],
     .bg = RL_COLOUR_BLACK,
   };
 
   for (int i = 0; i < text.length; ++i) {
-    cell.glyph = (Uint8)text.data[i];
-    rl_draw_cell(renderer, font, &cell, at);
-    at.x += font->glyph_width;
+    cell.index = (Uint8)text.data[i];
+    SDL_FRect dst = gfx_tileset_dst(font, at, 1);
+    gfx_draw_cell(renderer, font, &cell, &dst);
+    at.x += font->tile_width;
   }
 }
 
 static void
 draw_wrapped_string(SDL_Renderer* renderer,
-                    struct rl_font const* font,
+                    struct gfx_tileset const* font,
                     char const* text,
                     SDL_FRect* remaining)
 {
-  int const columns = (int)(remaining->w / (float)font->glyph_width);
+  int const columns = (int)(remaining->w / (float)font->tile_width);
   if (columns <= 0) {
     return;
   }
 
   char const* cursor = text;
   struct ui_string_span span;
-  while (remaining->h >= font->glyph_height) {
+  while (remaining->h >= font->tile_height) {
     if (!ui_wrap_next(&cursor, columns, &span)) {
       break;
     }
-    SDL_FRect const row = ui_cut_top(remaining, (float)font->glyph_height);
+    SDL_FRect const row = ui_cut_top(remaining, (float)font->tile_height);
     draw_text_span(renderer, font, span, (SDL_FPoint){ row.x, row.y });
   }
 }
 
 static void
 draw_item_summary(SDL_Renderer* renderer,
-                  struct rl_font const* font,
+                  struct gfx_tileset const* font,
                   int count,
                   SDL_FRect* remaining)
 {
@@ -228,12 +232,12 @@ prepare_view(void* data)
 static void
 render_view(void const* data,
             SDL_Renderer* renderer,
-            struct rl_font const* font)
+            struct gfx_tileset const* font)
 {
   struct view_state const* s = (struct view_state const*)data;
   SDL_assert(s != NULL);
 
-  float const line_height = (float)font->glyph_height;
+  float const line_height = (float)font->tile_height;
   float const actor_height = 2.0f * line_height;
 
   SDL_FRect remaining = s->viewport;

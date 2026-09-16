@@ -10,8 +10,8 @@
 typedef struct SDL_Renderer SDL_Renderer;
 
 // forward declarations
+struct gfx_tileset;
 struct inpt_state;
-struct rl_font;
 
 /**
  * Unique identifiers for each type of screen.
@@ -84,6 +84,7 @@ struct rl_screen
 };
 
 bool
-rl_alloc_gameplay_screen(struct rl_screen* screen, struct rl_font const* font);
+rl_alloc_gameplay_screen(struct rl_screen* screen,
+                         struct gfx_tileset const* font);
 
 #endif // GINC_ROGUELIKE_SCREEN_H

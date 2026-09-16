@@ -9,7 +9,7 @@
 #include "client/text.h"
 
 typedef struct SDL_Renderer SDL_Renderer;
-struct rl_font;
+struct gfx_tileset;
 
 enum rl_ribbon_slot
 {
@@ -26,12 +26,10 @@ struct rl_ribbon
 };
 
 void
-rl_init_ribbon(struct rl_ribbon* ribbon,
-               SDL_FRect const* viewport);
+rl_init_ribbon(struct rl_ribbon* ribbon, SDL_FRect const* viewport);
 
 void
-rl_resize_ribbon(struct rl_ribbon* ribbon,
-                 SDL_FRect const* viewport);
+rl_resize_ribbon(struct rl_ribbon* ribbon, SDL_FRect const* viewport);
 
 void
 rl_set_current_view(struct rl_ribbon* ribbon, char const* str);
@@ -47,6 +45,6 @@ rl_set_ribbon_text(struct rl_ribbon* ribbon,
 void
 rl_draw_ribbon(struct rl_ribbon const* ribbon,
                SDL_Renderer* renderer,
-               struct rl_font const* font);
+               struct gfx_tileset const* font);
 
 #endif // GINC_ROGUELIKE_RIBBON_VIEW_H

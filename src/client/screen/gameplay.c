@@ -44,7 +44,7 @@ enum panel_id
 
 struct screen_state
 {
-  struct rl_font const* font;
+  struct gfx_tileset const* font;
   float repeat_cooldown;
 
   // UI state
@@ -100,7 +100,7 @@ create_layout(SDL_FRect panels[PANEL_COUNT])
 }
 
 static bool
-alloc_screen(struct screen_state* s, struct rl_font const* font)
+alloc_screen(struct screen_state* s, struct gfx_tileset const* font)
 {
   // the layout is fixed
   create_layout(s->panel_bounds);
@@ -121,14 +121,14 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
   if (!rl_alloc_log_view(&s->views[RL_VIEW_LOG],
                          &s->log,
                          &s->panel_bounds[PANEL_BOTTOM],
-                         (float)font->glyph_height)) {
+                         (float)font->tile_height)) {
     return false;
   }
 
   if (!rl_alloc_inv_view(&s->views[RL_VIEW_INVENTORY],
                          &s->game.world,
                          &s->panel_bounds[PANEL_BOTTOM],
-                         (float)font->glyph_height)) {
+                         (float)font->tile_height)) {
     return false;
   }
 
@@ -137,8 +137,8 @@ alloc_screen(struct screen_state* s, struct rl_font const* font)
                          &s->game.world,
                          &s->game.fov,
                          &s->panel_bounds[PANEL_MAIN],
-                         font->glyph_width,
-                         font->glyph_height)) {
+                         font->tile_width,
+                         font->tile_height)) {
     return false;
   }
 
@@ -418,7 +418,8 @@ render_screen(void const* data, SDL_Renderer* renderer)
 }
 
 bool
-rl_alloc_gameplay_screen(struct rl_screen* screen, struct rl_font const* font)
+rl_alloc_gameplay_screen(struct rl_screen* screen,
+                         struct gfx_tileset const* font)
 {
   screen->state = SDL_calloc(1, sizeof(struct screen_state));
   if (screen->state == NULL) {

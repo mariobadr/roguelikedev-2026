@@ -77,7 +77,7 @@ load_dbyte_font(char const* base_path, SDL_Renderer* renderer)
 }
 
 bool
-rl_load_font(struct rl_font* font, SDL_Renderer* renderer)
+rl_load_font(struct gfx_tileset* font, SDL_Renderer* renderer)
 {
   char const* base_path = SDL_GetBasePath();
   if (base_path == NULL) {
@@ -90,15 +90,15 @@ rl_load_font(struct rl_font* font, SDL_Renderer* renderer)
     return false;
   }
 
-  font->glyph_width = DBYTE_GLYPH_WIDTH;
-  font->glyph_height = DBYTE_GLYPH_HEIGHT;
+  font->tile_width = DBYTE_GLYPH_WIDTH;
+  font->tile_height = DBYTE_GLYPH_HEIGHT;
   font->columns = DBYTE_COLS;
 
   return true;
 }
 
 void
-rl_unload_font(struct rl_font* font)
+rl_unload_font(struct gfx_tileset* font)
 {
   if (font == NULL) {
     return;
@@ -108,8 +108,7 @@ rl_unload_font(struct rl_font* font)
 }
 
 float
-rl_font_width(struct rl_font const* font, size_t glyph_count)
+rl_font_width(struct gfx_tileset const* font, size_t glyph_count)
 {
-  return (float)glyph_count * font->glyph_width;
+  return (float)glyph_count * font->tile_width;
 }
-

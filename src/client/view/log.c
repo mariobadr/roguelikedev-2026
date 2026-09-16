@@ -104,7 +104,7 @@ prepare_view(void* data)
 static void
 render_view(void const* data,
             SDL_Renderer* renderer,
-            struct rl_font const* font)
+            struct gfx_tileset const* font)
 {
   struct view_state const* s = (struct view_state*)data;
   SDL_assert(s != NULL);

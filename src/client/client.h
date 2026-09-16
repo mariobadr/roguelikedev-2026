@@ -22,7 +22,7 @@ array_define_as(enum rl_screen_id, rl_screen_id);
 struct rl_client
 {
   /** Bitmap font used to draw everything. */
-  struct rl_font font;
+  struct gfx_tileset font;
   /** Allocated screens, retained when removed from the stack. */
   struct rl_screen screens[RL_SCREEN_COUNT];
   /** Each screen may appear at most once; only the top is active. */
