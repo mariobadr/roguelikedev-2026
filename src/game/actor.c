@@ -1,30 +1,22 @@
 #include "actor.h"
 
-static struct rl_actor const actor_table[] = {
-  [RL_ACTOR_ROGUE] = {
-    .type = RL_ACTOR_ROGUE,
-    .name = "Rogue",
-    .awake = true,
-    .max_hp = 20,
-    .hp = 20,
-    .strength = 6,
-    .armor = 9,
-  },
-  [RL_ACTOR_RAT] = {
-    .type = RL_ACTOR_RAT,
-    .name = "Rat",
-    .awake = false,
-    .max_hp = 16,
-    .hp = 16,
-    .strength = 4,
-    .armor = 5,
-  },
-};
+#include "game/actor_def.h"
 
 struct rl_actor
 rl_make_actor(enum rl_actor_type type)
 {
-  return actor_table[type];
+  struct rl_actor actor = { 0 };
+  actor.type = type;
+  actor.handle = handle_invalid(rl_actor);
+
+  struct rl_actor_def const* def = rl_get_actor_def(type);
+  actor.name = def->name;
+  actor.max_hp = def->max_hp;
+  actor.strength = def->strength;
+  actor.armor = def->armor;
+  actor.hp = actor.max_hp;
+
+  return actor;
 }
 
 int

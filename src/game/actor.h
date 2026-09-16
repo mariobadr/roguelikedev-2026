@@ -7,19 +7,8 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
+#include "game/actor_def.h"
 #include "game/handles.h"
-
-// forward declarations
-struct rand_state;
-
-/**
- * The different types of actors in the game.
- */
-enum rl_actor_type
-{
-  RL_ACTOR_ROGUE, //< the player
-  RL_ACTOR_RAT    //< a dangerous mouse
-};
 
 /**
  * An actor in the game.

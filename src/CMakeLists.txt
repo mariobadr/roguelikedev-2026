@@ -46,6 +46,8 @@ set(GAME_SOURCES
     core/handle.h
     game/actor.c
     game/actor.h
+    game/actor_def.c
+    game/actor_def.h
     game/ai.c
     game/ai.h
     game/combat.c

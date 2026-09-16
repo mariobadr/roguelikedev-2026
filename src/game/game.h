@@ -9,7 +9,6 @@
 #include "container/alist.h"
 #include "container/grid.h"
 
-#include "actor.h"
 #include "command.h"
 #include "event.h"
 #include "fov.h"

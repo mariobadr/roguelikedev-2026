@@ -3,6 +3,8 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
+#include "actor.h"
+#include "actor_def.h"
 #include "ai.h"
 #include "command.h"
 #include "generate.h"
@@ -123,6 +125,7 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
   if (rogue_slot == NULL) {
     return false;
   }
+  rogue_slot->awake = true;
   game->world.rogue = rogue_slot->handle;
 
   struct rl_level* level = alist_push(&game->world.levels);

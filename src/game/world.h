@@ -8,13 +8,11 @@
 #include "container/pool.h"
 
 #include "game/actor.h"
+#include "game/actor_def.h"
 #include "game/handles.h"
 #include "game/item.h"
 #include "game/item_def.h"
 #include "game/level.h"
-
-// forward declarations
-struct rand_state;
 
 /**
  * A pool of actors, addressed by handle(rl_actor).
