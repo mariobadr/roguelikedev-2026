@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include <SDL3/SDL_error.h>
+#include <SDL3/SDL_iostream.h>
 #include <SDL3/SDL_log.h>
 
 #include "actor.h"
@@ -16,7 +17,7 @@ static void
 update_actors(struct rl_world* world,
               grid(int) * distances,
               struct rl_fov const* fov,
-              alist(rl_event) * events,
+              alist(rl_event)* events,
               struct rand_state* rng)
 {
   handle(rl_actor) const rogue_handle = rl_get_rogue(world);
@@ -103,6 +104,17 @@ alloc_map_buffers(struct rl_game* game, int width, int height)
   return true;
 }
 
+static void
+observe_world(struct rl_game* game)
+{
+  struct rl_level* level = rl_edit_current_level(&game->world);
+  struct rl_actor const* rogue =
+    rl_borrow_actor(&game->world, rl_get_rogue(&game->world));
+
+  rl_update_fov(&game->fov, &level->map, rogue->pos);
+  update_explored(level, &game->fov);
+}
+
 bool
 rl_alloc_game(struct rl_game* game)
 {
@@ -113,14 +125,40 @@ rl_alloc_game(struct rl_game* game)
   return true;
 }
 
+void
+rl_free_game(struct rl_game* game)
+{
+  if (game == NULL) {
+    return;
+  }
+
+  rl_free_fov(&game->fov);
+  grid_free(&game->distances);
+  rl_free_world(&game->world);
+}
+
+bool
+rl_prepare_game(struct rl_game* game)
+{
+  struct rl_level const* level = rl_get_current_level(&game->world);
+
+  if (!alloc_map_buffers(
+        game, grid_width(&level->map), grid_height(&level->map))) {
+    return false;
+  }
+
+  observe_world(game);
+  return true;
+}
+
 bool
 rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
 {
   rand_seed(&game->rng, seed);
+  game->turns = 0;
 
   // create the main character
-  handle(rl_actor) rogue_handle =
-    rl_create_actor(&game->world, RL_ACTOR_ROGUE);
+  handle(rl_actor) rogue_handle = rl_create_actor(&game->world, RL_ACTOR_ROGUE);
   struct rl_actor* rogue_slot = rl_borrow_mut_actor(&game->world, rogue_handle);
   if (rogue_slot == NULL) {
     return false;
@@ -147,46 +185,21 @@ rl_new_game(struct rl_game* game, int width, int height, Uint64 seed)
     return false;
   }
 
-  if (!alloc_map_buffers(game, width, height)) {
-    return false;
-  }
-
-  // make sure the rogue has an initial field-of-view
-  struct rl_actor const* rogue =
-    rl_borrow_actor(&game->world, rl_get_rogue(&game->world));
-  rl_update_fov(&game->fov, &level->map, rogue->pos);
-  update_explored(level, &game->fov);
-
-  return true;
-}
-
-void
-rl_free_game(struct rl_game* game)
-{
-  if (game == NULL) {
-    return;
-  }
-
-  rl_free_fov(&game->fov);
-  grid_free(&game->distances);
-  rl_free_world(&game->world);
+  return rl_prepare_game(game);
 }
 
 bool
 rl_update_game(struct rl_game* game,
                struct rl_command const* cmd,
-               alist(rl_event) * events)
+               alist(rl_event)* events)
 {
   bool turn_taken =
     rl_apply_command(&game->world, cmd, &game->fov, events, &game->rng);
 
   if (turn_taken) {
-    struct rl_actor const* rogue =
-      rl_borrow_actor(&game->world, rl_get_rogue(&game->world));
+    game->turns++;
 
-    struct rl_level* level = rl_edit_current_level(&game->world);
-    rl_update_fov(&game->fov, &level->map, rogue->pos);
-    update_explored(level, &game->fov);
+    observe_world(game);
 
     update_actors(
       &game->world, &game->distances, &game->fov, events, &game->rng);

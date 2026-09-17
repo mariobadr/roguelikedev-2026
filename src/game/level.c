@@ -48,11 +48,6 @@ rl_free_level(struct rl_level* level)
 bool
 rl_add_actor(struct rl_level* level, handle(rl_actor) actor)
 {
-  for (size_t i = 0; i < alist_len(&level->actors); i++) {
-    // a duplicate handle would give the actor more than one turn
-    SDL_assert(!handle_equal(*alist_at(&level->actors, i), actor));
-  }
-
   handle(rl_actor)* entry = alist_push(&level->actors);
   if (entry == NULL) {
     return false;

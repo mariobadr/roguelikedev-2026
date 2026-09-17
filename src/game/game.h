@@ -16,12 +16,12 @@
 #include "world.h"
 
 /**
- * The state of a game.
- *
- * A game represents one run of the roguelike game.
+ * A game that represents one run of the roguelike.
  */
 struct rl_game
 {
+  /** How many turns have been completed. */
+  Uint64 turns;
   /** The random number generator */
   struct rand_state rng;
   /** The world, including the levels visited so far. */
@@ -37,6 +37,13 @@ rl_alloc_game(struct rl_game* game);
 
 void
 rl_free_game(struct rl_game* game);
+
+/**
+ * Note: expects the current level and rogue to be populated; runtime buffers
+ * must be empty.
+ */
+bool
+rl_prepare_game(struct rl_game* game);
 
 bool
 rl_new_game(struct rl_game* game, int width, int height, Uint64 seed);
