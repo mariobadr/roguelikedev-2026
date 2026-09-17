@@ -35,16 +35,18 @@ struct gfx_console_cell
 grid_define_as(struct gfx_console_cell, gfx_console);
 
 void
-gfx_draw_cell(SDL_Renderer* renderer,
-              struct gfx_tileset const* tileset,
-              struct gfx_console_cell const* cell,
-              SDL_FRect const* dst);
+gfx_draw_console_cell(SDL_Renderer* renderer,
+                      struct gfx_tileset const* tileset,
+                      struct gfx_console_cell const* cell,
+                      SDL_FRect const* dst);
+
+void gfx_clear_console_grid(grid(gfx_console) * console);
 
 void
-gfx_draw_grid(SDL_Renderer* renderer,
-              struct gfx_tileset const* tileset,
-              grid(gfx_console) const* console,
-              SDL_Rect const* region,
-              SDL_FPoint at);
+gfx_draw_console_grid(SDL_Renderer* renderer,
+                      struct gfx_tileset const* tileset,
+                      grid(gfx_console) const* console,
+                      SDL_Rect const* region,
+                      SDL_FPoint at);
 
 #endif // GINC_GRAPHICS_CONSOLE_H

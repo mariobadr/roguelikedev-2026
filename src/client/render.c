@@ -43,7 +43,7 @@ rl_draw_string(SDL_Renderer* renderer,
     cell.index = (Uint8)text[i];
 
     SDL_FRect dst = gfx_tileset_dst(font, at, 1);
-    gfx_draw_cell(renderer, font, &cell, &dst);
+    gfx_draw_console_cell(renderer, font, &cell, &dst);
 
     at.x += font->tile_width;
   }
@@ -66,7 +66,7 @@ rl_draw_text(SDL_Renderer* renderer,
     cell.index = (Uint8)text->content[i];
 
     SDL_FRect dst = gfx_tileset_dst(font, at, 1);
-    gfx_draw_cell(renderer, font, &cell, &dst);
+    gfx_draw_console_cell(renderer, font, &cell, &dst);
 
     at.x += font->tile_width;
   }

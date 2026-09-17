@@ -21,16 +21,16 @@ draw_grid(SDL_Renderer* renderer,
 
       struct gfx_console_cell const* cell =
         grid_at(console, region->x + x, region->y + y);
-      gfx_draw_cell(renderer, tileset, cell, &dst);
+      gfx_draw_console_cell(renderer, tileset, cell, &dst);
     }
   }
 }
 
 void
-gfx_draw_cell(SDL_Renderer* renderer,
-              struct gfx_tileset const* tileset,
-              struct gfx_console_cell const* cell,
-              SDL_FRect const* dst)
+gfx_draw_console_cell(SDL_Renderer* renderer,
+                      struct gfx_tileset const* tileset,
+                      struct gfx_console_cell const* cell,
+                      SDL_FRect const* dst)
 {
   if (cell->bg.a > 0.0f) {
     SDL_SetRenderDrawColorFloat(
@@ -51,11 +51,17 @@ gfx_draw_cell(SDL_Renderer* renderer,
 }
 
 void
-gfx_draw_grid(SDL_Renderer* renderer,
-              struct gfx_tileset const* tileset,
-              grid(gfx_console) const* console,
-              SDL_Rect const* region,
-              SDL_FPoint at)
+gfx_clear_console_grid(grid(gfx_console) * console)
+{
+  SDL_memset(console->data, 0, grid_count(console) * sizeof(*console->data));
+}
+
+void
+gfx_draw_console_grid(SDL_Renderer* renderer,
+                      struct gfx_tileset const* tileset,
+                      grid(gfx_console) const* console,
+                      SDL_Rect const* region,
+                      SDL_FPoint at)
 {
   SDL_Rect all = { 0 };
   all.w = grid_width(console);

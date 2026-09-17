@@ -145,7 +145,7 @@ draw_text_span(SDL_Renderer* renderer,
   for (int i = 0; i < text.length; ++i) {
     cell.index = (Uint8)text.data[i];
     SDL_FRect dst = gfx_tileset_dst(font, at, 1);
-    gfx_draw_cell(renderer, font, &cell, &dst);
+    gfx_draw_console_cell(renderer, font, &cell, &dst);
     at.x += font->tile_width;
   }
 }

@@ -22,7 +22,6 @@
 #include "client/graphics.h"
 #include "client/lighting.h"
 #include "client/palette.h"
-#include "client/render.h"
 #include "client/view.h"
 
 /**
@@ -51,17 +50,10 @@ struct view_state
 
   /** Which mode the view is in. */
   enum map_mode mode;
-  /** Where this view exists on the screen. */
-  SDL_FRect viewport;
-  /** The width of a cell in the map. */
-  int cell_width;
-  /** The height of a cell in the map. */
-  int cell_height;
-  /** A "camera" of what's currently visible. */
-  SDL_Rect camera;
-  /** Terrain cells for the current level, indexed by world tile position. */
+
+  // rendering state
+  struct rl_camera camera;
   grid(gfx_console) terrain;
-  /** Light glow cells for the current level, indexed by world tile position. */
   grid(gfx_console) light;
 
   // for the MOVE mode
@@ -73,7 +65,7 @@ struct view_state
   SDL_Point pending_point;
 };
 
-static void
+static bool
 init_view_state(struct view_state* s,
                 struct rl_world const* world,
                 struct rl_fov const* fov,
@@ -83,90 +75,18 @@ init_view_state(struct view_state* s,
 {
   s->world = world;
   s->fov = fov;
-  s->viewport = *viewport;
-  s->cell_width = cell_width;
-  s->cell_height = cell_height;
 
-  s->camera.x = 0;
-  s->camera.y = 0;
-  s->camera.w = (int)viewport->w / cell_width;
-  s->camera.h = (int)viewport->h / cell_height;
-}
+  rl_init_camera(&s->camera, viewport, cell_width, cell_height);
 
-static SDL_FPoint
-cell_origin(SDL_FRect const* viewport)
-{
-  SDL_FPoint origin = { 0 };
-  origin.x = SDL_floorf(viewport->x);
-  origin.y = SDL_floorf(viewport->y);
-
-  return origin;
-}
-
-static SDL_FPoint
-cell_to_pixels(struct view_state const* s, SDL_Point cell)
-{
-  SDL_FPoint const origin = cell_origin(&s->viewport);
-
-  SDL_FPoint pixels = { 0 };
-  pixels.x = origin.x + (float)((cell.x - s->camera.x) * s->cell_width);
-  pixels.y = origin.y + (float)((cell.y - s->camera.y) * s->cell_height);
-
-  return pixels;
-}
-
-static bool
-cell_at(struct view_state const* s, SDL_FPoint pos, SDL_Point* cell)
-{
-  if (!SDL_PointInRectFloat(&pos, &s->viewport)) {
+  if (!grid_alloc(&s->terrain, s->camera.bounds.w, s->camera.bounds.h)) {
+    return false;
+  }
+  if (!grid_alloc(&s->light, s->camera.bounds.w, s->camera.bounds.h)) {
+    grid_free(&s->terrain);
     return false;
   }
 
-  SDL_FPoint const origin = cell_origin(&s->viewport);
-
-  SDL_Point world = { 0 };
-  world.x =
-    (int)SDL_floorf((pos.x - origin.x) / (float)s->cell_width) + s->camera.x;
-  world.y =
-    (int)SDL_floorf((pos.y - origin.y) / (float)s->cell_height) + s->camera.y;
-
-  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
-  if (!grid_contains(map, world.x, world.y)) {
-    return false;
-  }
-
-  *cell = world;
   return true;
-}
-
-static void
-sync_terrain_size(struct view_state* s, grid(rl_tile) const* map)
-{
-  int const w = grid_width(map);
-  int const h = grid_height(map);
-  if (grid_width(&s->terrain) == w && grid_height(&s->terrain) == h) {
-    return;
-  }
-
-  grid_free(&s->terrain);
-  if (!grid_alloc(&s->terrain, w, h)) {
-    SDL_Log("grid_alloc failed: %s", SDL_GetError());
-  }
-}
-
-static void
-sync_light_size(struct view_state* s, grid(rl_tile) const* map)
-{
-  int const w = grid_width(map);
-  int const h = grid_height(map);
-  if (grid_width(&s->light) == w && grid_height(&s->light) == h) {
-    return;
-  }
-
-  grid_free(&s->light);
-  if (!grid_alloc(&s->light, w, h)) {
-    SDL_Log("grid_alloc failed: %s", SDL_GetError());
-  }
 }
 
 static void
@@ -175,7 +95,7 @@ populate_terrain(struct view_state* s)
   struct rl_level const* level = rl_get_current_level(s->world);
   grid(rl_tile) const* map = &level->map;
 
-  sync_terrain_size(s, map);
+  gfx_clear_console_grid(&s->terrain);
 
   SDL_Rect const visible =
     rl_visible_world(&s->camera, grid_width(map), grid_height(map));
@@ -195,7 +115,8 @@ populate_terrain(struct view_state* s)
         }
       }
 
-      *grid_at(&s->terrain, p.x, p.y) = cell;
+      SDL_Point const local = rl_world_to_grid(&s->camera, p);
+      *grid_at(&s->terrain, local.x, local.y) = cell;
     }
   }
 }
@@ -206,7 +127,7 @@ populate_light(struct view_state* s)
   struct rl_level const* level = rl_get_current_level(s->world);
   grid(rl_tile) const* map = &level->map;
 
-  sync_light_size(s, map);
+  gfx_clear_console_grid(&s->light);
 
   // the colour of the light source - make this an argument?
   SDL_FColor const light = RL_COLOUR_GRAY[6];
@@ -227,7 +148,8 @@ populate_light(struct view_state* s)
         cell.bg = (SDL_FColor){ light.r, light.g, light.b, alpha };
       }
 
-      *grid_at(&s->light, p.x, p.y) = cell;
+      SDL_Point const local = rl_world_to_grid(&s->camera, p);
+      *grid_at(&s->light, local.x, local.y) = cell;
     }
   }
 }
@@ -237,12 +159,8 @@ draw_level(struct view_state const* s,
            SDL_Renderer* renderer,
            struct gfx_tileset const* font)
 {
-  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
-
-  SDL_Rect const visible =
-    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
-
-  gfx_draw_grid(renderer, font, &s->terrain, &visible, cell_origin(&s->viewport));
+  gfx_draw_console_grid(
+    renderer, font, &s->terrain, NULL, rl_viewport_origin(&s->camera));
 }
 
 static void
@@ -254,12 +172,8 @@ draw_light(struct view_state const* s,
   SDL_GetRenderDrawBlendMode(renderer, &prev);
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
 
-  grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
-
-  SDL_Rect const visible =
-    rl_visible_world(&s->camera, grid_width(map), grid_height(map));
-
-  gfx_draw_grid(renderer, font, &s->light, &visible, cell_origin(&s->viewport));
+  gfx_draw_console_grid(
+    renderer, font, &s->light, NULL, rl_viewport_origin(&s->camera));
 
   SDL_SetRenderDrawBlendMode(renderer, prev);
 }
@@ -271,9 +185,9 @@ draw_item(struct view_state const* s,
           struct rl_item const* item)
 {
   struct gfx_console_cell const cell = rl_get_item_gfx(item);
-  SDL_FPoint const at = cell_to_pixels(s, item->on.map);
+  SDL_FPoint const at = rl_world_to_screen(&s->camera, item->on.map);
   SDL_FRect dst = gfx_tileset_dst(font, at, 1);
-  gfx_draw_cell(renderer, font, &cell, &dst);
+  gfx_draw_console_cell(renderer, font, &cell, &dst);
 }
 
 static void
@@ -302,9 +216,9 @@ draw_actor(struct view_state const* s,
            struct rl_actor const* actor)
 {
   struct gfx_console_cell const cell = rl_get_actor_gfx(actor);
-  SDL_FPoint const at = cell_to_pixels(s, actor->pos);
+  SDL_FPoint const at = rl_world_to_screen(&s->camera, actor->pos);
   SDL_FRect dst = gfx_tileset_dst(font, at, 1);
-  gfx_draw_cell(renderer, font, &cell, &dst);
+  gfx_draw_console_cell(renderer, font, &cell, &dst);
 }
 
 static void
@@ -393,12 +307,12 @@ draw_target_area(struct view_state const* s, SDL_Renderer* renderer)
       }
 
       SDL_Point const p = { x, y };
-      SDL_FPoint const at = cell_to_pixels(s, p);
+      SDL_FPoint const at = rl_world_to_screen(&s->camera, p);
       SDL_FRect rect = { 0 };
       rect.x = at.x;
       rect.y = at.y;
-      rect.w = (float)s->cell_width;
-      rect.h = (float)s->cell_height;
+      rect.w = (float)s->camera.cell_width;
+      rect.h = (float)s->camera.cell_height;
       SDL_RenderFillRect(renderer, &rect);
     }
   }
@@ -409,12 +323,12 @@ draw_target_area(struct view_state const* s, SDL_Renderer* renderer)
 static void
 draw_cursor(struct view_state const* s, SDL_Renderer* renderer)
 {
-  SDL_FPoint const at = cell_to_pixels(s, s->selection.cursor);
+  SDL_FPoint const at = rl_world_to_screen(&s->camera, s->selection.cursor);
   SDL_FRect rect = { 0 };
   rect.x = at.x;
   rect.y = at.y;
-  rect.w = (float)s->cell_width;
-  rect.h = (float)s->cell_height;
+  rect.w = (float)s->camera.cell_width;
+  rect.h = (float)s->camera.cell_height;
 
   SDL_FColor colour = RL_COLOUR_YELLOW[5];
   SDL_SetRenderDrawColorFloat(renderer, colour.r, colour.g, colour.b, colour.a);
@@ -451,8 +365,11 @@ update_move(struct view_state* s, struct inpt_state const* istate)
 
   enum rl_action action = rl_handle_keyboard_input(istate);
   if (action == RL_ACTION_NONE) {
+    grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
+
     SDL_Point target;
-    if (cell_at(s, istate->mouse.position, &target)) {
+    if (rl_get_world_cell(&s->camera, istate->mouse.position, &target) &&
+        grid_contains(map, target.x, target.y)) {
       action = rl_handle_mouse_input(istate, rogue->pos, target);
     }
   }
@@ -597,7 +514,12 @@ rl_alloc_map_view(struct rl_view* view,
     return false;
   }
 
-  init_view_state(view->state, world, fov, viewport, cell_width, cell_height);
+  if (!init_view_state(
+        view->state, world, fov, viewport, cell_width, cell_height)) {
+    free_view(view->state);
+    view->state = NULL;
+    return false;
+  }
 
   view->free = free_view;
   view->update_ribbon = update_ribbon;
