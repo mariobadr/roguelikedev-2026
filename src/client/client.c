@@ -81,7 +81,6 @@ swap_top_screen(struct rl_client* client, enum rl_screen_id id)
   next->enter(next->state);
 }
 
-/** Apply a transition after update, preserving allocated screen state. */
 static void
 apply_transition(struct rl_client* client,
                  struct rl_screen_transition transition)
@@ -104,7 +103,7 @@ apply_transition(struct rl_client* client,
 }
 
 bool
-rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
+rl_alloc_client(struct rl_client* client, SDL_Renderer* renderer)
 {
   if (!rl_load_font(&client->font, renderer)) {
     return false;
@@ -115,14 +114,20 @@ rl_init_client(struct rl_client* client, SDL_Renderer* renderer)
     return false;
   }
 
+  if (!rl_alloc_main_menu_screen(
+        &client->screens[RL_SCREEN_MAIN_MENU], &client->font, &client->run)) {
+    return false;
+  }
+
   if (!rl_alloc_gameplay_screen(&client->screens[RL_SCREEN_GAMEPLAY],
-                                &client->font)) {
+                                &client->font,
+                                &client->run.game)) {
     return false;
   }
 
   struct rl_screen_transition transition = { 0 };
   transition.type = RL_SCREEN_TRANSITION_PUSH;
-  transition.target = RL_SCREEN_GAMEPLAY;
+  transition.target = RL_SCREEN_MAIN_MENU;
   apply_transition(client, transition);
 
   return true;
@@ -150,7 +155,8 @@ rl_free_client(struct rl_client* client)
     }
   }
 
-  // free the resources
+  // free the resources borrowed by the screens
+  rl_free_run(&client->run);
   rl_unload_font(&client->font);
 }
 
@@ -181,4 +187,19 @@ rl_render_client(struct rl_client const* client, SDL_Renderer* renderer)
 
   struct rl_screen const* screen = top_screen(client);
   screen->render(screen->state, renderer);
+}
+
+void
+rl_exit_client(struct rl_client* client)
+{
+  if(client == NULL) {
+    return;
+  }
+
+  if(rl_save_id_is_valid(client->run.save_id)) {
+    enum rl_save_result result = rl_save_run(&client->run);
+    if(result == RL_SAVE_OK) {
+      SDL_Log("Game was saved on exit.");
+    }
+  }
 }

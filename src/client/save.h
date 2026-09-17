@@ -17,7 +17,9 @@ struct rl_game;
 alist_define_as(struct rl_save_info, rl_save_info);
 
 /**
- * Summarise the saved runs into out.
+ * Summarise every saved run into out.
+ * 
+ * Sorted by most-recent-first.
  *
  * @return whether the runs were written to out successfully.
  */
@@ -25,9 +27,18 @@ bool
 rl_list_saves(alist(rl_save_info)* out);
 
 /**
+ * This is a summary-only check; it does not guarantee the full snapshot
+ * decodes successfully.
+ * 
+ * @return whether info describes a save that can be continued
+ */
+bool
+rl_save_is_continuable(struct rl_save_info const* info);
+
+/**
  * Begin a new run.
  *
- * @param out set to the run's identifier on success.
+ * @param out set to the run's identifier only on success.
  */
 enum rl_save_result
 rl_create_save(struct rl_game const* game, struct rl_save_id* out);
@@ -41,15 +52,15 @@ enum rl_save_result
 rl_save_game(struct rl_save_id id, struct rl_game const* game);
 
 /**
- * Restore the run's snapshot into game
+ * Restore the run's snapshot into game; delegates entirely to rl_read_save.
  *
- * @param game must be zeroed first.
+ * @param game must be zero-initialized. Left untouched on any non-OK result.
  */
 enum rl_save_result
 rl_load_game(struct rl_save_id id, struct rl_game* game);
 
 /**
- * End the run, so that it can no longer be resumed.
+ * End the run (so that it can no longer be resumed).
  */
 enum rl_save_result
 rl_finish_save(struct rl_save_id id, enum rl_run_outcome outcome);

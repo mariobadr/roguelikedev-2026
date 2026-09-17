@@ -3,6 +3,7 @@
 ###############################################################################
 add_library(rl_client STATIC
     screen/gameplay.c
+    screen/main_menu.c
     view/in_sight.c
     view/in_sight.h
     view/inventory.c
@@ -32,6 +33,8 @@ add_library(rl_client STATIC
     palette.h
     render.c
     render.h
+    run.c
+    run.h
     save.c
     save.h
     save_format.c

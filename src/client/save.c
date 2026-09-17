@@ -192,6 +192,14 @@ rl_list_saves(alist(rl_save_info) * out)
   return true;
 }
 
+bool
+rl_save_is_continuable(struct rl_save_info const* info)
+{
+  return rl_save_id_is_valid(info->id) &&
+         info->condition == RL_SAVE_CONDITION_OK &&
+         info->outcome == RL_RUN_ACTIVE;
+}
+
 enum rl_save_result
 rl_create_save(struct rl_game const* game, struct rl_save_id* out_id)
 {
@@ -236,8 +244,11 @@ read_existing_outcome(struct rl_save_id id, enum rl_run_outcome* out_outcome)
   enum rl_save_result const lookup = rl_read_save_summary(io, &existing);
   SDL_CloseIO(io);
 
-  *out_outcome = (lookup == RL_SAVE_OK) ? existing.outcome : RL_RUN_ACTIVE;
+  if (lookup != RL_SAVE_OK) {
+    return lookup;
+  }
 
+  *out_outcome = existing.outcome;
   return RL_SAVE_OK;
 }
 

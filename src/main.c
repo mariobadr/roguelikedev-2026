@@ -137,7 +137,7 @@ create_application(void)
     return NULL;
   }
 
-  if (!rl_init_client(&app->client, app->renderer)) {
+  if (!rl_alloc_client(&app->client, app->renderer)) {
     destroy_application(app);
     return NULL;
   }
@@ -229,8 +229,11 @@ SDL_AppQuit(void* appstate, SDL_AppResult result)
   SDL_Log("Quitting application (result: %d)", result);
 
   struct application* app = (struct application*)appstate;
-  destroy_application(app);
+  if(app != NULL) {
+    rl_exit_client(&app->client);
+  }
 
+  destroy_application(app);
   SDL_QuitSubSystem(SDL_INIT_AUDIO);
   SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }

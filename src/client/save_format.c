@@ -10,7 +10,7 @@
 #include "game/serialize/game.h"
 
 #define RL_SAVE_MAGIC 0x564C5352u // "RLSV"
-#define RL_SAVE_VERSION 1u
+#define RL_SAVE_VERSION 2u
 
 // offset of the outcome field within the header written by write_header;
 // used by rl_patch_save_outcome to patch it in place without disturbing the
@@ -164,10 +164,6 @@ rl_read_save(SDL_IOStream* src,
   }
 
   struct rl_game loaded = { 0 };
-  if (!rl_alloc_game(&loaded)) {
-    return RL_SAVE_ERROR;
-  }
-
   enum rl_save_result result = RL_SAVE_ERROR;
 
   switch (rl_read_game(src, &loaded)) {
@@ -179,7 +175,7 @@ rl_read_save(SDL_IOStream* src,
       } else if (SDL_GetIOStatus(src) != SDL_IO_STATUS_EOF) {
         result = RL_SAVE_ERROR;
       } else {
-        result = rl_prepare_game(&loaded) ? RL_SAVE_OK : RL_SAVE_ERROR;
+        result = RL_SAVE_OK;
       }
       break;
     }
@@ -187,6 +183,7 @@ rl_read_save(SDL_IOStream* src,
       result = RL_SAVE_CORRUPT;
       break;
     case RL_READ_ERROR:
+    default:
       result = RL_SAVE_ERROR;
       break;
   }

@@ -119,7 +119,8 @@ rl_read_save_summary(SDL_IOStream* src, struct rl_save_info* out);
 /**
  * Read src's summary and snapshot into game.
  *
- * @param out_info id must be set by the caller beforehand.
+ * @param out_info the id must be set by the caller beforehand.
+ * @param game must be zero-initialized.
  */
 enum rl_save_result
 rl_read_save(SDL_IOStream* src,
@@ -127,8 +128,7 @@ rl_read_save(SDL_IOStream* src,
              struct rl_game* game);
 
 /**
- * Rewrite an already-written save's outcome in place. Patching a save that
- * already records outcome succeeds without changing it.
+ * Rewrite an already-written save's outcome in place.
  *
  * @param io must be open for both reading and writing.
  */

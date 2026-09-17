@@ -38,12 +38,28 @@ read_snapshot_header(SDL_IOStream* src, struct rl_game* game)
 }
 
 enum rl_read_result
-rl_read_game(SDL_IOStream* src, struct rl_game* game)
+rl_read_game(SDL_IOStream* src, struct rl_game* out)
 {
-  enum rl_read_result result = read_snapshot_header(src, game);
+  struct rl_game tmp = { 0 };
+
+  if (!rl_alloc_world(&tmp.world)) {
+    return RL_READ_ERROR;
+  }
+
+  enum rl_read_result result = read_snapshot_header(src, &tmp);
+  if (result == RL_READ_OK) {
+    result = rl_read_world(src, &tmp.world);
+  }
+
+  if (result == RL_READ_OK && !rl_prepare_game(&tmp)) {
+    result = RL_READ_ERROR;
+  }
+
   if (result != RL_READ_OK) {
+    rl_free_game(&tmp);
     return result;
   }
 
-  return rl_read_world(src, &game->world);
+  *out = tmp;
+  return RL_READ_OK;
 }

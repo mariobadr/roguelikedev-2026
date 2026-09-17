@@ -23,16 +23,11 @@ bool
 rl_write_game(SDL_IOStream* dst, struct rl_game const* game);
 
 /**
- * Read a game's state from src into game, which must be allocated
- * beforehand (see rl_alloc_game).
+ * Read a complete, playable game from src into out.
  *
- * On success, src is left positioned right after the game record; it is
- * the caller's responsibility to check for trailing data if the format
- * composing this record requires it to be the last thing in the stream.
- *
- * On failure, game may hold a partially-read state.
+ * @param out must be zero-initialized.
  */
 enum rl_read_result
-rl_read_game(SDL_IOStream* src, struct rl_game* game);
+rl_read_game(SDL_IOStream* src, struct rl_game* out);
 
 #endif // GINC_ROGUELIKE_SERIALIZE_GAME_H

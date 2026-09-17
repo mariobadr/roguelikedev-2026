@@ -32,21 +32,19 @@ struct rl_game
   struct rl_fov fov;
 };
 
-bool
-rl_alloc_game(struct rl_game* game);
-
-void
-rl_free_game(struct rl_game* game);
-
 /**
- * Note: expects the current level and rogue to be populated; runtime buffers
- * must be empty.
+ * Generate a new, fully playable game into out.
+ *
+ * @param out must be zero-initialized.
  */
 bool
-rl_prepare_game(struct rl_game* game);
+rl_new_game(struct rl_game* out, int width, int height, Uint64 seed);
 
-bool
-rl_new_game(struct rl_game* game, int width, int height, Uint64 seed);
+/**
+ * Free game's owned resources and zero it.
+ */
+void
+rl_free_game(struct rl_game* game);
 
 /**
  * Applies a command and, if it consumes a turn, advances the rest of the game.
@@ -59,5 +57,12 @@ bool
 rl_update_game(struct rl_game* game,
                struct rl_command const* cmd,
                alist(rl_event)* events);
+
+/**
+ * Note: expects the current level and rogue to be populated; runtime buffers
+ * must be empty.
+ */
+bool
+rl_prepare_game(struct rl_game* game);
 
 #endif // GINC_ROGUELIKE_GAME_H

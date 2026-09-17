@@ -29,9 +29,6 @@
 /** How long between subsequent keys. */
 #define KEY_REPEAT_COOLDOWN (0.115f)
 
-#define RL_WORLD_WIDTH 64
-#define RL_WORLD_HEIGHT 64
-
 // I think this stays in screen
 enum panel_id
 {
@@ -53,7 +50,7 @@ struct screen_state
   enum panel_id focused_panel;
 
   // Game state
-  struct rl_game game;
+  struct rl_game* game; // borrowed
   struct rl_command pending_target_cmd; // RL_COMMAND_NONE when idle
 
   // Model state
@@ -100,8 +97,12 @@ create_layout(SDL_FRect panels[PANEL_COUNT])
 }
 
 static bool
-alloc_screen(struct screen_state* s, struct gfx_tileset const* font)
+alloc_screen(struct screen_state* s,
+             struct gfx_tileset const* font,
+             struct rl_game* game)
 {
+  s->game = game;
+
   // the layout is fixed
   create_layout(s->panel_bounds);
 
@@ -112,8 +113,8 @@ alloc_screen(struct screen_state* s, struct gfx_tileset const* font)
   s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
 
   if (!rl_alloc_in_sight_view(&s->views[RL_VIEW_IN_SIGHT],
-                              &s->game.world,
-                              &s->game.fov,
+                              &s->game->world,
+                              &s->game->fov,
                               &s->panel_bounds[PANEL_RIGHT])) {
     return false;
   }
@@ -126,7 +127,7 @@ alloc_screen(struct screen_state* s, struct gfx_tileset const* font)
   }
 
   if (!rl_alloc_inv_view(&s->views[RL_VIEW_INVENTORY],
-                         &s->game.world,
+                         &s->game->world,
                          &s->panel_bounds[PANEL_BOTTOM],
                          (float)font->tile_height)) {
     return false;
@@ -134,8 +135,8 @@ alloc_screen(struct screen_state* s, struct gfx_tileset const* font)
 
   // the map is only designed to work in the main panel right now
   if (!rl_alloc_map_view(&s->views[RL_VIEW_MAP],
-                         &s->game.world,
-                         &s->game.fov,
+                         &s->game->world,
+                         &s->game->fov,
                          &s->panel_bounds[PANEL_MAIN],
                          font->tile_width,
                          font->tile_height)) {
@@ -144,14 +145,6 @@ alloc_screen(struct screen_state* s, struct gfx_tileset const* font)
 
   // ribbon
   rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP]);
-
-  if (!rl_alloc_game(&s->game)) {
-    return false;
-  }
-
-  if (!rl_new_game(&s->game, RL_WORLD_WIDTH, RL_WORLD_HEIGHT, 1234)) {
-    return false;
-  }
 
   if (!rl_init_game_log(&s->log)) {
     return false;
@@ -186,20 +179,7 @@ free_screen(void* data)
 
   alist_free(&s->events);
   rl_free_game_log(&s->log);
-  rl_free_game(&s->game);
   SDL_free(s);
-}
-
-static void
-enter_screen(void* data)
-{
-  (void)data;
-}
-
-static void
-exit_screen(void* data)
-{
-  (void)data;
 }
 
 static void
@@ -207,6 +187,30 @@ cancel_focus(struct screen_state* s)
 {
   s->focused_panel = PANEL_MAIN;
   s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
+}
+
+static void
+enter_screen(void* data)
+{
+  struct screen_state* s = (struct screen_state*)data;
+  SDL_assert(s != NULL);
+
+  cancel_focus(s);
+  s->panel_views[PANEL_MAIN] = RL_VIEW_MAP;
+  s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
+  s->pending_target_cmd = (struct rl_command){ 0 };
+
+  alist_clear(&s->events);
+  alist_clear(&s->log.messages);
+
+  rl_view_update_ribbon(&s->views[s->panel_views[s->focused_panel]],
+                        &s->ribbon);
+}
+
+static void
+exit_screen(void* data)
+{
+  (void)data;
 }
 
 static void
@@ -239,12 +243,12 @@ static bool
 submit_command(struct screen_state* s, struct rl_command const* cmd)
 {
   alist_clear(&s->events);
-  bool const handled = rl_update_game(&s->game, cmd, &s->events);
+  bool const handled = rl_update_game(s->game, cmd, &s->events);
 
   // Consume this update's events exactly once, after submitting a command.
   for (int i = 0; i < alist_len(&s->events); i++) {
     struct rl_event const* event = alist_at(&s->events, i);
-    rl_log_event(&s->log, event, &s->game.world);
+    rl_log_event(&s->log, event, &s->game->world);
   }
 
   return handled;
@@ -255,8 +259,8 @@ begin_target_select(struct screen_state* s,
                     handle(rl_item) item,
                     struct rl_item_def const* def)
 {
-  handle(rl_actor) const rogue_handle = rl_get_rogue(&s->game.world);
-  struct rl_actor const* rogue = rl_borrow_actor(&s->game.world, rogue_handle);
+  handle(rl_actor) const rogue_handle = rl_get_rogue(&s->game->world);
+  struct rl_actor const* rogue = rl_borrow_actor(&s->game->world, rogue_handle);
 
   if (!rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos, def)) {
     return false;
@@ -301,7 +305,7 @@ resolve_pending_target(struct screen_state* s)
 static bool
 handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
 {
-  struct rl_item const* item = rl_borrow_item(&s->game.world, item_handle);
+  struct rl_item const* item = rl_borrow_item(&s->game->world, item_handle);
   if (item == NULL) {
     return false;
   }
@@ -314,7 +318,7 @@ handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
     case RL_ITEM_TARGET_CLOSEST: {
       // use item
       struct rl_command cmd = { 0 };
-      cmd.actor = rl_get_rogue(&s->game.world);
+      cmd.actor = rl_get_rogue(&s->game->world);
       cmd.type = RL_COMMAND_USE_ITEM;
       cmd.use_item.item = item_handle;
       handled = submit_command(s, &cmd);
@@ -419,14 +423,17 @@ render_screen(void const* data, SDL_Renderer* renderer)
 
 bool
 rl_alloc_gameplay_screen(struct rl_screen* screen,
-                         struct gfx_tileset const* font)
+                         struct gfx_tileset const* font,
+                         struct rl_game* game)
 {
+  SDL_assert(game != NULL);
+
   screen->state = SDL_calloc(1, sizeof(struct screen_state));
   if (screen->state == NULL) {
     return false;
   }
 
-  if (!alloc_screen(screen->state, font)) {
+  if (!alloc_screen(screen->state, font, game)) {
     free_screen(screen->state);
     screen->state = NULL;
     return false;
