@@ -32,6 +32,10 @@ add_library(rl_client STATIC
     palette.h
     render.c
     render.h
+    save.c
+    save.h
+    save_format.c
+    save_format.h
     screen.h
     text.c
     text.h
