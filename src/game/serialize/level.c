@@ -14,11 +14,28 @@ write_map_grid(SDL_IOStream* dst, struct rl_level const* level)
   int const height = grid_height(&level->map);
 
   bool ok = true;
+  Uint8 byte = 0;
+  int bits = 0;
 
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      ok &= SDL_WriteU8(dst, (Uint8)(*grid_at(&level->map, x, y)));
+      enum rl_tile const tile = *grid_at(&level->map, x, y);
+      ok &= (tile == RL_TILE_WALL || tile == RL_TILE_FLOOR);
+
+      if (tile == RL_TILE_FLOOR) {
+        byte |= (Uint8)(1u << bits);
+      }
+
+      if (++bits == 8) {
+        ok &= SDL_WriteU8(dst, byte);
+        byte = 0;
+        bits = 0;
+      }
     }
+  }
+
+  if (bits > 0) {
+    ok &= SDL_WriteU8(dst, byte);
   }
 
   return ok;
@@ -31,11 +48,25 @@ write_explored_grid(SDL_IOStream* dst, struct rl_level const* level)
   int const height = grid_height(&level->map);
 
   bool ok = true;
+  Uint8 byte = 0;
+  int bits = 0;
 
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      ok &= SDL_WriteU8(dst, *grid_at(&level->explored, x, y) ? 1 : 0);
+      if (*grid_at(&level->explored, x, y)) {
+        byte |= (Uint8)(1u << bits);
+      }
+
+      if (++bits == 8) {
+        ok &= SDL_WriteU8(dst, byte);
+        byte = 0;
+        bits = 0;
+      }
     }
+  }
+
+  if (bits > 0) {
+    ok &= SDL_WriteU8(dst, byte);
   }
 
   return ok;
@@ -76,33 +107,27 @@ rl_write_level(SDL_IOStream* dst,
   return ok;
 }
 
-static bool
-is_valid_tile(Uint8 value)
-{
-  switch ((enum rl_tile)value) {
-    case RL_TILE_WALL:
-    case RL_TILE_FLOOR:
-      return true;
-  }
-
-  return false;
-}
-
 static enum rl_read_result
 read_map_grid(SDL_IOStream* src, struct rl_level* level)
 {
   int const width = grid_width(&level->map);
   int const height = grid_height(&level->map);
 
+  Uint8 byte = 0;
+  int bits = 0;
+
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      Uint8 value = 0;
-      RL_READ_OR_FAIL(src, SDL_ReadU8(src, &value));
-
-      if (!is_valid_tile(value)) {
-        return RL_READ_CORRUPT;
+      if (bits == 0) {
+        RL_READ_OR_FAIL(src, SDL_ReadU8(src, &byte));
+        bits = 8;
       }
-      *grid_at(&level->map, x, y) = (enum rl_tile)value;
+
+      bool const floor = (byte & 1u) != 0;
+      byte >>= 1;
+      bits--;
+
+      *grid_at(&level->map, x, y) = floor ? RL_TILE_FLOOR : RL_TILE_WALL;
     }
   }
 
@@ -115,15 +140,19 @@ read_explored_grid(SDL_IOStream* src, struct rl_level* level)
   int const width = grid_width(&level->map);
   int const height = grid_height(&level->map);
 
+  Uint8 byte = 0;
+  int bits = 0;
+
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      Uint8 value = 0;
-      RL_READ_OR_FAIL(src, SDL_ReadU8(src, &value));
-
-      if (value > 1) {
-        return RL_READ_CORRUPT;
+      if (bits == 0) {
+        RL_READ_OR_FAIL(src, SDL_ReadU8(src, &byte));
+        bits = 8;
       }
-      *grid_at(&level->explored, x, y) = value != 0;
+
+      *grid_at(&level->explored, x, y) = (byte & 1u) != 0;
+      byte >>= 1;
+      bits--;
     }
   }
 
