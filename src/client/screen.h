@@ -17,9 +17,10 @@ struct inpt_state;
  */
 enum rl_screen_id
 {
-  RL_SCREEN_MAIN_MENU, //< The title/main menu screen
-  RL_SCREEN_GAMEPLAY,  //< The main screen
-  RL_SCREEN_COUNT,     //< The number of screens
+  RL_SCREEN_MAIN_MENU,  //< The title/main menu screen
+  RL_SCREEN_SAVE_FILES, //< Browse saved runs
+  RL_SCREEN_GAMEPLAY,   //< The main screen
+  RL_SCREEN_COUNT,      //< The number of screens
 };
 
 /**

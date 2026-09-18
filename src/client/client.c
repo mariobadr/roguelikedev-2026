@@ -7,6 +7,7 @@
 
 #include "client/screen/gameplay.h"
 #include "client/screen/main_menu.h"
+#include "client/screen/save_files.h"
 
 #include "client/palette.h"
 
@@ -123,6 +124,13 @@ rl_alloc_client(struct rl_client* client,
                                  bounds,
                                  &client->font,
                                  &client->run)) {
+    return false;
+  }
+
+  if (!rl_alloc_save_files_screen(&client->screens[RL_SCREEN_SAVE_FILES],
+                                  bounds,
+                                  &client->font,
+                                  &client->run)) {
     return false;
   }
 

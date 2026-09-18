@@ -38,6 +38,7 @@ enum menu_item
 {
   MENU_ITEM_CONTINUE,
   MENU_ITEM_NEW_GAME,
+  MENU_ITEM_MANAGE_SAVES,
   MENU_ITEM_EXIT,
   MENU_ITEM_COUNT,
 };
@@ -45,6 +46,7 @@ enum menu_item
 static char const* const MENU_LABELS[MENU_ITEM_COUNT] = {
   "Continue",
   "New Game",
+  "Manage Saves",
   "Exit",
 };
 
@@ -260,6 +262,10 @@ select_item(struct screen_state* s, enum menu_item item)
       }
       break;
     }
+    case MENU_ITEM_MANAGE_SAVES:
+      transition.type = RL_SCREEN_TRANSITION_PUSH;
+      transition.target = RL_SCREEN_SAVE_FILES;
+      break;
     case MENU_ITEM_EXIT:
       transition.type = RL_SCREEN_TRANSITION_POP;
       break;
