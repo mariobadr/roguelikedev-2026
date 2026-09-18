@@ -73,10 +73,17 @@ cd emsdk
 .\emsdk_env.bat
 ```
 
-Note that the configure step must use `emcmake`:
+Note that the configure step must use `emcmake`.
+And, since this project allows saving/loading, you must configure SDL3 for persistent storage in emscripten:
 
 ```
-emcmake cmake -S . -B build-emscripten -DCMAKE_BUILD_TYPE=Release
+emcmake cmake -S . -B build-emscripten -DCMAKE_BUILD_TYPE=Release -DSDL_EMSCRIPTEN_PERSISTENT_PATH=/storage
+```
+
+Once configured, you can build.
+The below command will work in terminals where you haven't activated the emsdk environment, too.
+
+```
 cmake --build build-emscripten --target a_roguelike
 ```
 
