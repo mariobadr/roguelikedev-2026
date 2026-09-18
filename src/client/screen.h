@@ -10,10 +10,7 @@
 typedef struct SDL_Renderer SDL_Renderer;
 
 // forward declarations
-struct gfx_tileset;
 struct inpt_state;
-struct rl_game;
-struct rl_run;
 
 /**
  * Unique identifiers for each type of screen.
@@ -85,22 +82,5 @@ struct rl_screen
    */
   void (*render)(void const* data, SDL_Renderer* renderer);
 };
-
-/**
- * @param run is borrowed and must outlive the screen; this screen starts
- *        and resumes runs into it.
- */
-bool
-rl_alloc_main_menu_screen(struct rl_screen* screen,
-                          struct gfx_tileset const* font,
-                          struct rl_run* run);
-
-/**
- * @param game is borrowed and must outlive the screen.
- */
-bool
-rl_alloc_gameplay_screen(struct rl_screen* screen,
-                         struct gfx_tileset const* font,
-                         struct rl_game* game);
 
 #endif // GINC_ROGUELIKE_SCREEN_H

@@ -3,7 +3,9 @@
 ###############################################################################
 add_library(rl_client STATIC
     screen/gameplay.c
+    screen/gameplay.h
     screen/main_menu.c
+    screen/main_menu.h
     view/in_sight.c
     view/in_sight.h
     view/inventory.c

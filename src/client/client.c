@@ -5,7 +5,10 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 
-#include "palette.h"
+#include "client/screen/gameplay.h"
+#include "client/screen/main_menu.h"
+
+#include "client/palette.h"
 
 static struct rl_screen const*
 top_screen(struct rl_client const* client)
@@ -192,13 +195,13 @@ rl_render_client(struct rl_client const* client, SDL_Renderer* renderer)
 void
 rl_exit_client(struct rl_client* client)
 {
-  if(client == NULL) {
+  if (client == NULL) {
     return;
   }
 
-  if(rl_save_id_is_valid(client->run.save_id)) {
+  if (rl_save_id_is_valid(client->run.save_id)) {
     enum rl_save_result result = rl_save_run(&client->run);
-    if(result == RL_SAVE_OK) {
+    if (result == RL_SAVE_OK) {
       SDL_Log("Game was saved on exit.");
     }
   }

@@ -1,4 +1,4 @@
-#include "client/screen.h"
+#include "main_menu.h"
 
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_log.h>
@@ -15,6 +15,7 @@
 #include "client/render.h"
 #include "client/run.h"
 #include "client/save.h"
+#include "client/screen.h"
 #include "client/text.h"
 #include "client/ui.h"
 

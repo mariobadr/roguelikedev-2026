@@ -1,4 +1,4 @@
-#include "client/screen.h"
+#include "gameplay.h"
 
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
@@ -19,6 +19,7 @@
 #include "client/controls.h"
 #include "client/font.h"
 #include "client/game_log.h"
+#include "client/screen.h"
 #include "client/ui.h"
 #include "client/view.h"
 
