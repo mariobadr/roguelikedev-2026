@@ -116,7 +116,8 @@ alloc_screen(struct screen_state* s,
   if (!rl_alloc_in_sight_view(&s->views[RL_VIEW_IN_SIGHT],
                               &s->game->world,
                               &s->game->fov,
-                              &s->panel_bounds[PANEL_RIGHT])) {
+                              &s->panel_bounds[PANEL_RIGHT],
+                              font)) {
     return false;
   }
 
@@ -145,7 +146,7 @@ alloc_screen(struct screen_state* s,
   }
 
   // ribbon
-  rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP]);
+  rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP], font);
 
   if (!rl_init_game_log(&s->log)) {
     return false;
