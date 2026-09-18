@@ -6,12 +6,11 @@
 #include "game/item_def.h"
 #include "game/world.h"
 
-#include "client/view/ribbon.h"
-
 #include "client/action.h"
 #include "client/controls.h"
 #include "client/palette.h"
 #include "client/render.h"
+#include "client/ribbon.h"
 #include "client/view.h"
 
 #include "ui/list.h"
@@ -68,16 +67,14 @@ item_text(struct rl_item const* item, bool selected)
 }
 
 static void
-update_ribbon(void const* data, struct rl_ribbon* ribbon)
+describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
   (void)data;
 
-  rl_set_current_view(ribbon, "Inventory");
-  rl_set_current_mode(ribbon, "Selecting");
-
-  struct rl_text msg = { 0 };
-  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WS, E]");
-  rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
+  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "View: Inventory");
+  rl_append_text(&content->text[RL_RIBBON_CENTRE], NULL, "Selecting");
+  rl_append_text(
+    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[WS, E]");
 }
 
 static bool
@@ -164,7 +161,7 @@ rl_alloc_inv_view(struct rl_view* view,
   init_view_state(view->state, world, viewport, line_height);
 
   view->free = SDL_free;
-  view->update_ribbon = update_ribbon;
+  view->describe_ribbon = describe_ribbon;
   view->update = update_view;
   view->prepare = prepare_view;
   view->render = render_view;

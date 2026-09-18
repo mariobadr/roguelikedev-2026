@@ -13,13 +13,16 @@
 #include "client/view/inventory.h"
 #include "client/view/log.h"
 #include "client/view/map.h"
-#include "client/view/ribbon.h"
 
 #include "client/action.h"
 #include "client/controls.h"
 #include "client/font.h"
 #include "client/game_log.h"
+#include "client/palette.h"
+#include "client/ribbon.h"
+#include "client/run.h"
 #include "client/screen.h"
+#include "client/text.h"
 #include "client/view.h"
 
 /** The horizontal margin between UI panels, in logical pixels. */
@@ -33,7 +36,6 @@
 enum panel_id
 {
   PANEL_MAIN,
-  PANEL_TOP,
   PANEL_BOTTOM,
   PANEL_RIGHT,
   PANEL_COUNT
@@ -82,10 +84,6 @@ create_layout(SDL_FRect panels[PANEL_COUNT], SDL_FRect const* bounds)
 
   ui_cut_left(&screen, RL_UI_MARGIN_X);
 
-  // One line of text across the full available width.
-  panels[PANEL_TOP] = ui_cut_top(&screen, 8.0f);
-  ui_cut_top(&screen, RL_UI_MARGIN_Y);
-
   SDL_FRect left = ui_cut_left(&screen, 384.0f);
   ui_cut_left(&screen, RL_UI_MARGIN_X);
   panels[PANEL_RIGHT] = screen;
@@ -107,8 +105,7 @@ alloc_screen(struct screen_state* s,
   // the layout is fixed
   create_layout(s->panel_bounds, bounds);
 
-  // this is the initial mapping; PANEL_TOP always shows the ribbon, which
-  // isn't a view, so it has no entry here
+  // this is the initial mapping
   s->panel_views[PANEL_MAIN] = RL_VIEW_MAP;
   s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
   s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
@@ -145,9 +142,6 @@ alloc_screen(struct screen_state* s,
     return false;
   }
 
-  // ribbon
-  rl_init_ribbon(&s->ribbon, &s->panel_bounds[PANEL_TOP], font);
-
   if (!rl_init_game_log(&s->log)) {
     return false;
   }
@@ -161,8 +155,6 @@ alloc_screen(struct screen_state* s,
   s->font = font;
 
   s->focused_panel = PANEL_MAIN;
-  rl_view_update_ribbon(&s->views[s->panel_views[s->focused_panel]],
-                        &s->ribbon);
 
   return true;
 }
@@ -204,9 +196,6 @@ enter_screen(void* data)
 
   alist_clear(&s->events);
   alist_clear(&s->log.messages);
-
-  rl_view_update_ribbon(&s->views[s->panel_views[s->focused_panel]],
-                        &s->ribbon);
 }
 
 static void
@@ -402,9 +391,24 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
     rl_prepare_view(&s->views[i]);
   }
 
-  rl_view_update_ribbon(&s->views[s->panel_views[s->focused_panel]],
-                        &s->ribbon);
   return transition;
+}
+
+static void
+describe_ribbon(void const* data, struct rl_ribbon_content* content)
+{
+  struct screen_state const* s = (struct screen_state const*)data;
+  SDL_assert(s != NULL);
+
+  if (s->game_over) {
+    rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "Game Over");
+    rl_append_text(
+      &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Esc] exit");
+    return;
+  }
+
+  rl_view_describe_ribbon(&s->views[s->panel_views[s->focused_panel]],
+                          content);
 }
 
 static void
@@ -414,11 +418,6 @@ render_screen(void const* data, SDL_Renderer* renderer)
   SDL_assert(s != NULL);
 
   for (int panel = 0; panel < PANEL_COUNT; ++panel) {
-    if (panel == PANEL_TOP) {
-      rl_draw_ribbon(&s->ribbon, renderer, s->font);
-      continue;
-    }
-
     rl_render_view(&s->views[s->panel_views[panel]], renderer, s->font);
   }
 }
@@ -445,6 +444,7 @@ rl_alloc_gameplay_screen(struct rl_screen* screen,
   screen->free = free_screen;
   screen->enter = enter_screen;
   screen->exit = exit_screen;
+  screen->describe_ribbon = describe_ribbon;
   screen->update = update_screen;
   screen->render = render_screen;
 

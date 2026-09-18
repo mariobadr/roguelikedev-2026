@@ -16,8 +16,6 @@ add_library(rl_client STATIC
     view/log.h
     view/map.c
     view/map.h
-    view/ribbon.c
-    view/ribbon.h
     action.c
     action.h
     camera.c
@@ -37,6 +35,8 @@ add_library(rl_client STATIC
     palette.h
     render.c
     render.h
+    ribbon.c
+    ribbon.h
     run.c
     run.h
     save.c

@@ -14,6 +14,7 @@
 
 #include "client/palette.h"
 #include "client/render.h"
+#include "client/ribbon.h"
 #include "client/run.h"
 #include "client/save.h"
 #include "client/screen.h"
@@ -48,11 +49,9 @@ struct screen_state
 {
   struct gfx_tileset const* font;
 
-  SDL_FPoint title_pos;
   SDL_FPoint summary_pos;
   SDL_FRect detail_bounds;
   SDL_FPoint status_pos;
-  SDL_FPoint hint_pos;
 
   enum screen_mode mode;
   float repeat_cooldown;
@@ -212,11 +211,6 @@ init_layout(struct screen_state* s,
     bounds->h - 2.0f * margin,
   };
 
-  SDL_FRect const title = ui_cut_top(&area, line);
-  ui_cut_top(&area, margin);
-
-  SDL_FRect const hint = ui_cut_bottom(&area, line);
-  ui_cut_bottom(&area, 4.0f);
   SDL_FRect const status = ui_cut_bottom(&area, line);
   ui_cut_bottom(&area, margin);
 
@@ -225,8 +219,6 @@ init_layout(struct screen_state* s,
   s->detail_bounds = ui_cut_right(&area, detail_width);
   ui_cut_right(&area, margin);
 
-  s->title_pos = (SDL_FPoint){ title.x, title.y };
-  s->hint_pos = (SDL_FPoint){ hint.x, hint.y };
   s->status_pos = (SDL_FPoint){ status.x, status.y };
   s->summary_pos = (SDL_FPoint){ area.x, area.y };
 
@@ -581,28 +573,28 @@ render_confirm_delete(struct screen_state const* s,
 }
 
 static void
-render_hints(struct screen_state const* s, SDL_Renderer* renderer)
+describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
-  struct rl_text text = { 0 };
-  rl_append_text(&text, NULL, "[WS] move   ");
+  struct screen_state const* s = (struct screen_state const*)data;
+  SDL_assert(s != NULL);
+
+  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "Manage Saves");
+
+  SDL_FColor const* const enabled = &RL_COLOUR_YELLOW[3];
+  SDL_FColor const* const disabled = &RL_COLOUR_GRAY[7];
+
+  struct rl_text* hint = &content->text[RL_RIBBON_RIGHT];
+  rl_append_text(hint, enabled, "[WS] move   ");
   if (s->mode == MODE_CONFIRM) {
-    rl_append_text(&text, NULL, "[E] select   [Esc] cancel");
+    rl_append_text(hint, enabled, "[E] select   [Esc] cancel");
   } else {
     struct rl_save_info const* info = selected_save(s);
     bool const can_load = info != NULL && rl_save_is_continuable(info);
-    rl_append_text(&text, can_load ? NULL : &RL_COLOUR_GRAY[7], "[E] load");
-    rl_append_text(&text, NULL, "   ");
-    rl_append_text(
-      &text, info != NULL ? NULL : &RL_COLOUR_GRAY[7], "[D] delete");
-    rl_append_text(&text, NULL, "   [Esc] back");
+    rl_append_text(hint, can_load ? enabled : disabled, "[E] load");
+    rl_append_text(hint, enabled, "   ");
+    rl_append_text(hint, info != NULL ? enabled : disabled, "[D] delete");
+    rl_append_text(hint, enabled, "   [Esc] back");
   }
-
-  rl_draw_text(renderer,
-               s->font,
-               &text,
-               RL_COLOUR_YELLOW[3],
-               RL_COLOUR_BLACK,
-               s->hint_pos);
 }
 
 static void
@@ -610,13 +602,6 @@ render_screen(void const* data, SDL_Renderer* renderer)
 {
   struct screen_state const* s = (struct screen_state const*)data;
   SDL_assert(s != NULL);
-
-  rl_draw_string(renderer,
-                 s->font,
-                 "Manage Saves",
-                 RL_COLOUR_GRAY[2],
-                 RL_COLOUR_BLACK,
-                 s->title_pos);
 
   struct rl_save_info const* selected = selected_save(s);
   if (s->mode == MODE_CONFIRM && selected != NULL) {
@@ -636,8 +621,6 @@ render_screen(void const* data, SDL_Renderer* renderer)
                RL_COLOUR_GRAY[2],
                RL_COLOUR_BLACK,
                s->status_pos);
-
-  render_hints(s, renderer);
 }
 
 bool
@@ -662,6 +645,7 @@ rl_alloc_save_files_screen(struct rl_screen* screen,
   screen->free = free_screen;
   screen->enter = enter_screen;
   screen->exit = exit_screen;
+  screen->describe_ribbon = describe_ribbon;
   screen->update = update_screen;
   screen->render = render_screen;
 

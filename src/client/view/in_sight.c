@@ -318,13 +318,6 @@ draw_actor(SDL_Renderer* renderer,
   draw_health_bar(renderer, row);
 }
 
-static void
-update_ribbon(void const* data, struct rl_ribbon* ribbon)
-{
-  (void)data;
-  (void)ribbon;
-}
-
 static bool
 update_view(void* data, struct inpt_state const* istate)
 {
@@ -408,7 +401,7 @@ rl_alloc_in_sight_view(struct rl_view* view,
   }
 
   view->free = free_view;
-  view->update_ribbon = update_ribbon;
+  view->describe_ribbon = NULL;
   view->update = update_view;
   view->prepare = prepare_view;
   view->render = render_view;

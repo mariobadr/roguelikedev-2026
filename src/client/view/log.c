@@ -7,13 +7,12 @@
 
 #include "ui/list.h"
 
-#include "client/view/ribbon.h"
-
 #include "client/action.h"
 #include "client/controls.h"
 #include "client/game_log.h"
 #include "client/palette.h"
 #include "client/render.h"
+#include "client/ribbon.h"
 #include "client/view.h"
 
 struct view_state
@@ -61,16 +60,14 @@ init_view_state(struct view_state* s,
 }
 
 static void
-update_ribbon(void const* data, struct rl_ribbon* ribbon)
+describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
   (void)data;
 
-  rl_set_current_view(ribbon, "Log");
-  rl_set_current_mode(ribbon, "Scrolling");
-
-  struct rl_text msg = { 0 };
-  rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WS]");
-  rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
+  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "View: Log");
+  rl_append_text(&content->text[RL_RIBBON_CENTRE], NULL, "Scrolling");
+  rl_append_text(
+    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[WS]");
 }
 
 static bool
@@ -139,7 +136,7 @@ rl_alloc_log_view(struct rl_view* view,
   init_view_state(view->state, log, viewport, line_height);
 
   view->free = SDL_free;
-  view->update_ribbon = update_ribbon;
+  view->describe_ribbon = describe_ribbon;
   view->update = update_view;
   view->prepare = prepare_view;
   view->render = render_view;

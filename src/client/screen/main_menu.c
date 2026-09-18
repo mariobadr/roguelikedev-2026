@@ -13,6 +13,7 @@
 #include "client/font.h"
 #include "client/palette.h"
 #include "client/render.h"
+#include "client/ribbon.h"
 #include "client/run.h"
 #include "client/save.h"
 #include "client/screen.h"
@@ -312,6 +313,17 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
 }
 
 static void
+describe_ribbon(void const* data, struct rl_ribbon_content* content)
+{
+  (void)data;
+
+  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "Main Menu");
+  rl_append_text(&content->text[RL_RIBBON_RIGHT],
+                 &RL_COLOUR_YELLOW[3],
+                 "[WS] move   [E] select");
+}
+
+static void
 render_screen(void const* data, SDL_Renderer* renderer)
 {
   struct screen_state const* s = (struct screen_state const*)data;
@@ -364,6 +376,7 @@ rl_alloc_main_menu_screen(struct rl_screen* screen,
   screen->free = free_screen;
   screen->enter = enter_screen;
   screen->exit = exit_screen;
+  screen->describe_ribbon = describe_ribbon;
   screen->update = update_screen;
   screen->render = render_screen;
 

@@ -12,8 +12,6 @@
 #include "game/tile.h"
 #include "game/world.h"
 
-#include "client/view/ribbon.h"
-
 #include "client/action.h"
 #include "client/camera.h"
 #include "client/controls.h"
@@ -22,6 +20,7 @@
 #include "client/graphics.h"
 #include "client/lighting.h"
 #include "client/palette.h"
+#include "client/ribbon.h"
 #include "client/view.h"
 
 /**
@@ -336,22 +335,22 @@ draw_cursor(struct view_state const* s, SDL_Renderer* renderer)
 }
 
 static void
-update_ribbon(void const* data, struct rl_ribbon* ribbon)
+describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
   struct view_state const* s = (struct view_state const*)data;
   SDL_assert(s != NULL);
 
-  rl_set_current_view(ribbon, "Map");
+  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "View: Map");
 
-  struct rl_text msg = { 0 };
+  struct rl_text* mode = &content->text[RL_RIBBON_CENTRE];
+  struct rl_text* hint = &content->text[RL_RIBBON_RIGHT];
   if (s->mode == MAP_MODE_SELECT) {
-    rl_set_current_mode(ribbon, "Selecting");
-    rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E, Esc]");
+    rl_append_text(mode, NULL, "Selecting");
+    rl_append_text(hint, &RL_COLOUR_YELLOW[3], "[WASD, E, Esc]");
   } else {
-    rl_set_current_mode(ribbon, "Moving");
-    rl_append_text(&msg, &RL_COLOUR_YELLOW[3], "[WASD, E, Z]");
+    rl_append_text(mode, NULL, "Moving");
+    rl_append_text(hint, &RL_COLOUR_YELLOW[3], "[WASD, E, Z]");
   }
-  rl_set_ribbon_text(ribbon, RL_RIBBON_RIGHT, &msg);
 }
 
 static bool
@@ -522,7 +521,7 @@ rl_alloc_map_view(struct rl_view* view,
   }
 
   view->free = free_view;
-  view->update_ribbon = update_ribbon;
+  view->describe_ribbon = describe_ribbon;
   view->update = update_view;
   view->prepare = prepare_view;
   view->render = render_view;

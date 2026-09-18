@@ -12,7 +12,7 @@ typedef struct SDL_Renderer SDL_Renderer;
 // forward declarations
 struct gfx_tileset;
 struct inpt_state;
-struct rl_ribbon;
+struct rl_ribbon_content;
 
 /**
  * Unique identifiers for each type of view.
@@ -36,7 +36,8 @@ struct rl_view
 
   void (*free)(void* data);
 
-  void (*update_ribbon)(void const* data, struct rl_ribbon* ribbon);
+  void (*describe_ribbon)(void const* data,
+                          struct rl_ribbon_content* content);
 
   bool (*update)(void* data, struct inpt_state const* istate);
 
@@ -58,13 +59,14 @@ rl_free_view(struct rl_view* view)
 }
 
 static inline void
-rl_view_update_ribbon(struct rl_view const* view, struct rl_ribbon* ribbon)
+rl_view_describe_ribbon(struct rl_view const* view,
+                        struct rl_ribbon_content* content)
 {
-  if (view->update_ribbon == NULL) {
+  if (view->describe_ribbon == NULL) {
     return;
   }
 
-  view->update_ribbon(view->state, ribbon);
+  view->describe_ribbon(view->state, content);
 }
 
 static inline bool

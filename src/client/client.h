@@ -10,6 +10,7 @@
 #include "container/array.h"
 
 #include "client/font.h"
+#include "client/ribbon.h"
 #include "client/run.h"
 #include "client/screen.h"
 
@@ -28,6 +29,8 @@ struct rl_client
 {
   /** Bitmap font used to draw everything. */
   struct gfx_tileset font;
+  /** Status line drawn above the active screen. */
+  struct rl_ribbon ribbon;
   /** The active run. */
   struct rl_run run;
   /** Allocated screens, retained when removed from the stack. */

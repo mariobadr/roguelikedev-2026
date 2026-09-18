@@ -11,6 +11,7 @@ typedef struct SDL_Renderer SDL_Renderer;
 
 // forward declarations
 struct inpt_state;
+struct rl_ribbon_content;
 
 /**
  * Unique identifiers for each type of screen.
@@ -20,6 +21,7 @@ enum rl_screen_id
   RL_SCREEN_MAIN_MENU,  //< The title/main menu screen
   RL_SCREEN_SAVE_FILES, //< Browse saved runs
   RL_SCREEN_GAMEPLAY,   //< The main screen
+  RL_SCREEN_GAME_OVER,  //< The rogue has died
   RL_SCREEN_COUNT,      //< The number of screens
 };
 
@@ -72,6 +74,12 @@ struct rl_screen
   void (*exit)(void* data);
 
   /**
+   * An optional callback that fills in the ribbon text for the screen's current
+   * state. The content starts out empty.
+   */
+  void (*describe_ribbon)(void const* data, struct rl_ribbon_content* content);
+
+  /**
    * A callback that is called once per frame.
    */
   struct rl_screen_transition (*update)(void* data,
@@ -83,5 +91,19 @@ struct rl_screen
    */
   void (*render)(void const* data, SDL_Renderer* renderer);
 };
+
+/**
+ * Asks the screen to fill in content; does nothing if it has no callback.
+ */
+static inline void
+rl_screen_describe_ribbon(struct rl_screen const* screen,
+                          struct rl_ribbon_content* content)
+{
+  if (screen->describe_ribbon == NULL) {
+    return;
+  }
+
+  screen->describe_ribbon(screen->state, content);
+}
 
 #endif // GINC_ROGUELIKE_SCREEN_H

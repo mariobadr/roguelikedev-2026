@@ -5,11 +5,19 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 
+#include "ui/rectcut.h"
+
+#include "client/screen/game_over.h"
 #include "client/screen/gameplay.h"
 #include "client/screen/main_menu.h"
 #include "client/screen/save_files.h"
 
 #include "client/palette.h"
+
+/** The gap between the ribbon and the screen content, in logical pixels. */
+#define RIBBON_GAP_Y 4.0f
+/** The ribbon's inset from the left edge of the bounds, in logical pixels. */
+#define RIBBON_INSET_X 4.0f
 
 static struct rl_screen const*
 top_screen(struct rl_client const* client)
@@ -106,6 +114,30 @@ apply_transition(struct rl_client* client,
   }
 }
 
+// Cuts the ribbon's strip off the top of the bounds, leaving the content.
+static SDL_FRect
+cut_ribbon_viewport(SDL_FRect* bounds, struct gfx_tileset const* font)
+{
+  SDL_FRect viewport = ui_cut_top(bounds, (float)font->tile_height);
+  ui_cut_top(bounds, RIBBON_GAP_Y);
+  ui_cut_left(&viewport, RIBBON_INSET_X);
+
+  return viewport;
+}
+
+static void
+refresh_ribbon(struct rl_client* client)
+{
+  struct rl_ribbon_content content = { 0 };
+
+  struct rl_screen const* screen = top_screen(client);
+  if (screen != NULL) {
+    rl_screen_describe_ribbon(screen, &content);
+  }
+
+  rl_set_ribbon_content(&client->ribbon, &content);
+}
+
 bool
 rl_alloc_client(struct rl_client* client,
                 SDL_FRect const* bounds,
@@ -115,29 +147,40 @@ rl_alloc_client(struct rl_client* client,
     return false;
   }
 
+  SDL_FRect content_bounds = *bounds;
+  SDL_FRect const ribbon_viewport =
+    cut_ribbon_viewport(&content_bounds, &client->font);
+  rl_init_ribbon(&client->ribbon, &ribbon_viewport, &client->font);
+
   if (!array_alloc(&client->stack, RL_SCREEN_COUNT)) {
     SDL_Log("array_alloc failed: %s", SDL_GetError());
     return false;
   }
 
   if (!rl_alloc_main_menu_screen(&client->screens[RL_SCREEN_MAIN_MENU],
-                                 bounds,
+                                 &content_bounds,
                                  &client->font,
                                  &client->run)) {
     return false;
   }
 
   if (!rl_alloc_save_files_screen(&client->screens[RL_SCREEN_SAVE_FILES],
-                                  bounds,
+                                  &content_bounds,
                                   &client->font,
                                   &client->run)) {
     return false;
   }
 
   if (!rl_alloc_gameplay_screen(&client->screens[RL_SCREEN_GAMEPLAY],
-                                bounds,
+                                &content_bounds,
                                 &client->font,
-                                &client->run.game)) {
+                                &client->run)) {
+    return false;
+  }
+
+  if (!rl_alloc_game_over_screen(&client->screens[RL_SCREEN_GAME_OVER],
+                                 &content_bounds,
+                                 &client->font)) {
     return false;
   }
 
@@ -145,6 +188,7 @@ rl_alloc_client(struct rl_client* client,
   transition.type = RL_SCREEN_TRANSITION_PUSH;
   transition.target = RL_SCREEN_MAIN_MENU;
   apply_transition(client, transition);
+  refresh_ribbon(client);
 
   return true;
 }
@@ -187,6 +231,7 @@ rl_update_client(struct rl_client* client,
   struct rl_screen_transition const transition =
     screen->update(screen->state, input, dt);
   apply_transition(client, transition);
+  refresh_ribbon(client);
 
   return !array_empty(&client->stack);
 }
@@ -202,7 +247,11 @@ rl_render_client(struct rl_client const* client, SDL_Renderer* renderer)
   SDL_RenderClear(renderer);
 
   struct rl_screen const* screen = top_screen(client);
-  screen->render(screen->state, renderer);
+  if (screen != NULL) {
+    screen->render(screen->state, renderer);
+  }
+
+  rl_draw_ribbon(&client->ribbon, renderer, &client->font);
 }
 
 void
