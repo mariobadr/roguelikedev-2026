@@ -24,6 +24,16 @@
 
 #define KEY_REPEAT_COOLDOWN (0.115f)
 
+/**
+ * From: https://patorjk.com/software/taag/#p=display&f=Graceful
+ */
+static char const* const RL_BANNER[] = {
+  "  __     ____   __    ___  _  _  ____  __    __  __ _  ____ ",
+  " / _\\   (  _ \\ /  \\  / __)/ )( \\(  __)(  )  (  )(  / )(  __)",
+  "/    \\   )   /(  O )( (_ \\) \\/ ( ) _) / (_/\\ )(  )  (  ) _) ",
+  "\\_/\\_/  (__\\_) \\__/  \\___/\\____/(____)\\____/(__)(__\\_)(____)",
+};
+
 enum menu_item
 {
   MENU_ITEM_CONTINUE,
@@ -41,6 +51,8 @@ static char const* const MENU_LABELS[MENU_ITEM_COUNT] = {
 struct screen_state
 {
   struct gfx_tileset const* font;
+
+  SDL_FPoint banner_pos;
 
   struct ui_list list;
   SDL_FRect slots[MENU_ITEM_COUNT];
@@ -84,6 +96,29 @@ refresh_saves(struct screen_state* s)
   }
 }
 
+static void
+measure_banner(struct gfx_tileset const* font, float* width, float* height)
+{
+  size_t cols = 0;
+  for (size_t i = 0; i < SDL_arraysize(RL_BANNER); i++) {
+    cols = SDL_max(cols, SDL_strlen(RL_BANNER[i]));
+  }
+
+  *width = (float)cols * (float)font->tile_width;
+  *height = (float)SDL_arraysize(RL_BANNER) * (float)font->tile_height;
+}
+
+static float
+measure_menu_width(struct gfx_tileset const* font)
+{
+  size_t cols = 0;
+  for (size_t i = 0; i < MENU_ITEM_COUNT; i++) {
+    cols = SDL_max(cols, SDL_strlen(MENU_LABELS[i]));
+  }
+
+  return (float)cols * (float)font->tile_width;
+}
+
 static bool
 alloc_screen(struct screen_state* s,
              struct gfx_tileset const* font,
@@ -94,17 +129,36 @@ alloc_screen(struct screen_state* s,
   s->repeat_cooldown = 0.0f;
   s->run = run;
 
+  float banner_width = 0.0f;
+  float banner_height = 0.0f;
+  measure_banner(font, &banner_width, &banner_height);
+  float const banner_gap = 32.0f;
+
   float const item_height = (float)font->tile_height + 4.0f;
   float const gap = 4.0f;
-  float const width = 160.0f;
-  float const height =
+  float const list_width = measure_menu_width(font);
+  float const list_height =
     MENU_ITEM_COUNT * item_height + (MENU_ITEM_COUNT - 1) * gap;
+
+  float const block_width = SDL_max(banner_width, list_width);
+  float const block_height = banner_height + banner_gap + list_height;
 
   SDL_FRect const screen = {
     0.0f, 0.0f, (float)RL_UI_WIDTH, (float)RL_UI_HEIGHT
   };
   struct ui_position const centre = { UI_ANCHOR_CENTRE, { 0.0f, 0.0f } };
-  SDL_FRect const viewport = ui_resolve(centre, &screen, width, height);
+  SDL_FRect const block =
+    ui_resolve(centre, &screen, block_width, block_height);
+
+  s->banner_pos.x = block.x + (block.w - banner_width) / 2.0f;
+  s->banner_pos.y = block.y;
+
+  SDL_FRect const viewport = {
+    block.x + (block.w - list_width) / 2.0f,
+    block.y + banner_height + banner_gap,
+    list_width,
+    list_height,
+  };
 
   ui_list_init(
     &s->list, &viewport, s->slots, MENU_ITEM_COUNT, item_height, gap);
@@ -254,6 +308,17 @@ render_screen(void const* data, SDL_Renderer* renderer)
   struct screen_state const* s = (struct screen_state const*)data;
   SDL_assert(s != NULL);
 
+  // render the banner
+  for (size_t i = 0; i < SDL_arraysize(RL_BANNER); i++) {
+    SDL_FPoint const at = {
+      s->banner_pos.x,
+      s->banner_pos.y + (float)i * (float)s->font->tile_height,
+    };
+    rl_draw_string(
+      renderer, s->font, RL_BANNER[i], RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
+  }
+
+  // render the menu
   for (int i = 0; i < MENU_ITEM_COUNT; ++i) {
     bool const enabled = is_enabled(s, (enum menu_item)i);
     bool const selected = enabled && i == s->selected;
