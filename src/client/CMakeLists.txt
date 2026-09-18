@@ -2,6 +2,8 @@
 # Client library
 ###############################################################################
 add_library(rl_client STATIC
+    screen/game_over.c
+    screen/game_over.h
     screen/gameplay.c
     screen/gameplay.h
     screen/main_menu.c

@@ -4,6 +4,7 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 
+#include "game/actor.h"
 #include "game/game.h"
 #include "game/item_def.h"
 
@@ -52,8 +53,9 @@ struct screen_state
   enum panel_id focused_panel;
 
   // Game state
-  struct rl_game* game; // borrowed
-  struct rl_command pending_target_cmd; // RL_COMMAND_NONE when idle
+  struct rl_run* run;
+  struct rl_command pending_target_cmd;
+  bool game_over;
 
   // Model state
   struct rl_game_log log;
@@ -61,15 +63,12 @@ struct screen_state
 
   // View state
   struct rl_view views[RL_VIEW_COUNT];
-  struct rl_ribbon ribbon;
 };
 
 /**
  * Roughly:
  *
- * ┌──────────────────────────────────────────────┐
- * │                  top panel                   │
- * ├──────────────────────────────┬───────────────┤
+ * ┌──────────────────────────────┬───────────────┐
  * │                              │  right panel  │
  * │            main              │               │
  * │                              │               │
@@ -98,9 +97,9 @@ static bool
 alloc_screen(struct screen_state* s,
              SDL_FRect const* bounds,
              struct gfx_tileset const* font,
-             struct rl_game* game)
+             struct rl_run* run)
 {
-  s->game = game;
+  s->run = run;
 
   // the layout is fixed
   create_layout(s->panel_bounds, bounds);
@@ -111,8 +110,8 @@ alloc_screen(struct screen_state* s,
   s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
 
   if (!rl_alloc_in_sight_view(&s->views[RL_VIEW_IN_SIGHT],
-                              &s->game->world,
-                              &s->game->fov,
+                              &s->run->game.world,
+                              &s->run->game.fov,
                               &s->panel_bounds[PANEL_RIGHT],
                               font)) {
     return false;
@@ -126,7 +125,7 @@ alloc_screen(struct screen_state* s,
   }
 
   if (!rl_alloc_inv_view(&s->views[RL_VIEW_INVENTORY],
-                         &s->game->world,
+                         &s->run->game.world,
                          &s->panel_bounds[PANEL_BOTTOM],
                          (float)font->tile_height)) {
     return false;
@@ -134,8 +133,8 @@ alloc_screen(struct screen_state* s,
 
   // the map is only designed to work in the main panel right now
   if (!rl_alloc_map_view(&s->views[RL_VIEW_MAP],
-                         &s->game->world,
-                         &s->game->fov,
+                         &s->run->game.world,
+                         &s->run->game.fov,
                          &s->panel_bounds[PANEL_MAIN],
                          font->tile_width,
                          font->tile_height)) {
@@ -193,6 +192,8 @@ enter_screen(void* data)
   s->panel_views[PANEL_MAIN] = RL_VIEW_MAP;
   s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
   s->pending_target_cmd = (struct rl_command){ 0 };
+  s->game_over = false;
+  s->repeat_cooldown = 0.0f;
 
   alist_clear(&s->events);
   alist_clear(&s->log.messages);
@@ -231,15 +232,53 @@ show_log(struct screen_state* s)
 }
 
 static bool
+rogue_is_dead(struct screen_state const* s)
+{
+  struct rl_world const* world = &s->run->game.world;
+  struct rl_actor const* rogue = rl_borrow_actor(world, rl_get_rogue(world));
+
+  return rogue != NULL && !rl_actor_is_alive(rogue);
+}
+
+static void
+begin_game_over(struct screen_state* s)
+{
+  s->game_over = true;
+  s->pending_target_cmd = (struct rl_command){ 0 };
+  cancel_focus(s);
+
+  enum rl_save_result const result = rl_save_run(s->run);
+  if (result != RL_SAVE_OK) {
+    SDL_Log("rl_save_run failed (%d): %s", (int)result, SDL_GetError());
+
+    struct rl_text failure = { 0 };
+    rl_append_text(&failure,
+                   &RL_COLOUR_RED[4],
+                   "Could not save the run; it will be retried on exit.");
+    rl_log_text(&s->log, &failure);
+  }
+
+  struct rl_text prompt = { 0 };
+  rl_append_text(&prompt, NULL, "You have died. Press ");
+  rl_append_text(&prompt, &RL_COLOUR_YELLOW[3], "Escape");
+  rl_append_text(&prompt, NULL, " to exit.");
+  rl_log_text(&s->log, &prompt);
+}
+
+static bool
 submit_command(struct screen_state* s, struct rl_command const* cmd)
 {
   alist_clear(&s->events);
-  bool const handled = rl_update_game(s->game, cmd, &s->events);
+  bool const handled = rl_update_game(&s->run->game, cmd, &s->events);
 
   // Consume this update's events exactly once, after submitting a command.
   for (int i = 0; i < alist_len(&s->events); i++) {
     struct rl_event const* event = alist_at(&s->events, i);
-    rl_log_event(&s->log, event, &s->game->world);
+    rl_log_event(&s->log, event, &s->run->game.world);
+  }
+
+  if (!s->game_over && rogue_is_dead(s)) {
+    begin_game_over(s);
   }
 
   return handled;
@@ -250,8 +289,9 @@ begin_target_select(struct screen_state* s,
                     handle(rl_item) item,
                     struct rl_item_def const* def)
 {
-  handle(rl_actor) const rogue_handle = rl_get_rogue(&s->game->world);
-  struct rl_actor const* rogue = rl_borrow_actor(&s->game->world, rogue_handle);
+  handle(rl_actor) const rogue_handle = rl_get_rogue(&s->run->game.world);
+  struct rl_actor const* rogue =
+    rl_borrow_actor(&s->run->game.world, rogue_handle);
 
   if (!rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos, def)) {
     return false;
@@ -296,7 +336,7 @@ resolve_pending_target(struct screen_state* s)
 static bool
 handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
 {
-  struct rl_item const* item = rl_borrow_item(&s->game->world, item_handle);
+  struct rl_item const* item = rl_borrow_item(&s->run->game.world, item_handle);
   if (item == NULL) {
     return false;
   }
@@ -309,7 +349,7 @@ handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
     case RL_ITEM_TARGET_CLOSEST: {
       // use item
       struct rl_command cmd = { 0 };
-      cmd.actor = rl_get_rogue(&s->game->world);
+      cmd.actor = rl_get_rogue(&s->run->game.world);
       cmd.type = RL_COMMAND_USE_ITEM;
       cmd.use_item.item = item_handle;
       handled = submit_command(s, &cmd);
@@ -362,6 +402,15 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   struct rl_screen_transition transition = { 0 };
   struct screen_state* s = (struct screen_state*)data;
   SDL_assert(s != NULL);
+
+  if (s->game_over) {
+    // Only leaving is possible, and it must not wait on the key repeat timer.
+    if (rl_handle_keyboard_input(istate) == RL_ACTION_CANCEL) {
+      transition.type = RL_SCREEN_TRANSITION_SWAP;
+      transition.target = RL_SCREEN_GAME_OVER;
+    }
+    return transition;
+  }
 
   s->repeat_cooldown = SDL_max(0.0f, s->repeat_cooldown - dt);
   if (s->repeat_cooldown > 0.0f) {
@@ -426,16 +475,16 @@ bool
 rl_alloc_gameplay_screen(struct rl_screen* screen,
                          SDL_FRect const* bounds,
                          struct gfx_tileset const* font,
-                         struct rl_game* game)
+                         struct rl_run* run)
 {
-  SDL_assert(game != NULL);
+  SDL_assert(run != NULL);
 
   screen->state = SDL_calloc(1, sizeof(struct screen_state));
   if (screen->state == NULL) {
     return false;
   }
 
-  if (!alloc_screen(screen->state, bounds, font, game)) {
+  if (!alloc_screen(screen->state, bounds, font, run)) {
     free_screen(screen->state);
     screen->state = NULL;
     return false;

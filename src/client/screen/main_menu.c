@@ -28,7 +28,7 @@
 /**
  * From: https://patorjk.com/software/taag/#p=display&f=Graceful
  */
-static char const* const RL_BANNER[] = {
+static char const* const GAME_OVER_BANNER[] = {
   "  __     ____   __    ___  _  _  ____  __    __  __ _  ____ ",
   " / _\\   (  _ \\ /  \\  / __)/ )( \\(  __)(  )  (  )(  / )(  __)",
   "/    \\   )   /(  O )( (_ \\) \\/ ( ) _) / (_/\\ )(  )  (  ) _) ",
@@ -111,12 +111,12 @@ static void
 measure_banner(struct gfx_tileset const* font, float* width, float* height)
 {
   size_t cols = 0;
-  for (size_t i = 0; i < SDL_arraysize(RL_BANNER); i++) {
-    cols = SDL_max(cols, SDL_strlen(RL_BANNER[i]));
+  for (size_t i = 0; i < SDL_arraysize(GAME_OVER_BANNER); i++) {
+    cols = SDL_max(cols, SDL_strlen(GAME_OVER_BANNER[i]));
   }
 
   *width = (float)cols * (float)font->tile_width;
-  *height = (float)SDL_arraysize(RL_BANNER) * (float)font->tile_height;
+  *height = (float)SDL_arraysize(GAME_OVER_BANNER) * (float)font->tile_height;
 }
 
 static float
@@ -330,13 +330,13 @@ render_screen(void const* data, SDL_Renderer* renderer)
   SDL_assert(s != NULL);
 
   // render the banner
-  for (size_t i = 0; i < SDL_arraysize(RL_BANNER); i++) {
+  for (size_t i = 0; i < SDL_arraysize(GAME_OVER_BANNER); i++) {
     SDL_FPoint const at = {
       s->banner_pos.x,
       s->banner_pos.y + (float)i * (float)s->font->tile_height,
     };
     rl_draw_string(
-      renderer, s->font, RL_BANNER[i], RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
+      renderer, s->font, GAME_OVER_BANNER[i], RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
   }
 
   // render the menu
