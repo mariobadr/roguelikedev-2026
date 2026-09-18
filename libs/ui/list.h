@@ -5,6 +5,7 @@
 #define GINC_UI_LIST_H
 
 #include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_stdinc.h>
 
 #include "ui/layout.h"
 
@@ -83,5 +84,56 @@ ui_list_ensure_visible(struct ui_list* list, int count, int index);
  */
 int
 ui_list_end(struct ui_list const* list, int count);
+
+/**
+ * A list with a selection.
+ */
+struct ui_list_menu
+{
+  struct ui_list list;
+  /** Selected model index, or -1 when no item is enabled. */
+  int selected;
+};
+
+/**
+ * A description of menu items.
+ */
+struct ui_list_menu_model
+{
+  /** Number of items. Nonpositive counts are treated as empty. */
+  int count;
+  /** NULL enables every item. Called only with indices in [0, count). */
+  bool (*is_enabled)(void const* data, int index);
+  /** User data. */
+  void const* data;
+};
+
+/**
+ * Repair selection after the model changes (or resizing).
+ */
+void
+ui_list_menu_sync(struct ui_list_menu* menu, struct ui_list_menu_model model);
+
+/**
+ * Move one enabled item in direction -1 or +1, wrapping at either end.
+ *
+ * @return whether selection changed.
+ */
+bool
+ui_list_menu_move(struct ui_list_menu* menu,
+                  struct ui_list_menu_model model,
+                  int direction);
+
+/**
+ * Select an exact model index and make it visible, without activating it.
+ *
+ * Invalid or disabled indices leave both selection and scrolling unchanged.
+ *
+ * @return whether the index was accepted, even if it was already selected.
+ */
+bool
+ui_list_menu_select(struct ui_list_menu* menu,
+                    struct ui_list_menu_model model,
+                    int index);
 
 #endif // GINC_UI_LIST_H

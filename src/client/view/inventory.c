@@ -21,14 +21,20 @@ struct view_state
   // the "model" data
   struct rl_world const* world;
   // the UI component
-  struct ui_list list;
+  struct ui_list_menu menu;
   // temporary; these are the rects where we draw the text
   SDL_FRect slots[8];
-  // selected item index in the filtered inventory
-  int selected;
   // the selected item, waiting to be "pulled"
   handle(rl_item) pending_item;
 };
+
+static struct ui_list_menu_model
+menu_model(struct view_state const* s)
+{
+  return (struct ui_list_menu_model){
+    .count = rl_count_held_items(s->world, rl_get_rogue(s->world)),
+  };
+}
 
 static void
 init_view_state(struct view_state* s,
@@ -37,11 +43,16 @@ init_view_state(struct view_state* s,
                 float line_height)
 {
   s->world = world;
-  s->selected = 0;
+  s->menu.selected = -1;
   s->pending_item = handle_invalid(rl_item);
 
-  ui_list_init(
-    &s->list, viewport, s->slots, SDL_arraysize(s->slots), line_height, 2.0f);
+  ui_list_init(&s->menu.list,
+               viewport,
+               s->slots,
+               SDL_arraysize(s->slots),
+               line_height,
+               2.0f);
+  ui_list_menu_sync(&s->menu, menu_model(s));
 }
 
 static struct rl_text
@@ -54,32 +65,6 @@ item_text(struct rl_item const* item, bool selected)
   rl_append_text(&text, NULL, def->name);
 
   return text;
-}
-
-static void
-scroll_to(struct view_state* view, int selected)
-{
-  int const count = rl_count_held_items(view->world, rl_get_rogue(view->world));
-  view->selected = SDL_clamp(selected, 0, SDL_max(0, count - 1));
-  ui_list_ensure_visible(&view->list, count, view->selected);
-}
-
-static void
-scroll_up(struct view_state* view)
-{
-  int const count = rl_count_held_items(view->world, rl_get_rogue(view->world));
-  int const last = SDL_max(0, count - 1);
-  int const selected = SDL_clamp(view->selected, 0, last);
-  scroll_to(view, selected - 1);
-}
-
-static void
-scroll_down(struct view_state* view)
-{
-  int const count = rl_count_held_items(view->world, rl_get_rogue(view->world));
-  int const last = SDL_max(0, count - 1);
-  int const selected = SDL_clamp(view->selected, 0, last);
-  scroll_to(view, selected + 1);
 }
 
 static void
@@ -104,14 +89,17 @@ update_view(void* data, struct inpt_state const* istate)
   enum rl_action const action = rl_handle_keyboard_input(istate);
   switch (action) {
     case RL_ACTION_MOVE_UP:
-      scroll_up(s);
+      ui_list_menu_move(&s->menu, menu_model(s), -1);
       return true;
     case RL_ACTION_MOVE_DOWN:
-      scroll_down(s);
+      ui_list_menu_move(&s->menu, menu_model(s), +1);
       return true;
     case RL_ACTION_SELECT:
+      if (!ui_list_menu_select(&s->menu, menu_model(s), s->menu.selected)) {
+        return false;
+      }
       s->pending_item =
-        rl_find_held_item(s->world, rl_get_rogue(s->world), s->selected);
+        rl_find_held_item(s->world, rl_get_rogue(s->world), s->menu.selected);
       return handle_is_nonnull(s->pending_item);
     default:
       break;
@@ -127,7 +115,7 @@ prepare_view(void* data)
   SDL_assert(s != NULL);
 
   // Keep selection in bounds after consuming an item.
-  scroll_to(s, s->selected);
+  ui_list_menu_sync(&s->menu, menu_model(s));
 }
 
 static void
@@ -140,9 +128,10 @@ render_view(void const* data,
 
   handle(rl_actor) const rogue = rl_get_rogue(s->world);
   int const count = rl_count_held_items(s->world, rogue);
-  int const first = ui_list_offset(&s->list, count);
+  int const first = ui_list_offset(&s->menu.list, count);
 
-  for (int row = 0; row < s->list.slot_count && first + row < count; ++row) {
+  for (int row = 0; row < s->menu.list.slot_count && first + row < count;
+       ++row) {
     handle(rl_item) const item_handle =
       rl_find_held_item(s->world, rogue, first + row);
     struct rl_item const* item = rl_borrow_item(s->world, item_handle);
@@ -150,7 +139,8 @@ render_view(void const* data,
       break;
     }
 
-    struct rl_text const text = item_text(item, first + row == s->selected);
+    struct rl_text const text =
+      item_text(item, first + row == s->menu.selected);
 
     SDL_FPoint const at = {
       s->slots[row].x,

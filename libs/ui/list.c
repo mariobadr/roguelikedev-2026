@@ -111,3 +111,83 @@ ui_list_end(struct ui_list const* list, int count)
 
   return SDL_min(ui_list_offset(list, count) + list->slot_count, count);
 }
+
+static bool
+menu_item_enabled(struct ui_list_menu_model model, int index)
+{
+  return index >= 0 && index < model.count &&
+         (model.is_enabled == NULL || model.is_enabled(model.data, index));
+}
+
+void
+ui_list_menu_sync(struct ui_list_menu* menu, struct ui_list_menu_model model)
+{
+  int const count = SDL_max(0, model.count);
+  int selected = -1;
+
+  if (count > 0) {
+    int const start = SDL_clamp(menu->selected, 0, count - 1);
+    for (int i = start; i < count; ++i) {
+      if (menu_item_enabled(model, i)) {
+        selected = i;
+        break;
+      }
+    }
+    if (selected < 0) {
+      for (int i = start - 1; i >= 0; --i) {
+        if (menu_item_enabled(model, i)) {
+          selected = i;
+          break;
+        }
+      }
+    }
+  }
+
+  menu->selected = selected;
+  if (selected >= 0) {
+    ui_list_ensure_visible(&menu->list, count, selected);
+  } else {
+    ui_list_scroll_to(&menu->list, count, menu->list.offset);
+  }
+}
+
+bool
+ui_list_menu_move(struct ui_list_menu* menu,
+                  struct ui_list_menu_model model,
+                  int direction)
+{
+  SDL_assert(direction == -1 || direction == 1);
+
+  int const previous = menu->selected;
+  ui_list_menu_sync(menu, model);
+  if (menu->selected >= 0) {
+    int i = menu->selected;
+    for (int visited = 0; visited < model.count; ++visited) {
+      i += direction;
+      if (i < 0) {
+        i = model.count - 1;
+      } else if (i >= model.count) {
+        i = 0;
+      }
+      if (ui_list_menu_select(menu, model, i)) {
+        break;
+      }
+    }
+  }
+
+  return menu->selected != previous;
+}
+
+bool
+ui_list_menu_select(struct ui_list_menu* menu,
+                    struct ui_list_menu_model model,
+                    int index)
+{
+  if (!menu_item_enabled(model, index)) {
+    return false;
+  }
+
+  menu->selected = index;
+  ui_list_ensure_visible(&menu->list, model.count, index);
+  return true;
+}

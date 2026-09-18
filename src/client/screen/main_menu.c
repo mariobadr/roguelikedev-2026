@@ -54,9 +54,8 @@ struct screen_state
 
   SDL_FPoint banner_pos;
 
-  struct ui_list list;
+  struct ui_list_menu menu;
   SDL_FRect slots[MENU_ITEM_COUNT];
-  int selected;
   float repeat_cooldown;
 
   struct rl_run* run;
@@ -66,12 +65,23 @@ struct screen_state
 };
 
 static bool
-is_enabled(struct screen_state const* s, enum menu_item item)
+is_enabled(void const* data, int item)
 {
+  struct screen_state const* s = data;
   if (item == MENU_ITEM_CONTINUE) {
     return rl_save_id_is_valid(s->continue_id);
   }
   return true;
+}
+
+static struct ui_list_menu_model
+menu_model(struct screen_state const* s)
+{
+  return (struct ui_list_menu_model){
+    .count = MENU_ITEM_COUNT,
+    .is_enabled = is_enabled,
+    .data = s,
+  };
 }
 
 static void
@@ -91,9 +101,7 @@ refresh_saves(struct screen_state* s)
     }
   }
 
-  if (!is_enabled(s, (enum menu_item)s->selected)) {
-    s->selected = MENU_ITEM_NEW_GAME;
-  }
+  ui_list_menu_sync(&s->menu, menu_model(s));
 }
 
 static void
@@ -160,7 +168,7 @@ alloc_screen(struct screen_state* s,
              struct rl_run* run)
 {
   s->font = font;
-  s->selected = 0;
+  s->menu.selected = -1;
   s->repeat_cooldown = 0.0f;
   s->run = run;
 
@@ -171,7 +179,7 @@ alloc_screen(struct screen_state* s,
   create_layout(bounds, font, item_height, gap, &s->banner_pos, &list_viewport);
 
   ui_list_init(
-    &s->list, &list_viewport, s->slots, MENU_ITEM_COUNT, item_height, gap);
+    &s->menu.list, &list_viewport, s->slots, MENU_ITEM_COUNT, item_height, gap);
 
   if (!alist_alloc(&s->saves, RL_SAVE_LIST_INITIAL_CAP)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
@@ -276,32 +284,17 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
 
   enum rl_action const action = rl_handle_keyboard_input(istate);
   switch (action) {
-    case RL_ACTION_MOVE_UP: {
-      int candidate = s->selected - 1;
-      while (candidate >= 0 && !is_enabled(s, (enum menu_item)candidate)) {
-        candidate--;
-      }
-      if (candidate >= 0) {
-        s->selected = candidate;
-      }
+    case RL_ACTION_MOVE_UP:
+      ui_list_menu_move(&s->menu, menu_model(s), -1);
       s->repeat_cooldown = KEY_REPEAT_COOLDOWN;
       break;
-    }
-    case RL_ACTION_MOVE_DOWN: {
-      int candidate = s->selected + 1;
-      while (candidate < MENU_ITEM_COUNT &&
-             !is_enabled(s, (enum menu_item)candidate)) {
-        candidate++;
-      }
-      if (candidate < MENU_ITEM_COUNT) {
-        s->selected = candidate;
-      }
+    case RL_ACTION_MOVE_DOWN:
+      ui_list_menu_move(&s->menu, menu_model(s), +1);
       s->repeat_cooldown = KEY_REPEAT_COOLDOWN;
       break;
-    }
     case RL_ACTION_SELECT:
-      if (is_enabled(s, (enum menu_item)s->selected)) {
-        transition = select_item(s, (enum menu_item)s->selected);
+      if (ui_list_menu_select(&s->menu, menu_model(s), s->menu.selected)) {
+        transition = select_item(s, (enum menu_item)s->menu.selected);
       }
       s->repeat_cooldown = KEY_REPEAT_COOLDOWN;
       break;
@@ -330,8 +323,8 @@ render_screen(void const* data, SDL_Renderer* renderer)
 
   // render the menu
   for (int i = 0; i < MENU_ITEM_COUNT; ++i) {
-    bool const enabled = is_enabled(s, (enum menu_item)i);
-    bool const selected = enabled && i == s->selected;
+    bool const enabled = is_enabled(s, i);
+    bool const selected = enabled && i == s->menu.selected;
 
     struct rl_text text = { 0 };
     rl_append_text(&text, &RL_COLOUR_YELLOW[3], selected ? "> " : "  ");
