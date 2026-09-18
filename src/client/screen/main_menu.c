@@ -17,7 +17,6 @@
 #include "client/save.h"
 #include "client/screen.h"
 #include "client/text.h"
-#include "client/ui.h"
 
 #define RL_NEW_GAME_WIDTH 64
 #define RL_NEW_GAME_HEIGHT 64
@@ -120,8 +119,43 @@ measure_menu_width(struct gfx_tileset const* font)
   return (float)cols * (float)font->tile_width;
 }
 
+static void
+create_layout(SDL_FRect const* bounds,
+              struct gfx_tileset const* font,
+              float item_height,
+              float gap,
+              SDL_FPoint* banner_pos,
+              SDL_FRect* list_viewport)
+{
+  float banner_width = 0.0f;
+  float banner_height = 0.0f;
+  measure_banner(font, &banner_width, &banner_height);
+  float const banner_gap = 32.0f;
+
+  float const list_width = measure_menu_width(font);
+  float const list_height =
+    MENU_ITEM_COUNT * item_height + (MENU_ITEM_COUNT - 1) * gap;
+
+  float const block_width = SDL_max(banner_width, list_width);
+  float const block_height = banner_height + banner_gap + list_height;
+
+  struct ui_position const centre = { UI_ANCHOR_CENTRE, { 0.0f, 0.0f } };
+  SDL_FRect const block = ui_resolve(centre, bounds, block_width, block_height);
+
+  banner_pos->x = block.x + (block.w - banner_width) / 2.0f;
+  banner_pos->y = block.y;
+
+  *list_viewport = (SDL_FRect){
+    block.x + (block.w - list_width) / 2.0f,
+    block.y + banner_height + banner_gap,
+    list_width,
+    list_height,
+  };
+}
+
 static bool
 alloc_screen(struct screen_state* s,
+             SDL_FRect const* bounds,
              struct gfx_tileset const* font,
              struct rl_run* run)
 {
@@ -130,39 +164,14 @@ alloc_screen(struct screen_state* s,
   s->repeat_cooldown = 0.0f;
   s->run = run;
 
-  float banner_width = 0.0f;
-  float banner_height = 0.0f;
-  measure_banner(font, &banner_width, &banner_height);
-  float const banner_gap = 32.0f;
-
   float const item_height = (float)font->tile_height + 4.0f;
   float const gap = 4.0f;
-  float const list_width = measure_menu_width(font);
-  float const list_height =
-    MENU_ITEM_COUNT * item_height + (MENU_ITEM_COUNT - 1) * gap;
 
-  float const block_width = SDL_max(banner_width, list_width);
-  float const block_height = banner_height + banner_gap + list_height;
-
-  SDL_FRect const screen = {
-    0.0f, 0.0f, (float)RL_UI_WIDTH, (float)RL_UI_HEIGHT
-  };
-  struct ui_position const centre = { UI_ANCHOR_CENTRE, { 0.0f, 0.0f } };
-  SDL_FRect const block =
-    ui_resolve(centre, &screen, block_width, block_height);
-
-  s->banner_pos.x = block.x + (block.w - banner_width) / 2.0f;
-  s->banner_pos.y = block.y;
-
-  SDL_FRect const viewport = {
-    block.x + (block.w - list_width) / 2.0f,
-    block.y + banner_height + banner_gap,
-    list_width,
-    list_height,
-  };
+  SDL_FRect list_viewport;
+  create_layout(bounds, font, item_height, gap, &s->banner_pos, &list_viewport);
 
   ui_list_init(
-    &s->list, &viewport, s->slots, MENU_ITEM_COUNT, item_height, gap);
+    &s->list, &list_viewport, s->slots, MENU_ITEM_COUNT, item_height, gap);
 
   if (!alist_alloc(&s->saves, RL_SAVE_LIST_INITIAL_CAP)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
@@ -336,6 +345,7 @@ render_screen(void const* data, SDL_Renderer* renderer)
 
 bool
 rl_alloc_main_menu_screen(struct rl_screen* screen,
+                          SDL_FRect const* bounds,
                           struct gfx_tileset const* font,
                           struct rl_run* run)
 {
@@ -346,7 +356,7 @@ rl_alloc_main_menu_screen(struct rl_screen* screen,
     return false;
   }
 
-  if (!alloc_screen(screen->state, font, run)) {
+  if (!alloc_screen(screen->state, bounds, font, run)) {
     free_screen(screen->state);
     screen->state = NULL;
     return false;

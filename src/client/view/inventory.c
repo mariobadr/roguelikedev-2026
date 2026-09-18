@@ -12,7 +12,6 @@
 #include "client/controls.h"
 #include "client/palette.h"
 #include "client/render.h"
-#include "client/ui.h"
 #include "client/view.h"
 
 #include "ui/list.h"

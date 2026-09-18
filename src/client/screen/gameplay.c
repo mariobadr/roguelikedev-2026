@@ -20,7 +20,6 @@
 #include "client/font.h"
 #include "client/game_log.h"
 #include "client/screen.h"
-#include "client/ui.h"
 #include "client/view.h"
 
 /** The horizontal margin between UI panels, in logical pixels. */
@@ -77,9 +76,9 @@ struct screen_state
  * └──────────────────────────────┴───────────────┘
  */
 static void
-create_layout(SDL_FRect panels[PANEL_COUNT])
+create_layout(SDL_FRect panels[PANEL_COUNT], SDL_FRect const* bounds)
 {
-  SDL_FRect screen = { 0.0f, 0.0f, (float)RL_UI_WIDTH, (float)RL_UI_HEIGHT };
+  SDL_FRect screen = *bounds;
 
   ui_cut_left(&screen, RL_UI_MARGIN_X);
 
@@ -99,13 +98,14 @@ create_layout(SDL_FRect panels[PANEL_COUNT])
 
 static bool
 alloc_screen(struct screen_state* s,
+             SDL_FRect const* bounds,
              struct gfx_tileset const* font,
              struct rl_game* game)
 {
   s->game = game;
 
   // the layout is fixed
-  create_layout(s->panel_bounds);
+  create_layout(s->panel_bounds, bounds);
 
   // this is the initial mapping; PANEL_TOP always shows the ribbon, which
   // isn't a view, so it has no entry here
@@ -424,6 +424,7 @@ render_screen(void const* data, SDL_Renderer* renderer)
 
 bool
 rl_alloc_gameplay_screen(struct rl_screen* screen,
+                         SDL_FRect const* bounds,
                          struct gfx_tileset const* font,
                          struct rl_game* game)
 {
@@ -434,7 +435,7 @@ rl_alloc_gameplay_screen(struct rl_screen* screen,
     return false;
   }
 
-  if (!alloc_screen(screen->state, font, game)) {
+  if (!alloc_screen(screen->state, bounds, font, game)) {
     free_screen(screen->state);
     screen->state = NULL;
     return false;

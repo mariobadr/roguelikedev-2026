@@ -44,8 +44,6 @@ add_library(rl_client STATIC
     screen.h
     text.c
     text.h
-    ui.c
-    ui.h
     view.h
 )
 

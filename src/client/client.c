@@ -106,7 +106,9 @@ apply_transition(struct rl_client* client,
 }
 
 bool
-rl_alloc_client(struct rl_client* client, SDL_Renderer* renderer)
+rl_alloc_client(struct rl_client* client,
+                SDL_FRect const* bounds,
+                SDL_Renderer* renderer)
 {
   if (!rl_load_font(&client->font, renderer)) {
     return false;
@@ -117,12 +119,15 @@ rl_alloc_client(struct rl_client* client, SDL_Renderer* renderer)
     return false;
   }
 
-  if (!rl_alloc_main_menu_screen(
-        &client->screens[RL_SCREEN_MAIN_MENU], &client->font, &client->run)) {
+  if (!rl_alloc_main_menu_screen(&client->screens[RL_SCREEN_MAIN_MENU],
+                                 bounds,
+                                 &client->font,
+                                 &client->run)) {
     return false;
   }
 
   if (!rl_alloc_gameplay_screen(&client->screens[RL_SCREEN_GAMEPLAY],
+                                bounds,
                                 &client->font,
                                 &client->run.game)) {
     return false;

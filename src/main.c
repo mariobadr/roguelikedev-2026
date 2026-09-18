@@ -11,9 +11,13 @@
 #include <SDL3/SDL_video.h>
 
 #include "client/client.h"
-#include "client/ui.h"
 #include "input/input.h"
 #include "input/input_event.h"
+
+/** The width of the entire UI, in logical pixels. */
+#define RL_UI_WIDTH 480
+/** The height of the entire UI, in logical pixels. */
+#define RL_UI_HEIGHT 360
 
 struct application
 {
@@ -137,7 +141,10 @@ create_application(void)
     return NULL;
   }
 
-  if (!rl_alloc_client(&app->client, app->renderer)) {
+  SDL_FRect const bounds = {
+    0.0f, 0.0f, (float)RL_UI_WIDTH, (float)RL_UI_HEIGHT
+  };
+  if (!rl_alloc_client(&app->client, &bounds, app->renderer)) {
     destroy_application(app);
     return NULL;
   }

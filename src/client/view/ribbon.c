@@ -7,7 +7,13 @@
 #include "client/font.h"
 #include "client/palette.h"
 #include "client/render.h"
-#include "client/ui.h"
+
+static SDL_Rect
+panel_clip_rect(SDL_FRect const* panel)
+{
+  return (
+    SDL_Rect){ (int)panel->x, (int)panel->y, (int)panel->w, (int)panel->h };
+}
 
 void
 rl_init_ribbon(struct rl_ribbon* ribbon, SDL_FRect const* viewport)
@@ -77,7 +83,7 @@ rl_draw_ribbon(struct rl_ribbon const* ribbon,
     SDL_FRect const dst = ui_resolve(
       pos, bounds, rl_font_width(font, text->length), (float)font->tile_height);
     SDL_FPoint const at = { dst.x, dst.y };
-    SDL_Rect const clip = rl_panel_clip_rect(bounds);
+    SDL_Rect const clip = panel_clip_rect(bounds);
 
     SDL_SetRenderClipRect(renderer, &clip);
     rl_draw_text(renderer, font, text, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);

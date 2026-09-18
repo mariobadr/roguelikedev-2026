@@ -4,6 +4,7 @@
 #ifndef GINC_ROGUELIKE_CLIENT_H
 #define GINC_ROGUELIKE_CLIENT_H
 
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
 
 #include "container/array.h"
@@ -36,7 +37,9 @@ struct rl_client
 };
 
 bool
-rl_alloc_client(struct rl_client* client, SDL_Renderer* renderer);
+rl_alloc_client(struct rl_client* client,
+                SDL_FRect const* bounds,
+                SDL_Renderer* renderer);
 
 void
 rl_free_client(struct rl_client* client);
