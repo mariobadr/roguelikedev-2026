@@ -6,6 +6,8 @@
 
 #include <SDL3/SDL_stdinc.h>
 
+#include "game/handles.h"
+
 // forward declarations
 struct rand_state;
 struct rl_level;
@@ -15,5 +17,20 @@ bool
 rl_gen_level(struct rl_world* world,
              struct rl_level* level,
              struct rand_state* rng);
+
+/**
+ * Generate a level below the deepest one.
+ *
+ * The world's current level is unchanged, and the arriving actor is not removed
+ * from the level it was on.
+ *
+ * @return whether the level was added; on failure the world is unchanged.
+ */
+bool
+rl_push_level(struct rl_world* world,
+              int width,
+              int height,
+              handle(rl_actor) arriving,
+              struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_GENERATE_H

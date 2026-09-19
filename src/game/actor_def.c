@@ -3,7 +3,7 @@
 static struct rl_actor_def const RL_ACTOR_DEFS[] = {
   [RL_ACTOR_ROGUE] = {
     .name = "Rogue",
-    .max_hp = 20,
+    .max_hp = 30,
     .strength = 6,
     .armor = 9,
   },

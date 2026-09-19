@@ -67,6 +67,8 @@ rl_apply_command(struct rl_world* world,
       return rl_attack_melee(world, cmd->actor, cmd->target_actor, events, rng);
     case RL_COMMAND_PICK_UP:
       return rl_pick_up_item(world, cmd->actor, cmd->dst, events);
+    case RL_COMMAND_TAKE_STAIRS:
+      return rl_take_stairs(world, cmd->actor, events, rng);
     case RL_COMMAND_USE_ITEM:
       return rl_use_item(world,
                          cmd->actor,

@@ -26,6 +26,8 @@ struct rl_level
 {
   /** How deep this level is in the overall dungeon. */
   int depth;
+  SDL_Point stairs_up;
+  SDL_Point stairs_down;
   /** A map of the current level. */
   grid(rl_tile) map;
   /** Cells the player has seen before */
@@ -55,6 +57,15 @@ rl_free_level(struct rl_level* level);
  */
 bool
 rl_add_actor(struct rl_level* level, handle(rl_actor) actor);
+
+/**
+ * Remove actor from level's turn order; the order of the remaining actors is
+ * kept.
+ *
+ * @return whether the actor was on this level.
+ */
+bool
+rl_remove_actor(struct rl_level* level, handle(rl_actor) actor);
 
 /**
  * Add item to level's floor. The item must not already be on this level.

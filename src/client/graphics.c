@@ -52,6 +52,20 @@ static struct tile_gfx_desc const tile_gfx_table[] = {
     .bg_colour = RL_COLOUR_GRAY,
     .bg_index = 9,
   },
+  [RL_TILE_STAIRS_UP] = {
+    .glyph = '<',
+    .fg_colour = RL_COLOUR_CYAN,
+    .fg_index = 3,
+    .bg_colour = RL_COLOUR_GRAY,
+    .bg_index = 9,
+  },
+  [RL_TILE_STAIRS_DOWN] = {
+    .glyph = '>',
+    .fg_colour = RL_COLOUR_CYAN,
+    .fg_index = 3,
+    .bg_colour = RL_COLOUR_GRAY,
+    .bg_index = 9,
+  },
 };
 
 struct gfx_console_cell

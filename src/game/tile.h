@@ -10,11 +10,16 @@
 
 /**
  * The different tile types.
+ *
+ * Important: do not renumber existing types.
  */
 enum rl_tile
 {
-  RL_TILE_WALL,  //< A wall tile
-  RL_TILE_FLOOR, //< A floor tile
+  RL_TILE_WALL = 0,        //< A wall tile
+  RL_TILE_FLOOR = 1,       //< A floor tile
+  RL_TILE_STAIRS_UP = 2,   //< A staircase leading up
+  RL_TILE_STAIRS_DOWN = 3, //< A staircase leading down
+  RL_TILE_COUNT,           //< The number of tile types; not a tile
 };
 
 /**
@@ -28,6 +33,12 @@ rl_is_walkable(enum rl_tile tile);
  */
 bool
 rl_is_transparent(enum rl_tile tile);
+
+/**
+ * @return whether this tile is a staircase, up or down
+ */
+bool
+rl_is_staircase(enum rl_tile tile);
 
 /**
  * A tile map as a 2D grid of tiles.

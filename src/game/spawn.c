@@ -12,6 +12,8 @@
 #include "tile.h"
 #include "world.h"
 
+array_define_as(SDL_Point, rl_spawn_point);
+
 /**
  * @return how many actors should populate a level at depth.
  */
@@ -59,11 +61,12 @@ rl_gen_item_type(int depth, struct rand_state* rng)
 }
 
 static bool
-is_tile_free(struct rl_level const* level,
+can_spawn_at(struct rl_level const* level,
              struct rl_world const* world,
              SDL_Point pos)
 {
-  if (!rl_is_walkable(*grid_at(&level->map, pos.x, pos.y))) {
+  enum rl_tile const tile = *grid_at(&level->map, pos.x, pos.y);
+  if (!rl_is_walkable(tile) || rl_is_staircase(tile)) {
     return false;
   }
 
@@ -79,77 +82,84 @@ is_tile_free(struct rl_level const* level,
     }
   }
 
+  for (size_t i = 0; i < alist_len(&level->items); i++) {
+    struct rl_item const* item =
+      rl_borrow_item(world, *alist_at(&level->items, i));
+    if (item == NULL || item->ltype != RL_ITEM_LOCATION_MAP) {
+      continue;
+    }
+
+    if (item->on.map.x == pos.x && item->on.map.y == pos.y) {
+      return false;
+    }
+  }
+
   return true;
 }
 
-static bool
-pick_free_tile(SDL_Point* out,
-               SDL_Rect const* room,
-               struct rl_level const* level,
-               struct rl_world const* world,
-               struct rand_state* rng)
+static void
+find_spawn_points(array(rl_spawn_point) * out,
+                  struct rl_level const* level,
+                  struct rl_layout const* layout,
+                  struct rl_world const* world,
+                  int reserved_room,
+                  struct rand_state* rng)
 {
-  int seen = 0;
+  array_clear(out);
+  if (array_cap(out) == 0) {
+    return;
+  }
 
-  for (int y = room->y; y < room->y + room->h; y++) {
-    for (int x = room->x; x < room->x + room->w; x++) {
-      SDL_Point const pos = { x, y };
-      if (!is_tile_free(level, world, pos)) {
-        continue;
-      }
+  size_t seen = 0;
 
-      seen++;
-      if (rand_next_up_to(rng, seen) == 0) {
-        *out = pos;
+  for (int i = 0; i < array_len(&layout->rooms); i++) {
+    if (i == reserved_room) {
+      continue;
+    }
+
+    SDL_Rect const* room = array_at(&layout->rooms, i);
+    for (int y = room->y; y < room->y + room->h; y++) {
+      for (int x = room->x; x < room->x + room->w; x++) {
+        SDL_Point const pos = { x, y };
+        if (!can_spawn_at(level, world, pos)) {
+          continue;
+        }
+
+        seen++;
+        if (!array_full(out)) {
+          *array_push(out) = pos;
+        } else {
+          // Reservoir sampling keeps a uniform subset without storing all tiles.
+          size_t const slot = (size_t)rand_next_up_to(rng, seen);
+          if (slot < array_cap(out)) {
+            *array_at(out, slot) = pos;
+          }
+        }
       }
     }
   }
-
-  return seen > 0;
 }
 
 static bool
-find_spawn_point(SDL_Point* out,
-                 array(int) * eligible,
-                 struct rl_level const* level,
-                 struct rl_layout const* layout,
-                 struct rl_world const* world,
-                 struct rand_state* rng)
-{
-  while (!array_empty(eligible)) {
-    int const slot = (int)rand_next_up_to(rng, array_len(eligible));
-    int const room_index = *array_at(eligible, slot);
-    SDL_Rect const* room = array_at(&layout->rooms, room_index);
-
-    if (pick_free_tile(out, room, level, world, rng)) {
-      return true;
-    }
-
-    int const last = (int)array_len(eligible) - 1;
-    *array_at(eligible, slot) = *array_at(eligible, last);
-    array_pop(eligible);
-  }
-
-  return false;
-}
-
-static struct rl_actor*
 spawn_actor(struct rl_world* world,
             struct rl_level* level,
-            enum rl_actor_type type)
+            enum rl_actor_type type,
+            SDL_Point pos)
 {
-  handle(rl_actor) h = rl_create_actor(world, type);
-  struct rl_actor* actor = rl_borrow_mut_actor(world, h);
+  handle(rl_actor) const actor_handle = rl_create_actor(world, type);
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   if (actor == NULL) {
-    return NULL;
+    return false;
   }
 
-  if (!rl_add_actor(level, actor->handle)) {
-    pool_release(&world->actors, actor->handle);
-    return NULL;
+  actor->pos = pos;
+
+  if (!rl_add_actor(level, actor_handle)) {
+    pool_release(&world->actors, actor_handle);
+    return false;
   }
 
-  return actor;
+  return true;
 }
 
 bool
@@ -159,39 +169,24 @@ rl_spawn_actors(struct rl_level* level,
                 int reserved_room,
                 struct rand_state* rng)
 {
-  int const room_count = (int)array_len(&layout->rooms);
-
-  array(int) eligible;
-  if (!array_alloc(&eligible, room_count)) {
+  int const total = rl_gen_total_actors(level->depth, rng);
+  array(rl_spawn_point) points;
+  if (!array_alloc(&points, total)) {
     return false;
   }
 
-  for (int i = 0; i < room_count; i++) {
-    if (i != reserved_room) {
-      *array_push(&eligible) = i;
-    }
-  }
+  find_spawn_points(&points, level, layout, world, reserved_room, rng);
 
   bool ok = true;
-  int const total = rl_gen_total_actors(level->depth, rng);
-  for (int i = 0; i < total && !array_empty(&eligible); i++) {
-    SDL_Point pos = { 0 };
-    if (!find_spawn_point(&pos, &eligible, level, layout, world, rng)) {
-      ok = false;
-      break;
-    }
-
+  for (size_t i = 0; i < array_len(&points); i++) {
     enum rl_actor_type const type = rl_gen_actor_type(level->depth, rng);
-    struct rl_actor* actor = spawn_actor(world, level, type);
-    if (actor == NULL) {
+    if (!spawn_actor(world, level, type, *array_at(&points, i))) {
       ok = false;
       break;
     }
-
-    actor->pos = pos;
   }
 
-  array_free(&eligible);
+  array_free(&points);
   return ok;
 }
 
@@ -224,24 +219,23 @@ rl_spawn_items(struct rl_level* level,
                struct rl_world* world,
                struct rand_state* rng)
 {
-  int const room_count = (int)array_len(&layout->rooms);
   int const total = rl_gen_total_items(rng);
+  array(rl_spawn_point) points;
+  if (!array_alloc(&points, total)) {
+    return false;
+  }
+
+  find_spawn_points(&points, level, layout, world, -1, rng);
 
   bool ok = true;
-  for (int i = 0; i < total; i++) {
-    int const room_index = (int)rand_next_up_to(rng, room_count);
-    SDL_Rect const* room = array_at(&layout->rooms, room_index);
-
-    SDL_Point pos;
-    pos.x = (int)rand_next_between(rng, room->x, room->x + room->w - 1);
-    pos.y = (int)rand_next_between(rng, room->y, room->y + room->h - 1);
-
+  for (size_t i = 0; i < array_len(&points); i++) {
     enum rl_item_type const type = rl_gen_item_type(level->depth, rng);
-    if (!spawn_item(world, level, type, pos)) {
+    if (!spawn_item(world, level, type, *array_at(&points, i))) {
       ok = false;
       break;
     }
   }
 
+  array_free(&points);
   return ok;
 }

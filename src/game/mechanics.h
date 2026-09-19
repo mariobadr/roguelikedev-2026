@@ -48,4 +48,19 @@ rl_use_item(struct rl_world* world,
             alist(rl_event)* events,
             struct rand_state* rng);
 
+/**
+ * Try to take the stairs.
+ * 
+ * Descending below the deepest level generates a new one.
+ * 
+ * Note: Only the rogue can take stairs (for now?)
+ *
+ * @return whether the actor changed levels.
+ */
+bool
+rl_take_stairs(struct rl_world* world,
+               handle(rl_actor) actor_handle,
+               alist(rl_event)* events,
+               struct rand_state* rng);
+
 #endif // GINC_ROGUELIKE_MECHANICS_H

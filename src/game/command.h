@@ -20,12 +20,13 @@ struct rand_state;
  */
 enum rl_command_type
 {
-  RL_COMMAND_NONE,     //< No action
-  RL_COMMAND_MOVE,     //< Move the actor
-  RL_COMMAND_ATTACK,   //< Attack an actor
-  RL_COMMAND_PICK_UP,  //< Pick up an item
-  RL_COMMAND_USE_ITEM, //< Use an item
-  RL_COMMAND_WAIT,     //< Consume a turn without acting
+  RL_COMMAND_NONE,        //< No action
+  RL_COMMAND_MOVE,        //< Move the actor
+  RL_COMMAND_ATTACK,      //< Attack an actor
+  RL_COMMAND_PICK_UP,     //< Pick up an item
+  RL_COMMAND_USE_ITEM,    //< Use an item
+  RL_COMMAND_TAKE_STAIRS, //< Take the stairs
+  RL_COMMAND_WAIT,        //< Consume a turn without acting
 };
 
 struct rl_item_use

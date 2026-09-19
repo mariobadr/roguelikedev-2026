@@ -123,6 +123,21 @@ build_feedback_log(struct rl_event_feedback const* event)
   return msg;
 }
 
+static struct rl_text
+build_level_change_log(struct rl_event_level_change const* event)
+{
+  struct rl_text msg = { 0 };
+
+  rl_append_text_format(&msg,
+                        NULL,
+                        event->to_depth > event->from_depth
+                          ? "You descend to depth %d."
+                          : "You climb up to depth %d.",
+                        event->to_depth);
+
+  return msg;
+}
+
 bool
 rl_init_game_log(struct rl_game_log* log)
 {
@@ -178,6 +193,9 @@ rl_log_event(struct rl_game_log* log,
       break;
     case RL_EVENT_FEEDBACK:
       msg = build_feedback_log(&event->as.feedback);
+      break;
+    case RL_EVENT_LEVEL_CHANGE:
+      msg = build_level_change_log(&event->as.level_change);
       break;
     default:
       return;

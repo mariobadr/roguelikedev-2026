@@ -4,6 +4,7 @@
 
 #include "actor.h"
 #include "combat.h"
+#include "generate.h"
 #include "item_def.h"
 #include "targeting.h"
 #include "world.h"
@@ -189,6 +190,81 @@ rl_pick_up_item(struct rl_world* world,
   event.type = RL_EVENT_PICKUP;
   event.as.pickup.actor = actor->handle;
   event.as.pickup.item = item_handle;
+  *alist_push(events) = event;
+
+  return true;
+}
+
+/**
+ * Add the actor to the level at index, at the staircase it arrives by.
+ */
+static bool
+enter_existing_level(struct rl_world* world,
+                     int index,
+                     bool going_down,
+                     handle(rl_actor) actor_handle)
+{
+  struct rl_level* level = alist_at(&world->levels, index);
+  if (!rl_add_actor(level, actor_handle)) {
+    return false;
+  }
+
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
+  actor->pos = going_down ? level->stairs_up : level->stairs_down;
+  return true;
+}
+
+bool
+rl_take_stairs(struct rl_world* world,
+               handle(rl_actor) actor_handle,
+               alist(rl_event)* events,
+               struct rand_state* rng)
+{
+  struct rl_actor const* actor = get_living_actor(world, actor_handle);
+  if (actor == NULL || !handle_equal(actor_handle, world->rogue)) {
+    return false;
+  }
+
+  // the level pointer is invalid once a level is pushed, so keep what is needed
+  struct rl_level const* level = rl_get_current_level(world);
+  int const from = world->current_level;
+  int const from_depth = level->depth;
+  int const width = grid_width(&level->map);
+  int const height = grid_height(&level->map);
+
+  bool going_down = false;
+  switch (*grid_at(&level->map, actor->pos.x, actor->pos.y)) {
+    case RL_TILE_STAIRS_DOWN:
+      going_down = true;
+      break;
+    case RL_TILE_STAIRS_UP:
+      break;
+    default:
+      return false;
+  }
+
+  int const to = going_down ? from + 1 : from - 1;
+  if (to < 0) {
+    return false;
+  }
+
+  if (to < (int)alist_len(&world->levels)) {
+    if (!enter_existing_level(world, to, going_down, actor_handle)) {
+      return false;
+    }
+  } else if (!rl_push_level(world, width, height, actor_handle, rng)) {
+    return false;
+  }
+
+  // the actor is now on both levels; leave the old one
+  rl_remove_actor(alist_at(&world->levels, from), actor_handle);
+  world->current_level = to;
+
+  struct rl_event event = { 0 };
+  event.type = RL_EVENT_LEVEL_CHANGE;
+  event.as.level_change.actor = actor_handle;
+  event.as.level_change.from_depth = from_depth;
+  event.as.level_change.to_depth = alist_at(&world->levels, to)->depth;
   *alist_push(events) = event;
 
   return true;

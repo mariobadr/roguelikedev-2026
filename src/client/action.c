@@ -3,9 +3,11 @@
 #include <SDL3/SDL_assert.h>
 
 #include "game/actor.h"
+#include "game/tile.h"
+#include "game/world.h"
 
 static struct rl_command
-build_pickup(struct rl_actor const* actor)
+build_interact(struct rl_actor const* actor, struct rl_world const* world)
 {
   struct rl_command cmd = { 0 };
 
@@ -13,9 +15,17 @@ build_pickup(struct rl_actor const* actor)
     return cmd;
   }
 
-  cmd.type = RL_COMMAND_PICK_UP;
-  cmd.actor = actor->handle;
-  cmd.dst = actor->pos;
+  struct rl_level const* level = rl_get_current_level(world);
+
+  if (handle_is_nonnull(rl_find_item(world, level, actor->pos))) {
+    cmd.type = RL_COMMAND_PICK_UP;
+    cmd.actor = actor->handle;
+    cmd.dst = actor->pos;
+  } else if (rl_is_staircase(
+               *grid_at(&level->map, actor->pos.x, actor->pos.y))) {
+    cmd.type = RL_COMMAND_TAKE_STAIRS;
+    cmd.actor = actor->handle;
+  }
 
   return cmd;
 }
@@ -41,7 +51,7 @@ rl_build_command(struct rl_actor const* actor,
     case RL_ACTION_MOVE_RIGHT:
       return rl_new_bump_command(actor, (SDL_Point){ 1, 0 }, world);
     case RL_ACTION_SELECT:
-      return build_pickup(actor);
+      return build_interact(actor, world);
     case RL_ACTION_WAIT:
       cmd.type = RL_COMMAND_WAIT;
       break;

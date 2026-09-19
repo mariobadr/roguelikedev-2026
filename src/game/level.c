@@ -58,6 +58,24 @@ rl_add_actor(struct rl_level* level, handle(rl_actor) actor)
 }
 
 bool
+rl_remove_actor(struct rl_level* level, handle(rl_actor) actor)
+{
+  size_t const len = alist_len(&level->actors);
+
+  for (size_t i = 0; i < len; ++i) {
+    if (handle_equal(*alist_at(&level->actors, i), actor)) {
+      SDL_memmove(alist_at(&level->actors, i),
+                  alist_at(&level->actors, i + 1),
+                  (len - i - 1) * sizeof(*level->actors.data));
+      alist_pop(&level->actors);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool
 rl_add_item(struct rl_level* level, handle(rl_item) item)
 {
   handle(rl_item)* entry = alist_push(&level->items);

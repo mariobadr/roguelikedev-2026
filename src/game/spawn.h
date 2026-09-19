@@ -12,6 +12,10 @@ struct rl_level;
 struct rl_layout;
 struct rl_world;
 
+/**
+ * Populate unoccupied room tiles, excluding reserved_room.
+ * Running out of space is successful; allocation failure returns false.
+ */
 bool
 rl_spawn_actors(struct rl_level* level,
                 struct rl_layout const* layout,
@@ -19,6 +23,10 @@ rl_spawn_actors(struct rl_level* level,
                 int reserved_room,
                 struct rand_state* rng);
 
+/**
+ * Populate unoccupied room tiles with items.
+ * Running out of space is successful; allocation failure returns false.
+ */
 bool
 rl_spawn_items(struct rl_level* level,
                struct rl_layout const* layout,

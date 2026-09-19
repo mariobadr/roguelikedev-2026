@@ -24,8 +24,10 @@ enum rl_action
 };
 
 /**
+ * If actor is NULL or the action has no effect here, then the NONE command is
+ * returned.
+ *
  * @return a command that corresponds to the given action.
- * Returns RL_COMMAND_NONE if actor is NULL.
  */
 struct rl_command
 rl_build_command(struct rl_actor const* actor,

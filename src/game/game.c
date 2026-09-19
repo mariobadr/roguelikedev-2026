@@ -142,52 +142,42 @@ rl_prepare_game(struct rl_game* game)
   return true;
 }
 
+// Initialize a zeroed game; the caller owns cleanup on failure.
+static bool
+init_game(struct rl_game* game, int width, int height, Uint64 seed)
+{
+  if (!rl_alloc_world(&game->world)) {
+    return false;
+  }
+
+  rand_seed(&game->rng, seed);
+  game->turns = 0;
+
+  // create the main character
+  handle(rl_actor) rogue_handle = rl_create_actor(&game->world, RL_ACTOR_ROGUE);
+  struct rl_actor* rogue = rl_borrow_mut_actor(&game->world, rogue_handle);
+  if (rogue == NULL) {
+    // oh noes
+    return false;
+  }
+  rogue->awake = true;
+  game->world.rogue = rogue->handle;
+
+  // the rogue starts at the entry point of the first level
+  if (!rl_push_level(
+        &game->world, width, height, game->world.rogue, &game->rng)) {
+    return false;
+  }
+  game->world.current_level = (int)alist_len(&game->world.levels) - 1;
+
+  return rl_prepare_game(game);
+}
+
 bool
 rl_new_game(struct rl_game* out, int width, int height, Uint64 seed)
 {
   struct rl_game tmp = { 0 };
-
-  if (!rl_alloc_world(&tmp.world)) {
-    return false;
-  }
-
-  rand_seed(&tmp.rng, seed);
-  tmp.turns = 0;
-
-  // create the main character
-  handle(rl_actor) rogue_handle = rl_create_actor(&tmp.world, RL_ACTOR_ROGUE);
-  struct rl_actor* rogue_slot = rl_borrow_mut_actor(&tmp.world, rogue_handle);
-  if (rogue_slot == NULL) {
-    rl_free_game(&tmp);
-    return false;
-  }
-  rogue_slot->awake = true;
-  tmp.world.rogue = rogue_slot->handle;
-
-  struct rl_level* level = alist_push(&tmp.world.levels);
-  if (level == NULL) {
-    rl_free_game(&tmp);
-    return false;
-  }
-
-  if (!rl_alloc_level(level, 1, width, height)) {
-    rl_free_game(&tmp);
-    return false;
-  }
-  tmp.world.current_level = (int)alist_len(&tmp.world.levels) - 1;
-
-  // the rogue takes the first turn on its level
-  if (!rl_add_actor(level, tmp.world.rogue)) {
-    rl_free_game(&tmp);
-    return false;
-  }
-
-  if (!rl_gen_level(&tmp.world, level, &tmp.rng)) {
-    rl_free_game(&tmp);
-    return false;
-  }
-
-  if (!rl_prepare_game(&tmp)) {
+  if (!init_game(&tmp, width, height, seed)) {
     rl_free_game(&tmp);
     return false;
   }

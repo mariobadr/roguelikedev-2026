@@ -21,6 +21,7 @@ enum rl_event_type
   RL_EVENT_PICKUP,
   RL_EVENT_HEAL,
   RL_EVENT_FEEDBACK,
+  RL_EVENT_LEVEL_CHANGE,
 };
 
 /**
@@ -90,6 +91,19 @@ struct rl_event_feedback
 };
 
 /**
+ * An actor moves to another level.
+ */
+struct rl_event_level_change
+{
+  /** Handle of the actor. */
+  handle(rl_actor) actor;
+  /** Depth of the level left. */
+  int from_depth;
+  /** Depth of the level entered. */
+  int to_depth;
+};
+
+/**
  * An event.
  */
 struct rl_event
@@ -104,6 +118,7 @@ struct rl_event
     struct rl_event_pickup pickup;
     struct rl_event_heal heal;
     struct rl_event_feedback feedback;
+    struct rl_event_level_change level_change;
   } as;
 };
 
