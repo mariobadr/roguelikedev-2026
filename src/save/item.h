@@ -1,12 +1,12 @@
 /**
  * @file item.h
  */
-#ifndef GINC_ROGUELIKE_SERIALIZE_ITEM_H
-#define GINC_ROGUELIKE_SERIALIZE_ITEM_H
+#ifndef GINC_ROGUELIKE_SAVE_ITEM_H
+#define GINC_ROGUELIKE_SAVE_ITEM_H
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/serialize/result.h"
+#include "save/result.h"
 
 // external forward declarations
 typedef struct SDL_IOStream SDL_IOStream;
@@ -38,4 +38,4 @@ rl_write_item(SDL_IOStream* dst,
 enum rl_read_result
 rl_read_item(SDL_IOStream* src, struct rl_reader const* r, struct rl_item* out);
 
-#endif // GINC_ROGUELIKE_SERIALIZE_ITEM_H
+#endif // GINC_ROGUELIKE_SAVE_ITEM_H

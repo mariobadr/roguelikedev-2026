@@ -1,12 +1,12 @@
 /**
  * @file actor.h
  */
-#ifndef GINC_ROGUELIKE_SERIALIZE_ACTOR_H
-#define GINC_ROGUELIKE_SERIALIZE_ACTOR_H
+#ifndef GINC_ROGUELIKE_SAVE_ACTOR_H
+#define GINC_ROGUELIKE_SAVE_ACTOR_H
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/serialize/result.h"
+#include "save/result.h"
 
 // external forward declarations
 typedef struct SDL_IOStream SDL_IOStream;
@@ -30,4 +30,4 @@ rl_write_actor(SDL_IOStream* dst, struct rl_actor const* actor);
 enum rl_read_result
 rl_read_actor(SDL_IOStream* src, struct rl_actor* out);
 
-#endif // GINC_ROGUELIKE_SERIALIZE_ACTOR_H
+#endif // GINC_ROGUELIKE_SAVE_ACTOR_H

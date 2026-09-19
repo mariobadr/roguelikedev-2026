@@ -6,7 +6,7 @@
 
 #include "container/alist.h"
 
-#include "client/save_format.h"
+#include "save/format.h"
 
 // forward declarations
 struct rl_game;

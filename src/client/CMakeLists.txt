@@ -41,10 +41,6 @@ add_library(rl_client STATIC
     ribbon.h
     run.c
     run.h
-    save.c
-    save.h
-    save_format.c
-    save_format.h
     screen.h
     text.c
     text.h
@@ -63,6 +59,7 @@ target_include_directories(rl_client
 target_link_libraries(rl_client
     PUBLIC
         rl::game
+        rl::save
         ginc::core
         ginc::container
         ginc::graphics

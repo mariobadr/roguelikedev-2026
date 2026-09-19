@@ -1,6 +1,6 @@
 #include "run.h"
 
-#include "client/save.h"
+#include "save/save.h"
 
 struct rl_run_result
 rl_start_run(struct rl_run* run, int width, int height, Uint64 seed)

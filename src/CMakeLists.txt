@@ -22,6 +22,7 @@ endfunction()
 set(RL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(game)
+add_subdirectory(save)
 add_subdirectory(client)
 
 

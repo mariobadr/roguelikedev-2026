@@ -1,5 +1,5 @@
 /**
- * @file save_format.h
+ * @file format.h
  */
 #ifndef GINC_ROGUELIKE_SAVE_FORMAT_H
 #define GINC_ROGUELIKE_SAVE_FORMAT_H

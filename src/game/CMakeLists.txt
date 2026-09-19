@@ -2,19 +2,6 @@
 # Game library
 ###############################################################################
 add_library(rl_game STATIC
-    serialize/actor.c
-    serialize/actor.h
-    serialize/context.c
-    serialize/context.h
-    serialize/game.c
-    serialize/game.h
-    serialize/item.c
-    serialize/item.h
-    serialize/level.c
-    serialize/level.h
-    serialize/result.h
-    serialize/world.c
-    serialize/world.h
     actor.c
     actor.h
     actor_def.c

@@ -6,9 +6,9 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/game.h"
+#include "save/format.h"
 
-#include "client/save_format.h"
+#include "game/game.h"
 
 /**
  * A playable game and its save identity.

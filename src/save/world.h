@@ -1,12 +1,12 @@
 /**
  * @file world.h
  */
-#ifndef GINC_ROGUELIKE_SERIALIZE_WORLD_H
-#define GINC_ROGUELIKE_SERIALIZE_WORLD_H
+#ifndef GINC_ROGUELIKE_SAVE_WORLD_H
+#define GINC_ROGUELIKE_SAVE_WORLD_H
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/serialize/result.h"
+#include "save/result.h"
 
 // external forward declarations
 typedef struct SDL_IOStream SDL_IOStream;
@@ -31,4 +31,4 @@ rl_write_world(SDL_IOStream* dst, struct rl_world const* world);
 enum rl_read_result
 rl_read_world(SDL_IOStream* src, struct rl_world* world);
 
-#endif // GINC_ROGUELIKE_SERIALIZE_WORLD_H
+#endif // GINC_ROGUELIKE_SAVE_WORLD_H

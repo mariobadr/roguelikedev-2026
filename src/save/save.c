@@ -5,7 +5,7 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 
-#include "save_format.h"
+#include "format.h"
 
 #define RL_SAVE_EXTENSION ".sav"
 

@@ -1,8 +1,8 @@
 /**
  * @file result.h
  */
-#ifndef GINC_ROGUELIKE_SERIALIZE_RESULT_H
-#define GINC_ROGUELIKE_SERIALIZE_RESULT_H
+#ifndef GINC_ROGUELIKE_SAVE_RESULT_H
+#define GINC_ROGUELIKE_SAVE_RESULT_H
 
 #include <SDL3/SDL_iostream.h>
 
@@ -37,4 +37,4 @@ rl_read_failure(SDL_IOStream* src)
     }                                                                          \
   } while (0)
 
-#endif // GINC_ROGUELIKE_SERIALIZE_RESULT_H
+#endif // GINC_ROGUELIKE_SAVE_RESULT_H

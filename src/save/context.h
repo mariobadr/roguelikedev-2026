@@ -1,8 +1,8 @@
 /**
  * @file context.h
  */
-#ifndef GINC_ROGUELIKE_SERIALIZE_CONTEXT_H
-#define GINC_ROGUELIKE_SERIALIZE_CONTEXT_H
+#ifndef GINC_ROGUELIKE_SAVE_CONTEXT_H
+#define GINC_ROGUELIKE_SAVE_CONTEXT_H
 
 #include <SDL3/SDL_stdinc.h>
 
@@ -102,4 +102,4 @@ rl_to_actor_id(struct rl_writer const* w, handle(rl_actor) h);
 Uint32
 rl_to_item_id(struct rl_writer const* w, handle(rl_item) h);
 
-#endif // GINC_ROGUELIKE_SERIALIZE_CONTEXT_H
+#endif // GINC_ROGUELIKE_SAVE_CONTEXT_H

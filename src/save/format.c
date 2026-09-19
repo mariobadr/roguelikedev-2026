@@ -1,4 +1,4 @@
-#include "save_format.h"
+#include "format.h"
 
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
@@ -7,7 +7,7 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "game/game.h"
-#include "game/serialize/game.h"
+#include "save/game.h"
 
 #define RL_SAVE_MAGIC 0x564C5352u // "RLSV"
 #define RL_SAVE_VERSION 4u

@@ -1,12 +1,12 @@
 /**
  * @file level.h
  */
-#ifndef GINC_ROGUELIKE_SERIALIZE_LEVEL_H
-#define GINC_ROGUELIKE_SERIALIZE_LEVEL_H
+#ifndef GINC_ROGUELIKE_SAVE_LEVEL_H
+#define GINC_ROGUELIKE_SAVE_LEVEL_H
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/serialize/result.h"
+#include "save/result.h"
 
 // external forward declarations
 typedef struct SDL_IOStream SDL_IOStream;
@@ -40,4 +40,4 @@ rl_read_level(SDL_IOStream* src,
               struct rl_reader const* r,
               struct rl_level* out);
 
-#endif // GINC_ROGUELIKE_SERIALIZE_LEVEL_H
+#endif // GINC_ROGUELIKE_SAVE_LEVEL_H
