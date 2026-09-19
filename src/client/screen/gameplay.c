@@ -450,7 +450,8 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   SDL_assert(s != NULL);
 
   if (s->game_over) {
-    rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "Game Over");
+    rl_append_text(
+      &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Game Over");
     rl_append_text(
       &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Esc] exit");
     return;

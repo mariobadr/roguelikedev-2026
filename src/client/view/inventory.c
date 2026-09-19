@@ -35,6 +35,13 @@ menu_model(struct view_state const* s)
   };
 }
 
+static handle(rl_item)
+selected_item(struct view_state const* s)
+{
+  return rl_find_held_item(
+    s->world, rl_get_rogue(s->world), s->menu.selected);
+}
+
 static void
 init_view_state(struct view_state* s,
                 struct rl_world const* world,
@@ -69,12 +76,28 @@ item_text(struct rl_item const* item, bool selected)
 static void
 describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
-  (void)data;
+  struct view_state const* s = (struct view_state const*)data;
+  SDL_assert(s != NULL);
 
-  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "View: Inventory");
-  rl_append_text(&content->text[RL_RIBBON_CENTRE], NULL, "Selecting");
   rl_append_text(
-    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[WS, E]");
+    &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Inventory");
+
+  struct rl_text* hint = &content->text[RL_RIBBON_RIGHT];
+  SDL_FColor const* const colour = &RL_COLOUR_YELLOW[3];
+  bool const can_move = menu_model(s).count > 1;
+  if (can_move) {
+    rl_append_text(hint, colour, "[WS] move");
+  }
+  if (handle_is_nonnull(selected_item(s))) {
+    if (can_move) {
+      rl_append_text(hint, colour, "   ");
+    }
+    rl_append_text(hint, colour, "[E] select");
+  }
+  if (hint->length > 0) {
+    rl_append_text(hint, colour, "   ");
+  }
+  rl_append_text(hint, colour, "[Esc] back");
 }
 
 static bool
@@ -95,8 +118,7 @@ update_view(void* data, struct inpt_state const* istate)
       if (!ui_list_menu_select(&s->menu, menu_model(s), s->menu.selected)) {
         return false;
       }
-      s->pending_item =
-        rl_find_held_item(s->world, rl_get_rogue(s->world), s->menu.selected);
+      s->pending_item = selected_item(s);
       return handle_is_nonnull(s->pending_item);
     default:
       break;

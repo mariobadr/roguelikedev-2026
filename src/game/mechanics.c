@@ -215,13 +215,32 @@ enter_existing_level(struct rl_world* world,
 }
 
 bool
+rl_can_take_stairs(struct rl_world const* world, struct rl_actor const* actor)
+{
+  if (actor == NULL || !rl_actor_is_alive(actor) ||
+      !handle_equal(actor->handle, world->rogue)) {
+    return false;
+  }
+
+  struct rl_level const* level = rl_get_current_level(world);
+  switch (*grid_at(&level->map, actor->pos.x, actor->pos.y)) {
+    case RL_TILE_STAIRS_DOWN:
+      return true;
+    case RL_TILE_STAIRS_UP:
+      return world->current_level > 0;
+    default:
+      return false;
+  }
+}
+
+bool
 rl_take_stairs(struct rl_world* world,
                handle(rl_actor) actor_handle,
                alist(rl_event)* events,
                struct rand_state* rng)
 {
-  struct rl_actor const* actor = get_living_actor(world, actor_handle);
-  if (actor == NULL || !handle_equal(actor_handle, world->rogue)) {
+  struct rl_actor const* actor = rl_borrow_actor(world, actor_handle);
+  if (!rl_can_take_stairs(world, actor)) {
     return false;
   }
 
@@ -232,21 +251,9 @@ rl_take_stairs(struct rl_world* world,
   int const width = grid_width(&level->map);
   int const height = grid_height(&level->map);
 
-  bool going_down = false;
-  switch (*grid_at(&level->map, actor->pos.x, actor->pos.y)) {
-    case RL_TILE_STAIRS_DOWN:
-      going_down = true;
-      break;
-    case RL_TILE_STAIRS_UP:
-      break;
-    default:
-      return false;
-  }
-
+  bool const going_down =
+    *grid_at(&level->map, actor->pos.x, actor->pos.y) == RL_TILE_STAIRS_DOWN;
   int const to = going_down ? from + 1 : from - 1;
-  if (to < 0) {
-    return false;
-  }
 
   if (to < (int)alist_len(&world->levels)) {
     if (!enter_existing_level(world, to, going_down, actor_handle)) {

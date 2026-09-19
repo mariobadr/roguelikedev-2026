@@ -23,6 +23,20 @@ enum rl_action
   RL_ACTION_CANCEL,
 };
 
+enum rl_interaction
+{
+  RL_INTERACTION_NONE,
+  RL_INTERACTION_PICK_UP,
+  RL_INTERACTION_TAKE_STAIRS,
+};
+
+/**
+ * @return the available interaction for actor.
+ */
+enum rl_interaction
+rl_available_interaction(struct rl_actor const* actor,
+                          struct rl_world const* world);
+
 /**
  * If actor is NULL or the action has no effect here, then the NONE command is
  * returned.

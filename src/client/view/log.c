@@ -62,12 +62,20 @@ init_view_state(struct view_state* s,
 static void
 describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
-  (void)data;
+  struct view_state const* s = (struct view_state const*)data;
+  SDL_assert(s != NULL);
 
-  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "View: Log");
-  rl_append_text(&content->text[RL_RIBBON_CENTRE], NULL, "Scrolling");
-  rl_append_text(
-    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[WS]");
+  rl_append_text(&content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Log");
+
+  int const count = (int)alist_len(&s->log->messages);
+  if (ui_list_max_offset(&s->list, count) > 0) {
+    rl_append_text(&content->text[RL_RIBBON_RIGHT],
+                   &RL_COLOUR_YELLOW[3],
+                   "[WS] scroll   ");
+  }
+  rl_append_text(&content->text[RL_RIBBON_RIGHT],
+                 &RL_COLOUR_YELLOW[3],
+                 "[Esc] back");
 }
 
 static bool

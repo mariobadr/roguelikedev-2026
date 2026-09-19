@@ -11,6 +11,7 @@
 #include "game/handles.h"
 
 // forward declarations
+struct rl_actor;
 struct rl_world;
 struct rl_fov;
 struct rand_state;
@@ -47,6 +48,13 @@ rl_use_item(struct rl_world* world,
             struct rl_fov const* fov,
             alist(rl_event)* events,
             struct rand_state* rng);
+
+/**
+ * Whether a living rogue can take the stairs at its current position.
+ * Ascending above the first level is not allowed.
+ */
+bool
+rl_can_take_stairs(struct rl_world const* world, struct rl_actor const* actor);
 
 /**
  * Try to take the stairs.

@@ -578,7 +578,8 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   struct screen_state const* s = (struct screen_state const*)data;
   SDL_assert(s != NULL);
 
-  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "Manage Saves");
+  rl_append_text(
+    &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Manage Saves");
 
   SDL_FColor const* const enabled = &RL_COLOUR_YELLOW[3];
   SDL_FColor const* const disabled = &RL_COLOUR_GRAY[7];

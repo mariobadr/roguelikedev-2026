@@ -317,7 +317,8 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
   (void)data;
 
-  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "Main Menu");
+  rl_append_text(
+    &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Main Menu");
   rl_append_text(&content->text[RL_RIBBON_RIGHT],
                  &RL_COLOUR_YELLOW[3],
                  "[WS] move   [E] select");

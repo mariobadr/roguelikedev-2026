@@ -340,17 +340,34 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   struct view_state const* s = (struct view_state const*)data;
   SDL_assert(s != NULL);
 
-  rl_append_text(&content->text[RL_RIBBON_LEFT], NULL, "View: Map");
+  rl_append_text(&content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Map");
 
-  struct rl_text* mode = &content->text[RL_RIBBON_CENTRE];
   struct rl_text* hint = &content->text[RL_RIBBON_RIGHT];
+  SDL_FColor const* const colour = &RL_COLOUR_YELLOW[3];
   if (s->mode == MAP_MODE_SELECT) {
-    rl_append_text(mode, NULL, "Selecting");
-    rl_append_text(hint, &RL_COLOUR_YELLOW[3], "[WASD, E, Esc]");
-  } else {
-    rl_append_text(mode, NULL, "Moving");
-    rl_append_text(hint, &RL_COLOUR_YELLOW[3], "[WASD, E, Z]");
+    rl_append_text(hint, colour, "[WASD] move cursor");
+    if (rl_is_valid_item_target(
+          s->selection.def, s->world, s->fov, s->selection.cursor)) {
+      rl_append_text(hint, colour, "   [E] confirm");
+    }
+    rl_append_text(hint, colour, "   [Esc] cancel");
+    return;
   }
+
+  rl_append_text(hint, colour, "[WASD] move");
+  struct rl_actor const* rogue =
+    rl_borrow_actor(s->world, rl_get_rogue(s->world));
+  switch (rl_available_interaction(rogue, s->world)) {
+    case RL_INTERACTION_PICK_UP:
+      rl_append_text(hint, colour, "   [E] pick up");
+      break;
+    case RL_INTERACTION_TAKE_STAIRS:
+      rl_append_text(hint, colour, "   [E] take stairs");
+      break;
+    case RL_INTERACTION_NONE:
+      break;
+  }
+  rl_append_text(hint, colour, "   [Z] wait");
 }
 
 static bool
@@ -415,6 +432,10 @@ update_select(struct view_state* s, struct inpt_state const* istate)
       next.x += 1;
       break;
     case RL_ACTION_SELECT:
+      if (!rl_is_valid_item_target(
+            s->selection.def, s->world, s->fov, s->selection.cursor)) {
+        return true;
+      }
       s->pending_point = s->selection.cursor;
       end_select(s, RL_MAP_SELECTION_CONFIRMED);
       return true;
