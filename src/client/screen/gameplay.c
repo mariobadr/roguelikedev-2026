@@ -10,16 +10,17 @@
 
 #include "ui/rectcut.h"
 
+#include "render/palette.h"
+
 #include "client/view/in_sight.h"
 #include "client/view/inventory.h"
 #include "client/view/log.h"
-#include "client/view/map.h"
+#include "client/view/world.h"
 
 #include "client/action.h"
 #include "client/controls.h"
 #include "client/font.h"
 #include "client/game_log.h"
-#include "client/palette.h"
 #include "client/ribbon.h"
 #include "client/run.h"
 #include "client/screen.h"
@@ -87,7 +88,7 @@ create_layout(SDL_FRect panels[PANEL_COUNT], SDL_FRect const* bounds)
   ui_cut_left(&screen, RL_UI_MARGIN_X);
   panels[PANEL_RIGHT] = screen;
 
-  // Must stay a whole number of cells (see rl_draw_map).
+  // Must stay a whole number of cells (see rl_draw_world).
   panels[PANEL_MAIN] = ui_cut_top(&left, 288.0f);
   ui_cut_top(&left, RL_UI_MARGIN_Y);
   panels[PANEL_BOTTOM] = left;
@@ -105,7 +106,7 @@ alloc_screen(struct screen_state* s,
   create_layout(s->panel_bounds, bounds);
 
   // this is the initial mapping
-  s->panel_views[PANEL_MAIN] = RL_VIEW_MAP;
+  s->panel_views[PANEL_MAIN] = RL_VIEW_WORLD;
   s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
   s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
 
@@ -130,8 +131,8 @@ alloc_screen(struct screen_state* s,
     return false;
   }
 
-  // the map is only designed to work in the main panel right now
-  if (!rl_alloc_map_view(&s->views[RL_VIEW_MAP],
+  // the world view is only designed to work in the main panel right now
+  if (!rl_alloc_world_view(&s->views[RL_VIEW_WORLD],
                          &s->run->game.world,
                          &s->panel_bounds[PANEL_MAIN],
                          font->tile_width,
@@ -187,7 +188,7 @@ enter_screen(void* data)
   SDL_assert(s != NULL);
 
   cancel_focus(s);
-  s->panel_views[PANEL_MAIN] = RL_VIEW_MAP;
+  s->panel_views[PANEL_MAIN] = RL_VIEW_WORLD;
   s->panel_views[PANEL_RIGHT] = RL_VIEW_IN_SIGHT;
   s->pending_target_cmd = (struct rl_command){ 0 };
   s->game_over = false;
@@ -291,7 +292,7 @@ begin_target_select(struct screen_state* s,
   struct rl_actor const* rogue =
     rl_borrow_actor(&s->run->game.world, rogue_handle);
 
-  if (!rl_map_view_begin_select(&s->views[RL_VIEW_MAP], rogue->pos, def)) {
+  if (!rl_world_view_begin_select(&s->views[RL_VIEW_WORLD], rogue->pos, def)) {
     return false;
   }
 
@@ -312,21 +313,21 @@ resolve_pending_target(struct screen_state* s)
   }
 
   SDL_Point dst;
-  enum rl_map_selection_result result =
-    rl_map_view_take_selection(&s->views[RL_VIEW_MAP], &dst);
+  enum rl_world_selection_result result =
+    rl_world_view_take_selection(&s->views[RL_VIEW_WORLD], &dst);
 
   switch (result) {
-    case RL_MAP_SELECTION_CONFIRMED:
+    case RL_WORLD_SELECTION_CONFIRMED:
       s->pending_target_cmd.use_item.dst = dst;
       submit_command(s, &s->pending_target_cmd);
       s->pending_target_cmd = (struct rl_command){ 0 };
       cancel_focus(s);
       break;
-    case RL_MAP_SELECTION_CANCELLED:
+    case RL_WORLD_SELECTION_CANCELLED:
       s->pending_target_cmd = (struct rl_command){ 0 };
       cancel_focus(s);
       break;
-    case RL_MAP_SELECTION_NONE:
+    case RL_WORLD_SELECTION_NONE:
       break;
   }
 }
@@ -376,9 +377,9 @@ handle_action(struct screen_state* s, struct inpt_state const* istate)
       handled = handle_item_selection(s, item) || handled;
       break;
     }
-    case RL_VIEW_MAP: {
+    case RL_VIEW_WORLD: {
       struct rl_command cmd;
-      if (rl_map_view_take_command(view, &cmd)) {
+      if (rl_world_view_take_command(view, &cmd)) {
         handled = submit_command(s, &cmd) || handled;
       }
       break;

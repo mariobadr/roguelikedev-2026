@@ -4,9 +4,10 @@
 
 #include "ui/anchor.h"
 
+#include "render/palette.h"
+
 #include "client/font.h"
-#include "client/palette.h"
-#include "client/render.h"
+#include "client/text.h"
 
 // Space between adjacent occupied slots, in glyph widths.
 #define RIBBON_GAP_GLYPHS 2.0f
@@ -61,8 +62,7 @@ layout_slots(struct rl_ribbon* ribbon, SDL_FRect slots[RL_RIBBON_SLOT_COUNT])
   float const centre_w =
     ribbon->content.text[RL_RIBBON_CENTRE].length > 0 ? centre_room : 0.0f;
 
-  slots[RL_RIBBON_LEFT] =
-    (SDL_FRect){ left_edge, viewport->y, left_w, height };
+  slots[RL_RIBBON_LEFT] = (SDL_FRect){ left_edge, viewport->y, left_w, height };
   slots[RL_RIBBON_CENTRE] =
     (SDL_FRect){ centre_x, viewport->y, centre_w, height };
   slots[RL_RIBBON_RIGHT] =
@@ -82,8 +82,7 @@ place_text(struct rl_ribbon* ribbon,
   struct ui_position const pos = { .anchor = SLOT_ANCHORS[slot] };
   float const width = SDL_min(text_width(ribbon, slot), bounds->w);
 
-  SDL_FRect const dst =
-    ui_resolve(pos, bounds, width, ribbon->line_height);
+  SDL_FRect const dst = ui_resolve(pos, bounds, width, ribbon->line_height);
   ribbon->origins[slot] = (SDL_FPoint){ dst.x, dst.y };
 }
 

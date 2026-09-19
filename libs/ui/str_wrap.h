@@ -8,14 +8,7 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-/**
- * A span referencing a contiguous, not null-terminated run of bytes.
- */
-struct ui_string_span
-{
-  char const* data; /**< Pointer to the first byte of the span. */
-  int length;       /**< Number of bytes in the span. */
-};
+#include "core/string.h"
 
 /**
  * Extract the next wrapped line from *cursor.
@@ -37,6 +30,6 @@ struct ui_string_span
  *         (**cursor == '\0') or columns is zero.
  */
 bool
-ui_wrap_next(char const** cursor, int columns, struct ui_string_span* line);
+ui_wrap_next(char const** cursor, int columns, struct str_view* line);
 
 #endif // GINC_UI_STR_WRAP_H

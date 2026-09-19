@@ -22,7 +22,7 @@ enum rl_view_id
   RL_VIEW_IN_SIGHT,
   RL_VIEW_INVENTORY,
   RL_VIEW_LOG,
-  RL_VIEW_MAP,
+  RL_VIEW_WORLD,
   RL_VIEW_COUNT,
 };
 

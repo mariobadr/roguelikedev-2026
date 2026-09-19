@@ -8,8 +8,8 @@
 #include "game/item_def.h"
 #include "game/world.h"
 
-#include "client/graphics.h"
-#include "client/palette.h"
+#include "render/graphics.h"
+#include "render/palette.h"
 
 static SDL_FColor
 actor_colour(struct rl_actor const* actor)

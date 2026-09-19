@@ -1,8 +1,8 @@
 /**
  * @file lighting.h
  */
-#ifndef GINC_ROGUELIKE_LIGHTING_H
-#define GINC_ROGUELIKE_LIGHTING_H
+#ifndef GINC_ROGUELIKE_RENDER_LIGHTING_H
+#define GINC_ROGUELIKE_RENDER_LIGHTING_H
 
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_rect.h>
@@ -31,4 +31,4 @@ rl_lerp_colour(SDL_FColor a, SDL_FColor b, float alpha);
 float
 rl_lerp_float(float a, float b, float alpha);
 
-#endif // GINC_ROGUELIKE_LIGHTING_H
+#endif // GINC_ROGUELIKE_RENDER_LIGHTING_H

@@ -5,15 +5,16 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 
+#include "graphics/console.h"
 #include "save/save.h"
 #include "ui/anchor.h"
 #include "ui/list.h"
 
+#include "render/palette.h"
+
 #include "client/action.h"
 #include "client/controls.h"
 #include "client/font.h"
-#include "client/palette.h"
-#include "client/render.h"
 #include "client/ribbon.h"
 #include "client/run.h"
 #include "client/screen.h"
@@ -336,8 +337,12 @@ render_screen(void const* data, SDL_Renderer* renderer)
       s->banner_pos.x,
       s->banner_pos.y + (float)i * (float)s->font->tile_height,
     };
-    rl_draw_string(
-      renderer, s->font, GAME_OVER_BANNER[i], RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, at);
+    gfx_print_console(renderer,
+                      s->font,
+                      str_view_from_cstr(GAME_OVER_BANNER[i]),
+                      RL_COLOUR_GRAY[5],
+                      RL_COLOUR_BLACK,
+                      at);
   }
 
   // render the menu

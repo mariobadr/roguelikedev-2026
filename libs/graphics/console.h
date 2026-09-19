@@ -8,6 +8,7 @@
 #include <SDL3/SDL_rect.h>
 
 #include "container/grid.h"
+#include "core/string.h"
 
 // external forward declarations
 typedef struct SDL_Renderer SDL_Renderer;
@@ -48,5 +49,13 @@ gfx_draw_console_grid(SDL_Renderer* renderer,
                       grid(gfx_console) const* console,
                       SDL_Rect const* region,
                       SDL_FPoint at);
+
+void
+gfx_print_console(SDL_Renderer* renderer,
+                  struct gfx_tileset const* font,
+                  struct str_view text,
+                  SDL_FColor fg,
+                  SDL_FColor bg,
+                  SDL_FPoint at);
 
 #endif // GINC_GRAPHICS_CONSOLE_H

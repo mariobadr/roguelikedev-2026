@@ -24,5 +24,6 @@ target_include_directories(ginc_ui
 
 target_link_libraries(ginc_ui
     PUBLIC
+        ginc::core
         SDL3::SDL3
 )

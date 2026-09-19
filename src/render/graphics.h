@@ -1,8 +1,8 @@
 /**
  * @file graphics.h
  */
-#ifndef GINC_ROGUELIKE_GRAPHICS_H
-#define GINC_ROGUELIKE_GRAPHICS_H
+#ifndef GINC_ROGUELIKE_RENDER_GRAPHICS_H
+#define GINC_ROGUELIKE_RENDER_GRAPHICS_H
 
 #include "game/tile.h"
 
@@ -30,4 +30,4 @@ rl_get_item_gfx(struct rl_item const* item);
 struct gfx_console_cell
 rl_get_actor_gfx(struct rl_actor const* actor);
 
-#endif // GINC_ROGUELIKE_GRAPHICS_H
+#endif // GINC_ROGUELIKE_RENDER_GRAPHICS_H

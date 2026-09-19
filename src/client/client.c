@@ -7,12 +7,12 @@
 
 #include "ui/rectcut.h"
 
+#include "render/palette.h"
+
 #include "client/screen/game_over.h"
 #include "client/screen/gameplay.h"
 #include "client/screen/main_menu.h"
 #include "client/screen/save_files.h"
-
-#include "client/palette.h"
 
 /** The gap between the ribbon and the screen content, in logical pixels. */
 #define RIBBON_GAP_Y 4.0f

@@ -6,11 +6,12 @@
 #include "game/item_def.h"
 #include "game/world.h"
 
+#include "render/palette.h"
+
 #include "client/action.h"
 #include "client/controls.h"
-#include "client/palette.h"
-#include "client/render.h"
 #include "client/ribbon.h"
+#include "client/text.h"
 #include "client/view.h"
 
 #include "ui/list.h"
@@ -38,8 +39,7 @@ menu_model(struct view_state const* s)
 static handle(rl_item)
 selected_item(struct view_state const* s)
 {
-  return rl_find_held_item(
-    s->world, rl_get_rogue(s->world), s->menu.selected);
+  return rl_find_held_item(s->world, rl_get_rogue(s->world), s->menu.selected);
 }
 
 static void

@@ -1,7 +1,7 @@
 #include "ui/str_wrap.h"
 
 bool
-ui_wrap_next(char const** cursor, int columns, struct ui_string_span* line)
+ui_wrap_next(char const** cursor, int columns, struct str_view* line)
 {
   char const* text = *cursor;
 

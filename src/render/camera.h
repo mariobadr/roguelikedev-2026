@@ -1,8 +1,8 @@
 /**
  * @file camera.h
  */
-#ifndef GINC_ROGUELIKE_CAMERA_H
-#define GINC_ROGUELIKE_CAMERA_H
+#ifndef GINC_ROGUELIKE_RENDER_CAMERA_H
+#define GINC_ROGUELIKE_RENDER_CAMERA_H
 
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
@@ -46,4 +46,4 @@ rl_get_world_cell(struct rl_camera const* camera,
                    SDL_FPoint pos,
                    SDL_Point* out);
 
-#endif // GINC_ROGUELIKE_CAMERA_H
+#endif // GINC_ROGUELIKE_RENDER_CAMERA_H

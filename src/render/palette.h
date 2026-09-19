@@ -5,8 +5,8 @@
  * MIT License
  * Copyright (c) 2016 heeyeun
  */
-#ifndef GINC_ROGUELIKE_PALETTE_H
-#define GINC_ROGUELIKE_PALETTE_H
+#ifndef GINC_ROGUELIKE_RENDER_PALETTE_H
+#define GINC_ROGUELIKE_RENDER_PALETTE_H
 
 #include <SDL3/SDL_pixels.h>
 
@@ -123,4 +123,4 @@ static const SDL_FColor RL_COLOUR_ORANGE[] = {
   RL_HEX_TO_FCOLOR(0xe8590c), RL_HEX_TO_FCOLOR(0xd9480f),
 };
 
-#endif // GINC_ROGUELIKE_PALETTE_H
+#endif // GINC_ROGUELIKE_RENDER_PALETTE_H

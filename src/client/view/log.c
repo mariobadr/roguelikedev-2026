@@ -7,12 +7,13 @@
 
 #include "ui/list.h"
 
+#include "render/palette.h"
+
 #include "client/action.h"
 #include "client/controls.h"
 #include "client/game_log.h"
-#include "client/palette.h"
-#include "client/render.h"
 #include "client/ribbon.h"
+#include "client/text.h"
 #include "client/view.h"
 
 struct view_state
@@ -69,13 +70,11 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
 
   int const count = (int)alist_len(&s->log->messages);
   if (ui_list_max_offset(&s->list, count) > 0) {
-    rl_append_text(&content->text[RL_RIBBON_RIGHT],
-                   &RL_COLOUR_YELLOW[3],
-                   "[WS] scroll   ");
+    rl_append_text(
+      &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[WS] scroll   ");
   }
-  rl_append_text(&content->text[RL_RIBBON_RIGHT],
-                 &RL_COLOUR_YELLOW[3],
-                 "[Esc] back");
+  rl_append_text(
+    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Esc] back");
 }
 
 static bool

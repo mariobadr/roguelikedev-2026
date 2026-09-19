@@ -1,8 +1,9 @@
 #include "text.h"
 
-#include <stdarg.h>
+#include <SDL3/SDL_stdinc.h>
 
-#include <SDL3/SDL_assert.h>
+#include "graphics/console.h"
+#include "graphics/tileset.h"
 
 static bool
 append_span(struct rl_text* text, size_t start, size_t end, SDL_FColor colour)
@@ -89,4 +90,45 @@ rl_append_text_format(struct rl_text* text,
   }
 
   return rl_append_text(text, colour, buffer);
+}
+
+static void
+draw_text_range(SDL_Renderer* renderer,
+                struct gfx_tileset const* font,
+                struct rl_text const* text,
+                size_t start,
+                size_t end,
+                SDL_FColor fg,
+                SDL_FColor bg,
+                SDL_FPoint at)
+{
+  struct str_view const view = { text->content + start, (int)(end - start) };
+  SDL_FPoint const pos = { at.x + (float)start * font->tile_width, at.y };
+  gfx_print_console(renderer, font, view, fg, bg, pos);
+}
+
+void
+rl_draw_text(SDL_Renderer* renderer,
+             struct gfx_tileset const* font,
+             struct rl_text const* text,
+             SDL_FColor fg,
+             SDL_FColor bg,
+             SDL_FPoint at)
+{
+  size_t cursor = 0;
+  for (size_t i = 0; i < text->span_count; ++i) {
+    struct rl_text_span const* span = &text->spans[i];
+
+    if (cursor < span->start) {
+      draw_text_range(renderer, font, text, cursor, span->start, fg, bg, at);
+    }
+
+    draw_text_range(
+      renderer, font, text, span->start, span->end, span->colour, bg, at);
+    cursor = span->end;
+  }
+
+  if (cursor < text->length) {
+    draw_text_range(renderer, font, text, cursor, text->length, fg, bg, at);
+  }
 }

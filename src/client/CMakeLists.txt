@@ -16,12 +16,10 @@ add_library(rl_client STATIC
     view/inventory.h
     view/log.c
     view/log.h
-    view/map.c
-    view/map.h
+    view/world.c
+    view/world.h
     action.c
     action.h
-    camera.c
-    camera.h
     client.c
     client.h
     controls.c
@@ -30,13 +28,6 @@ add_library(rl_client STATIC
     font.h
     game_log.c
     game_log.h
-    graphics.c
-    graphics.h
-    lighting.c
-    lighting.h
-    palette.h
-    render.c
-    render.h
     ribbon.c
     ribbon.h
     run.c
@@ -60,6 +51,7 @@ target_link_libraries(rl_client
     PUBLIC
         rl::game
         rl::save
+        rl::render
         ginc::core
         ginc::container
         ginc::graphics

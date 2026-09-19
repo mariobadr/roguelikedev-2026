@@ -6,14 +6,15 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_time.h>
 
+#include "graphics/console.h"
 #include "graphics/tileset.h"
 #include "input/input.h"
 #include "save/save.h"
 #include "ui/list.h"
 #include "ui/rectcut.h"
 
-#include "client/palette.h"
-#include "client/render.h"
+#include "render/palette.h"
+
 #include "client/ribbon.h"
 #include "client/run.h"
 #include "client/screen.h"
@@ -529,12 +530,12 @@ render_save_list(struct screen_state const* s, SDL_Renderer* renderer)
       s->saves_menu.list.bounds.x,
       s->saves_menu.list.bounds.y,
     };
-    rl_draw_string(renderer,
-                   s->font,
-                   "No saved runs.",
-                   RL_COLOUR_GRAY[3],
-                   RL_COLOUR_BLACK,
-                   at);
+    gfx_print_console(renderer,
+                      s->font,
+                      str_view_from_cstr("No saved runs."),
+                      RL_COLOUR_GRAY[3],
+                      RL_COLOUR_BLACK,
+                      at);
     return;
   }
 

@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_stdinc.h>
 
 #include "container/alist.h"
 
@@ -14,13 +15,13 @@
 #include "graphics/console.h"
 #include "graphics/tileset.h"
 
-#include "client/palette.h"
-#include "client/render.h"
+#include "render/palette.h"
+
 #include "client/view.h"
 
 struct text_row
 {
-  struct ui_string_span span;
+  struct str_view span;
   SDL_FPoint origin;
 };
 
@@ -211,7 +212,7 @@ prepare_summary(struct view_state* s, int count, SDL_FRect* remaining)
   }
 
   char const* cursor = s->summary_text;
-  struct ui_string_span span;
+  struct str_view span;
   while (remaining->h >= s->line_height) {
     if (!ui_wrap_next(&cursor, s->columns, &span)) {
       break;
@@ -260,24 +261,17 @@ prepare_monsters(struct view_state* s, SDL_FRect* remaining)
   }
 }
 
-// TODO: figure out how to add this to either client/render or libs/graphics
 static void
 draw_text_span(SDL_Renderer* renderer,
                struct gfx_tileset const* font,
                struct text_row const* row)
 {
-  struct gfx_console_cell cell = {
-    .fg = RL_COLOUR_GRAY[5],
-    .bg = RL_COLOUR_BLACK,
-  };
-
-  SDL_FPoint at = row->origin;
-  for (int i = 0; i < row->span.length; ++i) {
-    cell.index = (Uint8)row->span.data[i];
-    SDL_FRect dst = gfx_tileset_dst(font, at, 1);
-    gfx_draw_console_cell(renderer, font, &cell, &dst);
-    at.x += font->tile_width;
-  }
+  gfx_print_console(renderer,
+                    font,
+                    row->span,
+                    RL_COLOUR_GRAY[5],
+                    RL_COLOUR_BLACK,
+                    row->origin);
 }
 
 static void
@@ -302,18 +296,18 @@ draw_actor(SDL_Renderer* renderer,
            struct gfx_tileset const* font,
            struct actor_row const* row)
 {
-  rl_draw_string(renderer,
-                 font,
-                 row->name,
-                 RL_COLOUR_GRAY[5],
-                 RL_COLOUR_BLACK,
-                 row->name_origin);
-  rl_draw_string(renderer,
-                 font,
-                 row->hp_text,
-                 RL_COLOUR_GRAY[5],
-                 RL_COLOUR_BLACK,
-                 row->hp_origin);
+  gfx_print_console(renderer,
+                    font,
+                    str_view_from_cstr(row->name),
+                    RL_COLOUR_GRAY[5],
+                    RL_COLOUR_BLACK,
+                    row->name_origin);
+  gfx_print_console(renderer,
+                    font,
+                    str_view_from_cstr(row->hp_text),
+                    RL_COLOUR_GRAY[5],
+                    RL_COLOUR_BLACK,
+                    row->hp_origin);
   draw_health_bar(renderer, row);
 }
 
@@ -372,12 +366,12 @@ render_view(void const* data,
   }
 
   if (s->more_text[0] != '\0') {
-    rl_draw_string(renderer,
-                   font,
-                   s->more_text,
-                   RL_COLOUR_GRAY[5],
-                   RL_COLOUR_BLACK,
-                   s->more_origin);
+    gfx_print_console(renderer,
+                      font,
+                      str_view_from_cstr(s->more_text),
+                      RL_COLOUR_GRAY[5],
+                      RL_COLOUR_BLACK,
+                      s->more_origin);
   }
 }
 

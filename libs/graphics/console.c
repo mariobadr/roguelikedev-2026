@@ -73,3 +73,25 @@ gfx_draw_console_grid(SDL_Renderer* renderer,
 
   draw_grid(renderer, tileset, console, region, at);
 }
+
+void
+gfx_print_console(SDL_Renderer* renderer,
+                  struct gfx_tileset const* font,
+                  struct str_view text,
+                  SDL_FColor fg,
+                  SDL_FColor bg,
+                  SDL_FPoint at)
+{
+  struct gfx_console_cell cell = { 0 };
+  cell.fg = fg;
+  cell.bg = bg;
+
+  for (int i = 0; i < text.length; ++i) {
+    cell.index = (Uint8)text.data[i];
+
+    SDL_FRect dst = gfx_tileset_dst(font, at, 1);
+    gfx_draw_console_cell(renderer, font, &cell, &dst);
+
+    at.x += font->tile_width;
+  }
+}
