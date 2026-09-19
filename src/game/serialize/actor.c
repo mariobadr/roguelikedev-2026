@@ -23,6 +23,7 @@ rl_write_actor(SDL_IOStream* dst, struct rl_actor const* actor)
 {
   bool ok = true;
   ok &= SDL_WriteU32LE(dst, (Uint32)actor->type);
+  ok &= SDL_WriteS32LE(dst, (Sint32)actor->level);
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->pos.x);
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->pos.y);
   ok &= SDL_WriteU8(dst, actor->awake ? 1 : 0);
@@ -40,6 +41,12 @@ rl_read_actor(SDL_IOStream* src, struct rl_actor* out)
   Uint32 type_value = 0;
   RL_READ_OR_FAIL(src, SDL_ReadU32LE(src, &type_value));
   if (!is_valid_actor_type((enum rl_actor_type)type_value)) {
+    return RL_READ_CORRUPT;
+  }
+
+  Sint32 level = 0;
+  RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &level));
+  if (level < 1) {
     return RL_READ_CORRUPT;
   }
 
@@ -65,6 +72,7 @@ rl_read_actor(SDL_IOStream* src, struct rl_actor* out)
   }
 
   out->type = (enum rl_actor_type)type_value;
+  out->level = (int)level;
   out->pos.x = (int)x;
   out->pos.y = (int)y;
   out->awake = awake != 0;

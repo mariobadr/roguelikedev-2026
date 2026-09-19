@@ -129,7 +129,8 @@ find_spawn_points(array(rl_spawn_point) * out,
         if (!array_full(out)) {
           *array_push(out) = pos;
         } else {
-          // Reservoir sampling keeps a uniform subset without storing all tiles.
+          // Reservoir sampling keeps a uniform subset without storing all
+          // tiles.
           size_t const slot = (size_t)rand_next_up_to(rng, seen);
           if (slot < array_cap(out)) {
             *array_at(out, slot) = pos;
@@ -146,7 +147,8 @@ spawn_actor(struct rl_world* world,
             enum rl_actor_type type,
             SDL_Point pos)
 {
-  handle(rl_actor) const actor_handle = rl_create_actor(world, type);
+  handle(rl_actor) const actor_handle =
+    rl_create_actor(world, type, level->depth);
   struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   if (actor == NULL) {
     return false;

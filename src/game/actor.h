@@ -17,6 +17,8 @@ struct rl_actor
 {
   /** The type of actor. */
   enum rl_actor_type type;
+  /** The actor's level, starting at 1. */
+  int level;
   /** This actor's handle, so code holding a pointer can refer to it. */
   handle(rl_actor) handle;
   /** Dispalyed name. */
@@ -38,9 +40,11 @@ struct rl_actor
 /**
  * Create a new actor. Its handle is invalid until the actor is added to a
  * world (see rl_create_actor).
+ *
+ * @param level must be at least 1.
  */
 struct rl_actor
-rl_make_actor(enum rl_actor_type type);
+rl_make_actor(enum rl_actor_type type, int level);
 
 /**
  * Heal an actor's hit points by up to amount.

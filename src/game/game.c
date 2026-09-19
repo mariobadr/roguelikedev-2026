@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_iostream.h>
 #include <SDL3/SDL_log.h>
@@ -8,10 +9,66 @@
 #include "actor_def.h"
 #include "ai.h"
 #include "command.h"
+#include "experience.h"
 #include "generate.h"
+#include "mechanics.h"
 #include "pathfinding.h"
 
 #define FOV_RADIUS 8
+
+static void
+award_kill_xp(struct rl_world* world,
+              struct rl_event const* event,
+              alist(rl_event)* events)
+{
+  if (event->type != RL_EVENT_DEATH) {
+    // no kill xp to reward
+    return;
+  }
+
+  handle(rl_actor) const rogue_handle = rl_get_rogue(world);
+  if (!handle_equal(event->as.death.killer, rogue_handle)) {
+    // the rogue did not make the kill
+    return;
+  }
+
+  if (handle_equal(event->as.death.actor, rogue_handle)) {
+    // the rogue killed itself
+    return;
+  }
+
+  struct rl_actor const* rogue = rl_borrow_actor(world, rogue_handle);
+  SDL_assert(rogue != NULL);
+
+  if (!rl_actor_is_alive(rogue)) {
+    // the rogue is dead
+    return;
+  }
+
+  struct rl_actor const* victim = rl_borrow_actor(world, event->as.death.actor);
+  SDL_assert(victim != NULL);
+
+  rl_gain_xp(world, rl_xp_reward(rogue->level, victim->level), events);
+}
+
+static bool
+resolve_command(struct rl_world* world,
+                struct rl_command const* cmd,
+                struct rl_fov const* fov,
+                alist(rl_event)* events,
+                struct rand_state* rng)
+{
+  size_t const first_event = alist_len(events);
+  bool const turn_taken = rl_apply_command(world, cmd, fov, events, rng);
+  // XP awards append events; only process the command's original events.
+  size_t const end_event = alist_len(events);
+
+  for (size_t i = first_event; i < end_event; i++) {
+    award_kill_xp(world, alist_at(events, i), events);
+  }
+
+  return turn_taken;
+}
 
 static void
 update_actors(struct rl_world* world,
@@ -67,7 +124,7 @@ update_actors(struct rl_world* world,
 
     // choose and execute each actor's command before updating the next actor
     struct rl_command cmd = rl_next_ai_command(actor, world, distances);
-    rl_apply_command(world, &cmd, fov, events, rng);
+    resolve_command(world, &cmd, fov, events, rng);
 
     // the rogue lives in world->actors, which may have been reallocated
     rogue = rl_borrow_actor(world, rogue_handle);
@@ -154,18 +211,18 @@ init_game(struct rl_game* game, int width, int height, Uint64 seed)
   game->turns = 0;
 
   // create the main character
-  handle(rl_actor) rogue_handle = rl_create_actor(&game->world, RL_ACTOR_ROGUE);
+  handle(rl_actor) rogue_handle =
+    rl_create_actor(&game->world, RL_ACTOR_ROGUE, 1);
   struct rl_actor* rogue = rl_borrow_mut_actor(&game->world, rogue_handle);
   if (rogue == NULL) {
     // oh noes
     return false;
   }
   rogue->awake = true;
-  game->world.rogue = rogue->handle;
+  game->world.player.actor = rogue->handle;
 
   // the rogue starts at the entry point of the first level
-  if (!rl_push_level(
-        &game->world, width, height, game->world.rogue, &game->rng)) {
+  if (!rl_push_level(&game->world, width, height, rogue_handle, &game->rng)) {
     return false;
   }
   game->world.current_level = (int)alist_len(&game->world.levels) - 1;
@@ -192,7 +249,7 @@ rl_update_game(struct rl_game* game,
                alist(rl_event)* events)
 {
   bool turn_taken =
-    rl_apply_command(&game->world, cmd, &game->fov, events, &game->rng);
+    resolve_command(&game->world, cmd, &game->fov, events, &game->rng);
 
   if (turn_taken) {
     game->turns++;

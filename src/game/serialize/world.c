@@ -2,8 +2,8 @@
 
 #include <SDL3/SDL_iostream.h>
 
-#include "result.h"
 #include "context.h"
+#include "result.h"
 
 #include "actor.h"
 #include "item.h"
@@ -11,6 +11,7 @@
 
 #include "container/pool.h"
 
+#include "game/experience.h"
 #include "game/world.h"
 
 static bool
@@ -62,9 +63,10 @@ rl_write_world(SDL_IOStream* dst, struct rl_world const* world)
   bool ok = write_actors(dst, world, &w);
   ok &= write_items(dst, world, &w);
 
-  Uint32 const rogue_id = rl_to_actor_id(&w, world->rogue);
+  Uint32 const rogue_id = rl_to_actor_id(&w, world->player.actor);
   ok &= rogue_id != 0;
   ok &= SDL_WriteU32LE(dst, rogue_id);
+  ok &= SDL_WriteS32LE(dst, (Sint32)world->player.xp);
 
   Uint32 const level_count = (Uint32)alist_len(&world->levels);
   ok &= SDL_WriteU32LE(dst, level_count);
@@ -102,7 +104,7 @@ read_actors(SDL_IOStream* src, struct rl_world* world, struct rl_reader* r)
       return result;
     }
 
-    handle(rl_actor) const h = rl_create_actor(world, tmp.type);
+    handle(rl_actor) const h = rl_create_actor(world, tmp.type, tmp.level);
     struct rl_actor* actor = rl_borrow_mut_actor(world, h);
     if (actor == NULL) {
       return RL_READ_ERROR;
@@ -182,6 +184,14 @@ read_world_header(SDL_IOStream* src,
     return RL_READ_CORRUPT;
   }
 
+  Sint32 xp = 0;
+  RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &xp));
+  struct rl_actor const* rogue =
+    rl_borrow_actor(world, *array_at(&r->actor_handles, rogue_id));
+  if (xp < 0 || xp >= rl_xp_required(rogue->level)) {
+    return RL_READ_CORRUPT;
+  }
+
   Uint32 level_count = 0;
   RL_READ_OR_FAIL(src, SDL_ReadU32LE(src, &level_count));
   if (level_count > RL_SNAPSHOT_MAX_LEVELS) {
@@ -194,7 +204,8 @@ read_world_header(SDL_IOStream* src,
     return RL_READ_CORRUPT;
   }
 
-  world->rogue = *array_at(&r->actor_handles, rogue_id);
+  world->player.actor = *array_at(&r->actor_handles, rogue_id);
+  world->player.xp = (int)xp;
   world->current_level = (int)current_level;
 
   *out_level_count = level_count;
@@ -256,7 +267,8 @@ validate_world_references(struct rl_world const* world,
     }
   }
 
-  if (*array_at(actor_level, world->rogue.index) != world->current_level) {
+  if (*array_at(actor_level, world->player.actor.index) !=
+      world->current_level) {
     return RL_READ_CORRUPT;
   }
 

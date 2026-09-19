@@ -17,6 +17,14 @@ struct rl_fov;
 struct rand_state;
 
 /**
+ * Add experience points to the player.
+ *
+ * @return the number of levels gained.
+ */
+int
+rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events);
+
+/**
  * Try to move the actor in world to dst.
  *
  * @return whether world was updated (i.e., move succeeded).
@@ -58,9 +66,9 @@ rl_can_take_stairs(struct rl_world const* world, struct rl_actor const* actor);
 
 /**
  * Try to take the stairs.
- * 
+ *
  * Descending below the deepest level generates a new one.
- * 
+ *
  * Note: Only the rogue can take stairs (for now?)
  *
  * @return whether the actor changed levels.

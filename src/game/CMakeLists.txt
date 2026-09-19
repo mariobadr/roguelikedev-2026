@@ -28,6 +28,8 @@ add_library(rl_game STATIC
     command.c
     command.h
     event.h
+    experience.c
+    experience.h
     fov.c
     fov.h
     game.c
@@ -47,6 +49,7 @@ add_library(rl_game STATIC
     mechanics.h
     pathfinding.c
     pathfinding.h
+    player.h
     spawn.c
     spawn.h
     targeting.c

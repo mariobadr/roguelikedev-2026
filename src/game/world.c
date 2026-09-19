@@ -6,7 +6,8 @@
 bool
 rl_alloc_world(struct rl_world* world)
 {
-  world->rogue = handle_invalid(rl_actor);
+  world->player.actor = handle_invalid(rl_actor);
+  world->player.xp = 0;
   world->current_level = -1;
 
   // allocate space for the levels
@@ -47,7 +48,7 @@ rl_free_world(struct rl_world* world)
 }
 
 handle(rl_actor)
-rl_create_actor(struct rl_world* world, enum rl_actor_type type)
+rl_create_actor(struct rl_world* world, enum rl_actor_type type, int level)
 {
   if (pool_full(&world->actors) &&
       !pool_reserve(&world->actors, (size_t)pool_cap(&world->actors) * 2)) {
@@ -60,7 +61,7 @@ rl_create_actor(struct rl_world* world, enum rl_actor_type type)
     return handle_invalid(rl_actor);
   }
 
-  *actor = rl_make_actor(type);
+  *actor = rl_make_actor(type, level);
   actor->handle = actor_handle;
 
   return actor_handle;
@@ -69,7 +70,7 @@ rl_create_actor(struct rl_world* world, enum rl_actor_type type)
 handle(rl_actor)
 rl_get_rogue(struct rl_world const* world)
 {
-  return world->rogue;
+  return world->player.actor;
 }
 
 struct rl_actor const*

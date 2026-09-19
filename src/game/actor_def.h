@@ -4,8 +4,15 @@
 #ifndef GINC_ROGUELIKE_ACTOR_DEF_H
 #define GINC_ROGUELIKE_ACTOR_DEF_H
 
+/** Actor categories. */
+enum rl_actor_class
+{
+  RL_ACTOR_HUMANOID,
+  RL_ACTOR_BEAST,
+};
+
 /**
- * The different types of actors in the game.
+ * Possible actors encountered in the game.
  */
 enum rl_actor_type
 {
@@ -16,10 +23,17 @@ enum rl_actor_type
 /** Immutable data that defines an actor. */
 struct rl_actor_def
 {
+  enum rl_actor_class class;
+
   char const* name;
-  int max_hp;
-  int strength;
-  int armor;
+  int base_hp;
+  int hp_per_level;
+
+  int base_strength;
+  int strength_per_level;
+
+  int base_armor;
+  int armor_per_level;
 };
 
 /**

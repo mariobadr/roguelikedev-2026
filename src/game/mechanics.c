@@ -4,6 +4,7 @@
 
 #include "actor.h"
 #include "combat.h"
+#include "experience.h"
 #include "generate.h"
 #include "item_def.h"
 #include "targeting.h"
@@ -31,6 +32,55 @@ get_living_actor(struct rl_world* world, handle(rl_actor) actor_handle)
   }
 
   return actor;
+}
+
+int
+rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events)
+{
+  if (amount <= 0) {
+    return 0;
+  }
+
+  struct rl_actor* actor = get_living_actor(world, rl_get_rogue(world));
+  if (actor == NULL) {
+    return 0;
+  }
+
+  struct rl_actor_def const* def = rl_get_actor_def(actor->type);
+  int const awarded = amount;
+  int const from_level = actor->level;
+  int gained = 0;
+  int needed = rl_xp_required(actor->level) - world->player.xp;
+  while (amount >= needed) {
+    amount -= needed;
+    world->player.xp = 0;
+    actor->level++;
+    actor->max_hp += def->hp_per_level;
+    actor->hp += def->hp_per_level;
+    actor->strength += def->strength_per_level;
+    actor->armor += def->armor_per_level;
+    gained++;
+    needed = rl_xp_required(actor->level);
+  }
+
+  world->player.xp += amount;
+
+  struct rl_event xp_event = { 0 };
+  xp_event.type = RL_EVENT_XP_GAIN;
+  xp_event.as.xp_gain.actor = actor->handle;
+  xp_event.as.xp_gain.amount = awarded;
+  *alist_push(events) = xp_event;
+
+  if (gained > 0) {
+    struct rl_event level_event = { 0 };
+    level_event.type = RL_EVENT_LEVEL_UP;
+    level_event.as.level_up.actor = actor->handle;
+    level_event.as.level_up.from_level = from_level;
+    level_event.as.level_up.to_level = actor->level;
+    *alist_push(events) = level_event;
+  }
+
+  return gained;
 }
 
 static bool
@@ -218,7 +268,7 @@ bool
 rl_can_take_stairs(struct rl_world const* world, struct rl_actor const* actor)
 {
   if (actor == NULL || !rl_actor_is_alive(actor) ||
-      !handle_equal(actor->handle, world->rogue)) {
+      !handle_equal(actor->handle, rl_get_rogue(world))) {
     return false;
   }
 

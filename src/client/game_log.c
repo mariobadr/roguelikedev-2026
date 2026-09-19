@@ -138,6 +138,38 @@ build_level_change_log(struct rl_event_level_change const* event)
   return msg;
 }
 
+static struct rl_text
+build_xp_gain_log(struct rl_world const* world,
+                  struct rl_event_xp_gain const* event)
+{
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
+  SDL_FColor const colour = actor_colour(actor);
+
+  struct rl_text msg = { 0 };
+  rl_append_text(&msg, &colour, actor->name);
+  rl_append_text_format(&msg, NULL, " gained %d XP.", event->amount);
+
+  return msg;
+}
+
+static struct rl_text
+build_level_up_log(struct rl_world const* world,
+                   struct rl_event_level_up const* event)
+{
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
+  SDL_FColor const colour = actor_colour(actor);
+
+  struct rl_text msg = { 0 };
+  rl_append_text(&msg, &colour, actor->name);
+  rl_append_text_format(&msg,
+                        NULL,
+                        " advanced from level %d to level %d!",
+                        event->from_level,
+                        event->to_level);
+
+  return msg;
+}
+
 bool
 rl_init_game_log(struct rl_game_log* log)
 {
@@ -196,6 +228,12 @@ rl_log_event(struct rl_game_log* log,
       break;
     case RL_EVENT_LEVEL_CHANGE:
       msg = build_level_change_log(&event->as.level_change);
+      break;
+    case RL_EVENT_XP_GAIN:
+      msg = build_xp_gain_log(world, &event->as.xp_gain);
+      break;
+    case RL_EVENT_LEVEL_UP:
+      msg = build_level_up_log(world, &event->as.level_up);
       break;
     default:
       return;

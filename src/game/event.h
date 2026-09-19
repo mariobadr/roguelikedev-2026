@@ -22,6 +22,8 @@ enum rl_event_type
   RL_EVENT_HEAL,
   RL_EVENT_FEEDBACK,
   RL_EVENT_LEVEL_CHANGE,
+  RL_EVENT_XP_GAIN,
+  RL_EVENT_LEVEL_UP,
 };
 
 /**
@@ -104,6 +106,30 @@ struct rl_event_level_change
 };
 
 /**
+ * An actor gains experience.
+ */
+struct rl_event_xp_gain
+{
+  /** Handle of the actor. */
+  handle(rl_actor) actor;
+  /** Total XP awarded, including XP spent on level-ups. */
+  int amount;
+};
+
+/**
+ * An actor gains one or more levels from a single XP award.
+ */
+struct rl_event_level_up
+{
+  /** Handle of the actor. */
+  handle(rl_actor) actor;
+  /** Level before the award. */
+  int from_level;
+  /** Level after the award. */
+  int to_level;
+};
+
+/**
  * An event.
  */
 struct rl_event
@@ -119,6 +145,8 @@ struct rl_event
     struct rl_event_heal heal;
     struct rl_event_feedback feedback;
     struct rl_event_level_change level_change;
+    struct rl_event_xp_gain xp_gain;
+    struct rl_event_level_up level_up;
   } as;
 };
 

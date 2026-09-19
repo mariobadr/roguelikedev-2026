@@ -13,6 +13,7 @@
 #include "game/item.h"
 #include "game/item_def.h"
 #include "game/level.h"
+#include "game/player.h"
 
 /**
  * A pool of actors, addressed by handle(rl_actor).
@@ -37,8 +38,9 @@ struct rl_world
   pool(rl_actor) actors;
   /** All items, wherever they are. */
   pool(rl_item) items;
-  /** The rogue (player). Invalid until a new game creates it. */
-  handle(rl_actor) rogue;
+  /** Player progression and actor handle, invalid until a new game creates it.
+   */
+  struct rl_player player;
 };
 
 /**
@@ -60,12 +62,14 @@ handle(rl_actor)
 rl_get_rogue(struct rl_world const* world);
 
 /**
- * Add a new actor of the given type to the world.
+ * Add a new actor of the given type and level to the world.
+ *
+ * @param level must be at least 1.
  *
  * @return the new actor's handle, or an invalid handle if allocation failed.
  */
 handle(rl_actor)
-rl_create_actor(struct rl_world* world, enum rl_actor_type type);
+rl_create_actor(struct rl_world* world, enum rl_actor_type type, int level);
 
 /**
  * @return the handle of the (alive) actor at position on level, or an
