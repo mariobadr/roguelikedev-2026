@@ -2,8 +2,6 @@
 # Render library
 ###############################################################################
 add_library(rl_render STATIC
-    camera.c
-    camera.h
     graphics.c
     graphics.h
     lighting.c

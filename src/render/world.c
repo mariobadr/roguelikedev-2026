@@ -12,17 +12,22 @@
 #include "game/tile.h"
 #include "game/world.h"
 
+#include "graphics/camera.h"
+#include "graphics/grid_view.h"
 #include "graphics/tileset.h"
 
-#include "camera.h"
 #include "graphics.h"
 #include "lighting.h"
 #include "palette.h"
 
+static SDL_Point
+map_to_buffer(struct rl_world_renderer const* wr, SDL_Point cell)
+{
+  return (SDL_Point){ cell.x - wr->bounds.x, cell.y - wr->bounds.y };
+}
+
 static void
-populate_terrain(struct rl_world_renderer* wr,
-                 struct rl_world const* world,
-                 struct rl_camera const* camera)
+populate_terrain(struct rl_world_renderer* wr, struct rl_world const* world)
 {
   struct rl_level const* level = rl_get_current_level(world);
   grid(rl_tile) const* map = &level->map;
@@ -44,16 +49,14 @@ populate_terrain(struct rl_world_renderer* wr,
         }
       }
 
-      SDL_Point const local = rl_world_to_grid(camera, p);
+      SDL_Point const local = map_to_buffer(wr, p);
       *grid_at(&wr->terrain, local.x, local.y) = cell;
     }
   }
 }
 
 static void
-populate_light(struct rl_world_renderer* wr,
-               struct rl_world const* world,
-               struct rl_camera const* camera)
+populate_light(struct rl_world_renderer* wr, struct rl_world const* world)
 {
   gfx_clear_console_grid(&wr->light);
 
@@ -73,7 +76,7 @@ populate_light(struct rl_world_renderer* wr,
         cell.bg = (SDL_FColor){ light.r, light.g, light.b, alpha };
       }
 
-      SDL_Point const local = rl_world_to_grid(camera, p);
+      SDL_Point const local = map_to_buffer(wr, p);
       *grid_at(&wr->light, local.x, local.y) = cell;
     }
   }
@@ -104,19 +107,21 @@ draw_light(struct rl_world_renderer const* wr,
 }
 
 static void
-draw_item(struct rl_camera const* camera,
+draw_item(struct gfx_camera const* camera,
+          struct gfx_grid_view const* view,
           SDL_Renderer* renderer,
           struct gfx_tileset const* font,
           struct rl_item const* item)
 {
   struct gfx_console_cell const cell = rl_get_item_gfx(item);
-  SDL_FPoint const at = rl_world_to_screen(camera, item->on.map);
+  SDL_FPoint const at = gfx_cell_to_screen(view, camera, item->on.map);
   SDL_FRect dst = gfx_tileset_dst(font, at, 1);
   gfx_draw_console_cell(renderer, font, &cell, &dst);
 }
 
 static void
-draw_items(struct rl_camera const* camera,
+draw_items(struct gfx_camera const* camera,
+           struct gfx_grid_view const* view,
            struct rl_world const* world,
            SDL_Renderer* renderer,
            struct gfx_tileset const* font)
@@ -130,25 +135,27 @@ draw_items(struct rl_camera const* camera,
     }
 
     if (rl_is_tile_visible(&world->player.fov, item->on.map)) {
-      draw_item(camera, renderer, font, item);
+      draw_item(camera, view, renderer, font, item);
     }
   }
 }
 
 static void
-draw_actor(struct rl_camera const* camera,
+draw_actor(struct gfx_camera const* camera,
+           struct gfx_grid_view const* view,
            SDL_Renderer* renderer,
            struct gfx_tileset const* font,
            struct rl_actor const* actor)
 {
   struct gfx_console_cell const cell = rl_get_actor_gfx(actor);
-  SDL_FPoint const at = rl_world_to_screen(camera, actor->pos);
+  SDL_FPoint const at = gfx_cell_to_screen(view, camera, actor->pos);
   SDL_FRect dst = gfx_tileset_dst(font, at, 1);
   gfx_draw_console_cell(renderer, font, &cell, &dst);
 }
 
 static void
-draw_actors(struct rl_camera const* camera,
+draw_actors(struct gfx_camera const* camera,
+            struct gfx_grid_view const* view,
             struct rl_world const* world,
             SDL_Renderer* renderer,
             struct gfx_tileset const* font)
@@ -163,16 +170,15 @@ draw_actors(struct rl_camera const* camera,
     }
 
     if (rl_is_tile_visible(&world->player.fov, actor->pos)) {
-      draw_actor(camera, renderer, font, actor);
+      draw_actor(camera, view, renderer, font, actor);
     }
   }
 }
 
 bool
-rl_init_world_renderer(struct rl_world_renderer* wr,
-                     int columns,
-                     int rows)
+rl_init_world_renderer(struct rl_world_renderer* wr, int columns, int rows)
 {
+  wr->bounds = (SDL_Rect){ 0 };
   wr->visible = (SDL_Rect){ 0 };
 
   if (!grid_alloc(&wr->terrain, columns, rows)) {
@@ -195,43 +201,49 @@ rl_free_world_renderer(struct rl_world_renderer* wr)
 
 void
 rl_prepare_world_renderer(struct rl_world_renderer* wr,
-                        struct rl_world const* world,
-                        struct rl_camera const* camera)
+                          struct rl_world const* world,
+                          struct gfx_camera const* camera,
+                          struct gfx_grid_view const* view)
 {
-  SDL_assert(grid_width(&wr->terrain) == camera->bounds.w);
-  SDL_assert(grid_height(&wr->terrain) == camera->bounds.h);
+  wr->bounds = gfx_grid_view_bounds(view, camera);
+  SDL_assert(grid_width(&wr->terrain) == wr->bounds.w);
+  SDL_assert(grid_height(&wr->terrain) == wr->bounds.h);
 
   grid(rl_tile) const* map = &rl_get_current_level(world)->map;
 
-  wr->visible = rl_visible_world(camera, grid_width(map), grid_height(map));
+  wr->visible =
+    gfx_visible_cells(view, camera, grid_width(map), grid_height(map));
 
-  populate_terrain(wr, world, camera);
-  populate_light(wr, world, camera);
+  populate_terrain(wr, world);
+  populate_light(wr, world);
 }
 
 void
 rl_draw_world(struct rl_world_renderer const* wr,
-            struct rl_world const* world,
-            struct rl_camera const* camera,
-            SDL_Renderer* renderer,
-            struct gfx_tileset const* font)
+              struct rl_world const* world,
+              struct gfx_camera const* camera,
+              struct gfx_grid_view const* view,
+              SDL_Renderer* renderer,
+              struct gfx_tileset const* font)
 {
-  SDL_assert(font->tile_width == camera->cell_width);
-  SDL_assert(font->tile_height == camera->cell_height);
+  SDL_assert(font->tile_width == view->cell_width);
+  SDL_assert(font->tile_height == view->cell_height);
 
-  SDL_FPoint const screen_origin = rl_viewport_origin(camera);
+  SDL_Point const first = { wr->bounds.x, wr->bounds.y };
+  SDL_FPoint const screen_origin = gfx_cell_to_screen(view, camera, first);
   draw_level(wr, renderer, font, screen_origin);
-  draw_items(camera, world, renderer, font);
-  draw_actors(camera, world, renderer, font);
+  draw_items(camera, view, world, renderer, font);
+  draw_actors(camera, view, world, renderer, font);
   draw_light(wr, renderer, font, screen_origin);
 }
 
 void
 rl_draw_world_target_area(struct rl_world_renderer const* wr,
-                        struct rl_camera const* camera,
-                        SDL_Renderer* renderer,
-                        SDL_Rect const* bounds,
-                        grid(boolean) const* mask)
+                          struct gfx_camera const* camera,
+                          struct gfx_grid_view const* view,
+                          SDL_Renderer* renderer,
+                          SDL_Rect const* bounds,
+                          grid(boolean) const* mask)
 {
   SDL_Rect region;
   if (!SDL_GetRectIntersection(&wr->visible, bounds, &region)) {
@@ -253,9 +265,9 @@ rl_draw_world_target_area(struct rl_world_renderer const* wr,
       }
 
       SDL_Point const p = { x, y };
-      SDL_FPoint const at = rl_world_to_screen(camera, p);
+      SDL_FPoint const at = gfx_cell_to_screen(view, camera, p);
       SDL_FRect const rect = {
-        at.x, at.y, (float)camera->cell_width, (float)camera->cell_height
+        at.x, at.y, (float)view->cell_width, (float)view->cell_height
       };
       SDL_RenderFillRect(renderer, &rect);
     }
@@ -265,13 +277,14 @@ rl_draw_world_target_area(struct rl_world_renderer const* wr,
 }
 
 void
-rl_draw_world_cursor(struct rl_camera const* camera,
-                   SDL_Renderer* renderer,
-                   SDL_Point cursor)
+rl_draw_world_cursor(struct gfx_camera const* camera,
+                     struct gfx_grid_view const* view,
+                     SDL_Renderer* renderer,
+                     SDL_Point cursor)
 {
-  SDL_FPoint const at = rl_world_to_screen(camera, cursor);
+  SDL_FPoint const at = gfx_cell_to_screen(view, camera, cursor);
   SDL_FRect const rect = {
-    at.x, at.y, (float)camera->cell_width, (float)camera->cell_height
+    at.x, at.y, (float)view->cell_width, (float)view->cell_height
   };
 
   SDL_FColor colour = RL_COLOUR_YELLOW[5];

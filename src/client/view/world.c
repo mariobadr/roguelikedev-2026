@@ -10,7 +10,9 @@
 #include "game/tile.h"
 #include "game/world.h"
 
-#include "render/camera.h"
+#include "graphics/camera.h"
+#include "graphics/grid_view.h"
+
 #include "render/palette.h"
 #include "render/world.h"
 
@@ -45,7 +47,8 @@ struct view_state
   /** Which mode the view is in. */
   enum world_mode mode;
 
-  struct rl_camera camera;
+  struct gfx_camera camera;
+  struct gfx_grid_view grid_view;
   struct rl_world_renderer renderer;
 
   // for the MOVE mode
@@ -66,9 +69,10 @@ init_view_state(struct view_state* s,
 {
   s->world = world;
 
-  rl_init_camera(&s->camera, viewport, cell_width, cell_height);
-  return rl_init_world_renderer(
-    &s->renderer, s->camera.bounds.w, s->camera.bounds.h);
+  gfx_init_camera(&s->camera, viewport);
+  s->grid_view = (struct gfx_grid_view){ cell_width, cell_height };
+  SDL_Rect const bounds = gfx_grid_view_bounds(&s->grid_view, &s->camera);
+  return rl_init_world_renderer(&s->renderer, bounds.w, bounds.h);
 }
 
 static bool
@@ -156,7 +160,8 @@ update_move(struct view_state* s, struct inpt_state const* istate)
     grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
 
     SDL_Point target;
-    if (rl_get_world_cell(&s->camera, istate->mouse.position, &target) &&
+    if (gfx_screen_to_cell(
+          &s->grid_view, &s->camera, istate->mouse.position, &target) &&
         grid_contains(map, target.x, target.y)) {
       action = rl_handle_mouse_input(istate, rogue->pos, target);
     }
@@ -251,9 +256,17 @@ prepare_view(void* data)
   SDL_Point const focus =
     s->mode == WORLD_MODE_SELECT ? s->selection.cursor : rogue->pos;
   grid(rl_tile) const* map = &rl_get_current_level(s->world)->map;
-  rl_centre_camera_on(&s->camera, focus, grid_width(map), grid_height(map));
+  int const columns = (int)s->camera.viewport.w / s->grid_view.cell_width;
+  int const rows = (int)s->camera.viewport.h / s->grid_view.cell_height;
+  int const max_x = SDL_max(0, grid_width(map) - columns);
+  int const max_y = SDL_max(0, grid_height(map) - rows);
+  SDL_Point const origin = {
+    SDL_clamp(focus.x - columns / 2, 0, max_x),
+    SDL_clamp(focus.y - rows / 2, 0, max_y)
+  };
+  s->camera.position = gfx_cell_to_world(&s->grid_view, origin);
 
-  rl_prepare_world_renderer(&s->renderer, s->world, &s->camera);
+  rl_prepare_world_renderer(&s->renderer, s->world, &s->camera, &s->grid_view);
 }
 
 static void
@@ -264,15 +277,18 @@ render_view(void const* data,
   struct view_state const* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
-  rl_draw_world(&s->renderer, s->world, &s->camera, renderer, font);
+  rl_draw_world(
+    &s->renderer, s->world, &s->camera, &s->grid_view, renderer, font);
 
   if (s->mode == WORLD_MODE_SELECT) {
     rl_draw_world_target_area(&s->renderer,
                               &s->camera,
+                              &s->grid_view,
                               renderer,
                               &s->selection.bounds,
                               &s->selection.mask);
-    rl_draw_world_cursor(&s->camera, renderer, s->selection.cursor);
+    rl_draw_world_cursor(
+      &s->camera, &s->grid_view, renderer, s->selection.cursor);
   }
 }
 

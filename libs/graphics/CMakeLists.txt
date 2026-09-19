@@ -2,8 +2,12 @@
 # Graphics library
 ###############################################################################
 add_library(ginc_graphics STATIC
+    camera.c
+    camera.h
     console.c
     console.h
+    grid_view.c
+    grid_view.h
     tileset.c
     tileset.h
 )
