@@ -7,12 +7,10 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "container/alist.h"
-#include "container/grid.h"
 #include "core/rand.h"
 
 #include "command.h"
 #include "event.h"
-#include "fov.h"
 #include "world.h"
 
 /**
@@ -24,12 +22,8 @@ struct rl_game
   Uint64 turns;
   /** The random number generator */
   struct rand_state rng;
-  /** The world, including the levels visited so far. */
+  /** The game world. */
   struct rl_world world;
-  /** A map of distances to reach the player. */
-  grid(int) distances;
-  /** Player's field-of-view */
-  struct rl_fov fov;
 };
 
 /**
@@ -57,12 +51,5 @@ bool
 rl_update_game(struct rl_game* game,
                struct rl_command const* cmd,
                alist(rl_event)* events);
-
-/**
- * Note: expects the current level and rogue to be populated; runtime buffers
- * must be empty.
- */
-bool
-rl_prepare_game(struct rl_game* game);
 
 #endif // GINC_ROGUELIKE_GAME_H

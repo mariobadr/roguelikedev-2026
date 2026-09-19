@@ -8,8 +8,7 @@
 static bool
 pick_direction(SDL_Point* direction,
                struct rl_actor const* actor,
-               struct rl_world const* world,
-               grid(int) const* distances)
+               struct rl_world const* world)
 {
   int best_distance = RL_INFINITE_DISTANCE;
 
@@ -24,7 +23,7 @@ pick_direction(SDL_Point* direction,
       continue;
     }
 
-    int next_distance = *grid_at(distances, next.x, next.y);
+    int next_distance = *grid_at(&world->player.distances, next.x, next.y);
 
     if (next_distance >= best_distance) {
       continue;
@@ -65,12 +64,10 @@ rl_wake_actor(struct rl_actor* actor, struct rl_fov const* fov)
 }
 
 struct rl_command
-rl_next_ai_command(struct rl_actor const* actor,
-                   struct rl_world const* world,
-                   grid(int) const* distances)
+rl_next_ai_command(struct rl_actor const* actor, struct rl_world const* world)
 {
   SDL_Point dir;
-  if (pick_direction(&dir, actor, world, distances)) {
+  if (pick_direction(&dir, actor, world)) {
     return rl_new_bump_command(actor, dir, world);
   }
 

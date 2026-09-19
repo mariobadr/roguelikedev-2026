@@ -48,7 +48,6 @@ rl_new_bump_command(struct rl_actor const* actor,
 bool
 rl_apply_command(struct rl_world* world,
                  struct rl_command const* cmd,
-                 struct rl_fov const* fov,
                  alist(rl_event)* events,
                  struct rand_state* rng)
 {
@@ -70,13 +69,8 @@ rl_apply_command(struct rl_world* world,
     case RL_COMMAND_TAKE_STAIRS:
       return rl_take_stairs(world, cmd->actor, events, rng);
     case RL_COMMAND_USE_ITEM:
-      return rl_use_item(world,
-                         cmd->actor,
-                         cmd->use_item.item,
-                         cmd->use_item.dst,
-                         fov,
-                         events,
-                         rng);
+      return rl_use_item(
+        world, cmd->actor, cmd->use_item.item, cmd->use_item.dst, events, rng);
     case RL_COMMAND_WAIT:
       return true;
     default:

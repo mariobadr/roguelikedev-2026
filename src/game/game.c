@@ -1,9 +1,7 @@
 #include "game.h"
 
 #include <SDL3/SDL_assert.h>
-#include <SDL3/SDL_error.h>
 #include <SDL3/SDL_iostream.h>
-#include <SDL3/SDL_log.h>
 
 #include "actor.h"
 #include "actor_def.h"
@@ -13,8 +11,6 @@
 #include "generate.h"
 #include "mechanics.h"
 #include "pathfinding.h"
-
-#define FOV_RADIUS 8
 
 static void
 award_kill_xp(struct rl_world* world,
@@ -54,12 +50,11 @@ award_kill_xp(struct rl_world* world,
 static bool
 resolve_command(struct rl_world* world,
                 struct rl_command const* cmd,
-                struct rl_fov const* fov,
                 alist(rl_event)* events,
                 struct rand_state* rng)
 {
   size_t const first_event = alist_len(events);
-  bool const turn_taken = rl_apply_command(world, cmd, fov, events, rng);
+  bool const turn_taken = rl_apply_command(world, cmd, events, rng);
   // XP awards append events; only process the command's original events.
   size_t const end_event = alist_len(events);
 
@@ -72,8 +67,6 @@ resolve_command(struct rl_world* world,
 
 static void
 update_actors(struct rl_world* world,
-              grid(int) * distances,
-              struct rl_fov const* fov,
               alist(rl_event)* events,
               struct rand_state* rng)
 {
@@ -86,7 +79,8 @@ update_actors(struct rl_world* world,
 
   // build the distance map where the target is the player
   struct rl_level const* level = rl_get_current_level(world);
-  if (!rl_build_dijkstra_map(distances, &level->map, rogue->pos)) {
+  if (!rl_build_dijkstra_map(
+        &world->player.distances, &level->map, rogue->pos)) {
     return;
   }
 
@@ -110,7 +104,7 @@ update_actors(struct rl_world* world,
     }
 
     bool const was_awake = actor->awake;
-    if (!rl_wake_actor(actor, fov)) {
+    if (!rl_wake_actor(actor, &world->player.fov)) {
       // actor is asleep
       continue;
     }
@@ -123,8 +117,8 @@ update_actors(struct rl_world* world,
     }
 
     // choose and execute each actor's command before updating the next actor
-    struct rl_command cmd = rl_next_ai_command(actor, world, distances);
-    resolve_command(world, &cmd, fov, events, rng);
+    struct rl_command cmd = rl_next_ai_command(actor, world);
+    resolve_command(world, &cmd, events, rng);
 
     // the rogue lives in world->actors, which may have been reallocated
     rogue = rl_borrow_actor(world, rogue_handle);
@@ -135,43 +129,6 @@ update_actors(struct rl_world* world,
   }
 }
 
-static void
-update_explored(struct rl_level* level, struct rl_fov const* fov)
-{
-  for (size_t i = 0; i < grid_count(&fov->visible); i++) {
-    if (*grid_at_index(&fov->visible, i)) {
-      *grid_at_index(&level->explored, i) = true;
-    }
-  }
-}
-
-static bool
-alloc_map_buffers(struct rl_game* game, int width, int height)
-{
-  // allocate space for the distance map
-  if (!grid_alloc(&game->distances, width, height)) {
-    SDL_Log("grid_alloc failed: %s", SDL_GetError());
-    return false;
-  }
-
-  if (!rl_alloc_fov(&game->fov, width, height, FOV_RADIUS)) {
-    return false;
-  }
-
-  return true;
-}
-
-static void
-observe_world(struct rl_game* game)
-{
-  struct rl_level* level = rl_edit_current_level(&game->world);
-  struct rl_actor const* rogue =
-    rl_borrow_actor(&game->world, rl_get_rogue(&game->world));
-
-  rl_update_fov(&game->fov, &level->map, rogue->pos);
-  update_explored(level, &game->fov);
-}
-
 void
 rl_free_game(struct rl_game* game)
 {
@@ -179,24 +136,8 @@ rl_free_game(struct rl_game* game)
     return;
   }
 
-  rl_free_fov(&game->fov);
-  grid_free(&game->distances);
   rl_free_world(&game->world);
   SDL_zerop(game);
-}
-
-bool
-rl_prepare_game(struct rl_game* game)
-{
-  struct rl_level const* level = rl_get_current_level(&game->world);
-
-  if (!alloc_map_buffers(
-        game, grid_width(&level->map), grid_height(&level->map))) {
-    return false;
-  }
-
-  observe_world(game);
-  return true;
 }
 
 // Initialize a zeroed game; the caller owns cleanup on failure.
@@ -227,7 +168,7 @@ init_game(struct rl_game* game, int width, int height, Uint64 seed)
   }
   game->world.current_level = (int)alist_len(&game->world.levels) - 1;
 
-  return rl_prepare_game(game);
+  return rl_create_player(&game->world);
 }
 
 bool
@@ -248,16 +189,14 @@ rl_update_game(struct rl_game* game,
                struct rl_command const* cmd,
                alist(rl_event)* events)
 {
-  bool turn_taken =
-    resolve_command(&game->world, cmd, &game->fov, events, &game->rng);
+  bool turn_taken = resolve_command(&game->world, cmd, events, &game->rng);
 
   if (turn_taken) {
     game->turns++;
 
-    observe_world(game);
+    rl_update_visibility(&game->world);
 
-    update_actors(
-      &game->world, &game->distances, &game->fov, events, &game->rng);
+    update_actors(&game->world, events, &game->rng);
   }
 
   return turn_taken;

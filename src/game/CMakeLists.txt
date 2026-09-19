@@ -49,6 +49,7 @@ add_library(rl_game STATIC
     mechanics.h
     pathfinding.c
     pathfinding.h
+    player.c
     player.h
     spawn.c
     spawn.h

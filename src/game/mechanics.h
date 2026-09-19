@@ -13,7 +13,6 @@
 // forward declarations
 struct rl_actor;
 struct rl_world;
-struct rl_fov;
 struct rand_state;
 
 /**
@@ -53,7 +52,6 @@ rl_use_item(struct rl_world* world,
             handle(rl_actor) actor_handle,
             handle(rl_item) item_handle,
             SDL_Point target,
-            struct rl_fov const* fov,
             alist(rl_event)* events,
             struct rand_state* rng);
 

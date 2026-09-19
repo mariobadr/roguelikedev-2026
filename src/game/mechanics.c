@@ -164,13 +164,12 @@ use_item_damage_area(struct rl_world* world,
 static bool
 use_item_lightning(struct rl_actor* actor,
                    struct rl_world* world,
-                   struct rl_fov const* fov,
                    int power,
                    alist(rl_event)* events,
                    struct rand_state* rng)
 {
   handle(rl_actor) const target_handle =
-    rl_find_nearest_visible_actor(world, fov, actor->handle);
+    rl_find_nearest_visible_actor(world, actor->handle);
   struct rl_actor* nearest = rl_borrow_mut_actor(world, target_handle);
   if (nearest == NULL) {
     struct rl_event event = { 0 };
@@ -332,7 +331,6 @@ rl_use_item(struct rl_world* world,
             handle(rl_actor) actor_handle,
             handle(rl_item) item_handle,
             SDL_Point target,
-            struct rl_fov const* fov,
             alist(rl_event)* events,
             struct rand_state* rng)
 {
@@ -353,7 +351,7 @@ rl_use_item(struct rl_world* world,
 
   struct rl_item_def const* idef = rl_get_item_def(item->itype);
   if (idef->target == RL_ITEM_TARGET_TILE &&
-      !rl_is_valid_item_target(idef, world, fov, target)) {
+      !rl_is_valid_item_target(idef, world, target)) {
     return false;
   }
 
@@ -366,7 +364,7 @@ rl_use_item(struct rl_world* world,
       used = use_item_damage_area(world, actor, idef, target, events, rng);
       break;
     case RL_ITEM_EFFECT_DAMAGE_NEAREST:
-      used = use_item_lightning(actor, world, fov, idef->power, events, rng);
+      used = use_item_lightning(actor, world, idef->power, events, rng);
       break;
     default:
       break;

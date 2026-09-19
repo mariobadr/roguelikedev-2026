@@ -51,7 +51,7 @@ rl_read_game(SDL_IOStream* src, struct rl_game* out)
     result = rl_read_world(src, &tmp.world);
   }
 
-  if (result == RL_READ_OK && !rl_prepare_game(&tmp)) {
+  if (result == RL_READ_OK && !rl_create_player(&tmp.world)) {
     result = RL_READ_ERROR;
   }
 

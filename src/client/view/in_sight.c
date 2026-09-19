@@ -41,7 +41,6 @@ alist_define_as(struct actor_row, actor_row);
 struct view_state
 {
   struct rl_world const* world;
-  struct rl_fov const* fov;
 
   // Static layout/geometry
   float glyph_width;
@@ -81,12 +80,10 @@ layout_view(struct view_state* s, SDL_FRect const* viewport)
 static bool
 init_view_state(struct view_state* s,
                 struct rl_world const* world,
-                struct rl_fov const* fov,
                 SDL_FRect const* viewport,
                 struct gfx_tileset const* font)
 {
   s->world = world;
-  s->fov = fov;
   s->glyph_width = (float)font->tile_width;
   s->line_height = (float)font->tile_height;
 
@@ -130,7 +127,8 @@ visible_item_count(struct view_state const* s)
   for (size_t i = 0; i < alist_len(&level->items); ++i) {
     struct rl_item const* item =
       rl_borrow_item(s->world, *alist_at(&level->items, i));
-    if (item != NULL && rl_is_tile_visible(s->fov, item->on.map)) {
+    if (item != NULL &&
+        rl_is_tile_visible(&s->world->player.fov, item->on.map)) {
       ++count;
     }
   }
@@ -149,7 +147,8 @@ collect_monsters(struct view_state* s)
     struct rl_actor const* actor =
       rl_borrow_actor(s->world, *alist_at(&level->actors, i));
     if (actor == NULL || handle_equal(actor->handle, rogue) ||
-        !rl_actor_is_alive(actor) || !rl_is_tile_visible(s->fov, actor->pos)) {
+        !rl_actor_is_alive(actor) ||
+        !rl_is_tile_visible(&s->world->player.fov, actor->pos)) {
       continue;
     }
 
@@ -385,7 +384,6 @@ render_view(void const* data,
 bool
 rl_alloc_in_sight_view(struct rl_view* view,
                        struct rl_world const* world,
-                       struct rl_fov const* fov,
                        SDL_FRect const* viewport,
                        struct gfx_tileset const* font)
 {
@@ -394,7 +392,7 @@ rl_alloc_in_sight_view(struct rl_view* view,
     return false;
   }
 
-  if (!init_view_state(view->state, world, fov, viewport, font)) {
+  if (!init_view_state(view->state, world, viewport, font)) {
     free_view(view->state);
     view->state = NULL;
     return false;

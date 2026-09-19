@@ -38,8 +38,7 @@ struct rl_world
   pool(rl_actor) actors;
   /** All items, wherever they are. */
   pool(rl_item) items;
-  /** Player progression and actor handle, invalid until a new game creates it.
-   */
+  /** Player state. */
   struct rl_player player;
 };
 
@@ -48,6 +47,20 @@ struct rl_world
  */
 bool
 rl_alloc_world(struct rl_world* world);
+
+/**
+ * Allocate player runtime buffers and initialize visibility.
+ *
+ * @return whether allocation succeeded.
+ */
+bool
+rl_create_player(struct rl_world* world);
+
+/**
+ * Update the player's field-of-view and explored tiles on the current level.
+ */
+void
+rl_update_visibility(struct rl_world* world);
 
 /**
  * Free the resources used by world.

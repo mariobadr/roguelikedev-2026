@@ -9,7 +9,6 @@
 
 // forward declarations
 struct rl_command;
-struct rl_fov;
 struct rl_item_def;
 struct rl_view;
 struct rl_world;
@@ -30,7 +29,6 @@ enum rl_map_selection_result
 bool
 rl_alloc_map_view(struct rl_view* view,
                   struct rl_world const* world,
-                  struct rl_fov const* fov,
                   SDL_FRect const* viewport,
                   int cell_width,
                   int cell_height);

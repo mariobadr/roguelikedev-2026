@@ -111,7 +111,6 @@ alloc_screen(struct screen_state* s,
 
   if (!rl_alloc_in_sight_view(&s->views[RL_VIEW_IN_SIGHT],
                               &s->run->game.world,
-                              &s->run->game.fov,
                               &s->panel_bounds[PANEL_RIGHT],
                               font)) {
     return false;
@@ -134,7 +133,6 @@ alloc_screen(struct screen_state* s,
   // the map is only designed to work in the main panel right now
   if (!rl_alloc_map_view(&s->views[RL_VIEW_MAP],
                          &s->run->game.world,
-                         &s->run->game.fov,
                          &s->panel_bounds[PANEL_MAIN],
                          font->tile_width,
                          font->tile_height)) {
@@ -457,8 +455,7 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
     return;
   }
 
-  rl_view_describe_ribbon(&s->views[s->panel_views[s->focused_panel]],
-                          content);
+  rl_view_describe_ribbon(&s->views[s->panel_views[s->focused_panel]], content);
 }
 
 static void

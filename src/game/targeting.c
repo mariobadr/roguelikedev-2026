@@ -8,7 +8,6 @@
 
 handle(rl_actor)
 rl_find_nearest_visible_actor(struct rl_world const* world,
-                              struct rl_fov const* fov,
                               handle(rl_actor) attacker)
 {
   handle(rl_actor) nearest = handle_invalid(rl_actor);
@@ -31,7 +30,7 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
       continue;
     }
 
-    if (!rl_is_tile_visible(fov, candidate->pos)) {
+    if (!rl_is_tile_visible(&world->player.fov, candidate->pos)) {
       continue;
     }
 
@@ -53,7 +52,6 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
 bool
 rl_is_valid_item_target(struct rl_item_def const* def,
                         struct rl_world const* world,
-                        struct rl_fov const* fov,
                         SDL_Point dst)
 {
   (void)def;
@@ -63,7 +61,7 @@ rl_is_valid_item_target(struct rl_item_def const* def,
     return false;
   }
 
-  return rl_is_tile_visible(fov, dst);
+  return rl_is_tile_visible(&world->player.fov, dst);
 }
 
 bool
@@ -103,7 +101,7 @@ void
 rl_fill_item_area(struct rl_item_def const* def,
                   struct rl_world const* world,
                   SDL_Point centre,
-                  grid(boolean)* mask)
+                  grid(boolean) * mask)
 {
   SDL_Rect const bounds = rl_item_area_bounds(def, centre);
   SDL_assert(grid_width(mask) == bounds.w);

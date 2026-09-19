@@ -12,7 +12,6 @@
 #include "game/handles.h"
 
 // forward declarations
-struct rl_fov;
 struct rl_item_def;
 struct rl_world;
 
@@ -22,17 +21,15 @@ struct rl_world;
  */
 handle(rl_actor)
 rl_find_nearest_visible_actor(struct rl_world const* world,
-                              struct rl_fov const* fov,
                               handle(rl_actor) attacker);
 
 /**
  * @return whether dst is an acceptable centre for the tile-targeted item def,
- * as seen through the fov.
+ * as seen through the player's field-of-view.
  */
 bool
 rl_is_valid_item_target(struct rl_item_def const* def,
                         struct rl_world const* world,
-                        struct rl_fov const* fov,
                         SDL_Point dst);
 
 /**

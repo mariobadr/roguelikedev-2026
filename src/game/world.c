@@ -31,6 +31,41 @@ rl_alloc_world(struct rl_world* world)
   return true;
 }
 
+static void
+update_explored(struct rl_level* level, struct rl_fov const* fov)
+{
+  for (size_t i = 0; i < grid_count(&fov->visible); i++) {
+    if (*grid_at_index(&fov->visible, i)) {
+      *grid_at_index(&level->explored, i) = true;
+    }
+  }
+}
+
+void
+rl_update_visibility(struct rl_world* world)
+{
+  struct rl_level* level = rl_edit_current_level(world);
+  struct rl_actor const* rogue =
+    rl_borrow_actor(world, rl_get_rogue(world));
+
+  rl_update_fov(&world->player.fov, &level->map, rogue->pos);
+  update_explored(level, &world->player.fov);
+}
+
+bool
+rl_create_player(struct rl_world* world)
+{
+  struct rl_level const* level = rl_get_current_level(world);
+
+  if (!rl_alloc_player(
+        &world->player, grid_width(&level->map), grid_height(&level->map))) {
+    return false;
+  }
+
+  rl_update_visibility(world);
+  return true;
+}
+
 void
 rl_free_world(struct rl_world* world)
 {
@@ -38,6 +73,7 @@ rl_free_world(struct rl_world* world)
     return;
   }
 
+  rl_free_player(&world->player);
   pool_free(&world->items);
   pool_free(&world->actors);
 

@@ -45,7 +45,6 @@ struct view_state
 {
   // the "model" for this view
   struct rl_world const* world;
-  struct rl_fov const* fov;
 
   /** Which mode the view is in. */
   enum map_mode mode;
@@ -67,13 +66,11 @@ struct view_state
 static bool
 init_view_state(struct view_state* s,
                 struct rl_world const* world,
-                struct rl_fov const* fov,
                 SDL_FRect const* viewport,
                 int cell_width,
                 int cell_height)
 {
   s->world = world;
-  s->fov = fov;
 
   rl_init_camera(&s->camera, viewport, cell_width, cell_height);
 
@@ -108,7 +105,7 @@ populate_terrain(struct view_state* s)
         enum rl_tile const tile = *grid_at(map, p.x, p.y);
         cell = rl_get_tile_gfx(tile);
 
-        if (!rl_is_tile_visible(s->fov, p)) {
+        if (!rl_is_tile_visible(&s->world->player.fov, p)) {
           // dim explored but not visible tiles
           cell.fg = rl_lerp_colour(cell.fg, RL_COLOUR_BLACK, 0.4f);
         }
@@ -139,9 +136,9 @@ populate_light(struct view_state* s)
       SDL_Point const p = { x, y };
       struct gfx_console_cell cell = { 0 };
 
-      if (rl_is_tile_visible(s->fov, p)) {
-        float const brightness =
-          rl_calculate_brightness(s->fov->origin, p, (float)s->fov->radius);
+      if (rl_is_tile_visible(&s->world->player.fov, p)) {
+        float const brightness = rl_calculate_brightness(
+          s->world->player.fov.origin, p, (float)s->world->player.fov.radius);
         float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
 
         cell.bg = (SDL_FColor){ light.r, light.g, light.b, alpha };
@@ -202,7 +199,7 @@ draw_items(struct view_state const* s,
       continue;
     }
 
-    if (rl_is_tile_visible(s->fov, item->on.map)) {
+    if (rl_is_tile_visible(&s->world->player.fov, item->on.map)) {
       draw_item(s, renderer, font, item);
     }
   }
@@ -234,7 +231,7 @@ draw_actors(struct view_state const* s,
       continue;
     }
 
-    if (rl_is_tile_visible(s->fov, actor->pos)) {
+    if (rl_is_tile_visible(&s->world->player.fov, actor->pos)) {
       draw_actor(s, renderer, font, actor);
     }
   }
@@ -347,7 +344,7 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   if (s->mode == MAP_MODE_SELECT) {
     rl_append_text(hint, colour, "[WASD] move cursor");
     if (rl_is_valid_item_target(
-          s->selection.def, s->world, s->fov, s->selection.cursor)) {
+          s->selection.def, s->world, s->selection.cursor)) {
       rl_append_text(hint, colour, "   [E] confirm");
     }
     rl_append_text(hint, colour, "   [Esc] cancel");
@@ -433,7 +430,7 @@ update_select(struct view_state* s, struct inpt_state const* istate)
       break;
     case RL_ACTION_SELECT:
       if (!rl_is_valid_item_target(
-            s->selection.def, s->world, s->fov, s->selection.cursor)) {
+            s->selection.def, s->world, s->selection.cursor)) {
         return true;
       }
       s->pending_point = s->selection.cursor;
@@ -446,7 +443,7 @@ update_select(struct view_state* s, struct inpt_state const* istate)
       return false;
   }
 
-  if (rl_is_valid_item_target(s->selection.def, s->world, s->fov, next)) {
+  if (rl_is_valid_item_target(s->selection.def, s->world, next)) {
     s->selection.cursor = next;
     refresh_area(s);
   }
@@ -521,7 +518,6 @@ free_view(void* data)
 bool
 rl_alloc_map_view(struct rl_view* view,
                   struct rl_world const* world,
-                  struct rl_fov const* fov,
                   SDL_FRect const* viewport,
                   int cell_width,
                   int cell_height)
@@ -534,8 +530,7 @@ rl_alloc_map_view(struct rl_view* view,
     return false;
   }
 
-  if (!init_view_state(
-        view->state, world, fov, viewport, cell_width, cell_height)) {
+  if (!init_view_state(view->state, world, viewport, cell_width, cell_height)) {
     free_view(view->state);
     view->state = NULL;
     return false;

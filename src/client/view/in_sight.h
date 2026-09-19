@@ -9,14 +9,12 @@
 
 // forward declarations
 struct gfx_tileset;
-struct rl_fov;
 struct rl_view;
 struct rl_world;
 
 bool
 rl_alloc_in_sight_view(struct rl_view* view,
                        struct rl_world const* world,
-                       struct rl_fov const* fov,
                        SDL_FRect const* viewport,
                        struct gfx_tileset const* font);
 
