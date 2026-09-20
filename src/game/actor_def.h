@@ -7,8 +7,8 @@
 /** Actor categories. */
 enum rl_actor_class
 {
-  RL_ACTOR_HUMANOID,
-  RL_ACTOR_BEAST,
+  RL_ACTOR_HUMANOID, //< a person
+  RL_ACTOR_BEAST,    //< an animal
 };
 
 /**
@@ -20,19 +20,29 @@ enum rl_actor_type
   RL_ACTOR_RAT    //< a dangerous mouse
 };
 
-/** Immutable data that defines an actor. */
+/**
+ * Immutable data that defines an actor.
+ */
 struct rl_actor_def
 {
+  /** The category of the actor. */
   enum rl_actor_class class;
 
+  /** The display name. */
   char const* name;
+  /** The maximum hit points at level 1. */
   int base_hp;
+  /** The maximum hit points gained per level. */
   int hp_per_level;
 
+  /** The strength at level 1. */
   int base_strength;
+  /** The strength gained per level. */
   int strength_per_level;
 
+  /** The armor at level 1. */
   int base_armor;
+  /** The armor gained per level. */
   int armor_per_level;
 };
 

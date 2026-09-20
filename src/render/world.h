@@ -36,21 +36,21 @@ struct rl_world_renderer
 };
 
 /**
- * Allocates buffers of columns x rows cells.
+ * Allocate buffers of columns x rows cells.
  *
- * @return false if allocation fails
+ * @return whether allocation succeeded.
  */
 bool
 rl_init_world_renderer(struct rl_world_renderer* wr, int columns, int rows);
 
 /**
- * Frees the buffers.
+ * Free the buffers.
  */
 void
 rl_free_world_renderer(struct rl_world_renderer* wr);
 
 /**
- * Fills the buffers from the current level for the cells the camera sees.
+ * Fill the buffers from the current level for the cells the camera sees.
  */
 void
 rl_prepare_world_renderer(struct rl_world_renderer* wr,
@@ -59,9 +59,9 @@ rl_prepare_world_renderer(struct rl_world_renderer* wr,
                           struct gfx_grid_view const* view);
 
 /**
- * Draws the prepared terrain, the visible items and actors, then the light.
+ * Draw the prepared terrain, the visible items and actors, then the light.
  *
- * @param font its tile size must equal the cell size of view
+ * @param font its tile size must equal the cell size of view.
  */
 void
 rl_draw_world(struct rl_world_renderer const* wr,
@@ -72,9 +72,9 @@ rl_draw_world(struct rl_world_renderer const* wr,
               struct gfx_tileset const* font);
 
 /**
- * Highlights the cells of bounds that are set in mask.
+ * Highlight the cells of bounds that are set in mask.
  *
- * @param mask one entry per cell of bounds
+ * @param mask one entry per cell of bounds.
  */
 void
 rl_draw_world_target_area(struct rl_world_renderer const* wr,
@@ -85,7 +85,7 @@ rl_draw_world_target_area(struct rl_world_renderer const* wr,
                           grid(boolean) const* mask);
 
 /**
- * Outlines the cell at cursor.
+ * Outline the cell at cursor.
  */
 void
 rl_draw_world_cursor(struct gfx_camera const* camera,

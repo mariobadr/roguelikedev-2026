@@ -44,12 +44,14 @@ struct rl_world
 
 /**
  * Allocate a new world.
+ *
+ * @return whether allocation succeeded.
  */
 bool
 rl_alloc_world(struct rl_world* world);
 
 /**
- * Allocate player runtime buffers and initialize visibility.
+ * Allocate player runtime buffers and initialise visibility.
  *
  * @return whether allocation succeeded.
  */
@@ -94,7 +96,7 @@ rl_find_actor(struct rl_world const* world,
               SDL_Point position);
 
 /**
- * @return the actor referred to by actor_handle (NULL if not found)
+ * @return the actor referred to by actor_handle (NULL if not found).
  */
 struct rl_actor const*
 rl_borrow_actor(struct rl_world const* world, handle(rl_actor) actor_handle);
@@ -136,7 +138,7 @@ int
 rl_count_held_items(struct rl_world const* world, handle(rl_actor) holder);
 
 /**
- * @return the item referred to by item_handle (NULL if not found)
+ * @return the item referred to by item_handle (NULL if not found).
  */
 struct rl_item const*
 rl_borrow_item(struct rl_world const* world, handle(rl_item) item_handle);

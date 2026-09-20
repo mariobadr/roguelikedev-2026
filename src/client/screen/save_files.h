@@ -13,7 +13,10 @@ struct rl_run;
 struct rl_screen;
 
 /**
- * A screen for browsing saved runs, loading one into run, or deleting one.
+ * Allocate a screen for browsing saved runs, loading one into run, or deleting
+ * one.
+ *
+ * @return whether allocation succeeded.
  */
 bool
 rl_alloc_save_files_screen(struct rl_screen* screen,

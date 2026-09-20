@@ -11,6 +11,11 @@
 struct rl_game_log;
 struct rl_view;
 
+/**
+ * Allocate a view of log within viewport.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_log_view(struct rl_view* view,
                   struct rl_game_log const* log,

@@ -15,27 +15,27 @@
  */
 enum rl_tile
 {
-  RL_TILE_WALL = 0,        //< A wall tile
-  RL_TILE_FLOOR = 1,       //< A floor tile
-  RL_TILE_STAIRS_UP = 2,   //< A staircase leading up
-  RL_TILE_STAIRS_DOWN = 3, //< A staircase leading down
-  RL_TILE_COUNT,           //< The number of tile types; not a tile
+  RL_TILE_WALL = 0,        //< wall tile
+  RL_TILE_FLOOR = 1,       //< floor tile
+  RL_TILE_STAIRS_UP = 2,   //< staircase leading up
+  RL_TILE_STAIRS_DOWN = 3, //< staircase leading down
+  RL_TILE_COUNT,           //< number of tile types; not a tile
 };
 
 /**
- * @return whether an actor can walk on this tile
+ * @return whether an actor can walk on this tile.
  */
 bool
 rl_is_walkable(enum rl_tile tile);
 
 /**
- * @return whether an actor can see through this tile
+ * @return whether an actor can see through this tile.
  */
 bool
 rl_is_transparent(enum rl_tile tile);
 
 /**
- * @return whether this tile is a staircase, up or down
+ * @return whether this tile is a staircase, up or down.
  */
 bool
 rl_is_staircase(enum rl_tile tile);

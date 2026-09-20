@@ -18,11 +18,11 @@ struct rl_ribbon_content;
  */
 enum rl_screen_id
 {
-  RL_SCREEN_MAIN_MENU,  //< The title/main menu screen
-  RL_SCREEN_SAVE_FILES, //< Browse saved runs
-  RL_SCREEN_GAMEPLAY,   //< The main screen
-  RL_SCREEN_GAME_OVER,  //< The rogue has died
-  RL_SCREEN_COUNT,      //< The number of screens
+  RL_SCREEN_MAIN_MENU,  //< the title/main menu screen
+  RL_SCREEN_SAVE_FILES, //< browse saved runs
+  RL_SCREEN_GAMEPLAY,   //< the main screen
+  RL_SCREEN_GAME_OVER,  //< the rogue has died
+  RL_SCREEN_COUNT,      //< the number of screens
 };
 
 /**
@@ -30,12 +30,15 @@ enum rl_screen_id
  */
 enum rl_screen_transition_type
 {
-  RL_SCREEN_TRANSITION_NONE, //< Do not transition
-  RL_SCREEN_TRANSITION_PUSH, //< Push new screen to top
-  RL_SCREEN_TRANSITION_POP,  //< Pop top screen
-  RL_SCREEN_TRANSITION_SWAP, //< Swap out top screen
+  RL_SCREEN_TRANSITION_NONE, //< do not transition
+  RL_SCREEN_TRANSITION_PUSH, //< push new screen to top
+  RL_SCREEN_TRANSITION_POP,  //< pop top screen
+  RL_SCREEN_TRANSITION_SWAP, //< swap out top screen
 };
 
+/**
+ * A request to change the active screen.
+ */
 struct rl_screen_transition
 {
   /** The type of this transition. */
@@ -80,20 +83,21 @@ struct rl_screen
   void (*describe_ribbon)(void const* data, struct rl_ribbon_content* content);
 
   /**
-   * A callback that is called once per frame.
+   * A callback that is called once per frame to update the screen. It returns
+   * the transition to apply.
    */
   struct rl_screen_transition (*update)(void* data,
                                         struct inpt_state const* istate,
                                         float dt);
 
   /**
-   * A callback that is called once per frame.
+   * A callback that is called once per frame to draw the screen.
    */
   void (*render)(void const* data, SDL_Renderer* renderer);
 };
 
 /**
- * Asks the screen to fill in content; does nothing if it has no callback.
+ * Ask the screen to fill in content; does nothing if it has no callback.
  */
 static inline void
 rl_screen_describe_ribbon(struct rl_screen const* screen,

@@ -12,22 +12,45 @@
 struct rl_event;
 struct rl_world;
 
+/**
+ * A growable array of log messages.
+ */
 alist_define_as(struct rl_text, rl_message);
 
+/**
+ * A log of messages for the player.
+ */
 struct rl_game_log
 {
+  /** The messages, oldest first. */
   alist(rl_message) messages;
 };
 
+/**
+ * Initialise the log.
+ *
+ * @return whether initialisation succeeded.
+ */
 bool
 rl_init_game_log(struct rl_game_log* log);
 
+/**
+ * Free the log.
+ */
 void
 rl_free_game_log(struct rl_game_log* log);
 
+/**
+ * Append message to the log.
+ *
+ * @return whether message was appended.
+ */
 bool
 rl_log_text(struct rl_game_log* log, struct rl_text const* message);
 
+/**
+ * Append a message describing event to the log.
+ */
 void
 rl_log_event(struct rl_game_log* log,
              struct rl_event const* event,

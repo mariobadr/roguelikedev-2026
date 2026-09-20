@@ -15,15 +15,15 @@
  */
 enum rl_event_type
 {
-  RL_EVENT_ATTACK,
-  RL_EVENT_DEATH,
-  RL_EVENT_AWAKEN,
-  RL_EVENT_PICKUP,
-  RL_EVENT_HEAL,
-  RL_EVENT_FEEDBACK,
-  RL_EVENT_LEVEL_CHANGE,
-  RL_EVENT_XP_GAIN,
-  RL_EVENT_LEVEL_UP,
+  RL_EVENT_ATTACK,       //< an actor attacks
+  RL_EVENT_DEATH,        //< an actor dies
+  RL_EVENT_AWAKEN,       //< an actor awakens
+  RL_EVENT_PICKUP,       //< an actor picks up an item
+  RL_EVENT_HEAL,         //< an actor is healed
+  RL_EVENT_FEEDBACK,     //< a message for the player
+  RL_EVENT_LEVEL_CHANGE, //< an actor moves to another level
+  RL_EVENT_XP_GAIN,      //< an actor gains experience
+  RL_EVENT_LEVEL_UP,     //< an actor gains one or more levels
 };
 
 /**
@@ -84,7 +84,7 @@ struct rl_event_heal
 };
 
 /**
- * Feedback (i.e., a message) for the player..
+ * Feedback (i.e., a message) for the player.
  */
 struct rl_event_feedback
 {
@@ -134,8 +134,10 @@ struct rl_event_level_up
  */
 struct rl_event
 {
+  /** The kind of event. */
   enum rl_event_type type;
 
+  /** The details of the event, matching type. */
   union
   {
     struct rl_event_attack attack;

@@ -13,12 +13,22 @@
 struct rl_view;
 struct rl_world;
 
+/**
+ * Allocate an inventory view of world within viewport.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_inv_view(struct rl_view* view,
                   struct rl_world const* world,
                   SDL_FRect const* viewport,
                   float line_height);
 
+/**
+ * Consume the pending item selection.
+ *
+ * @return the selected item, or an invalid handle if there is none.
+ */
 handle(rl_item)
 rl_inv_view_take_selection(struct rl_view* view);
 

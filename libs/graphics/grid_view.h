@@ -10,7 +10,7 @@
 // forward declarations
 struct gfx_camera;
 
-/** 
+/**
  * A grid of fixed-size cells laid over world space.
  */
 struct gfx_grid_view
@@ -22,19 +22,19 @@ struct gfx_grid_view
 };
 
 /**
- * @return the world position of the top-left corner of cell
+ * @return the world position of the top-left corner of cell.
  */
 SDL_FPoint
 gfx_cell_to_world(struct gfx_grid_view const* view, SDL_Point cell);
 
 /**
- * @return the cell containing the world position
+ * @return the cell containing the world position.
  */
 SDL_Point
 gfx_world_to_cell(struct gfx_grid_view const* view, SDL_FPoint world);
 
 /**
- * @return the screen position of the top-left corner of cell
+ * @return the screen position of the top-left corner of cell.
  */
 SDL_FPoint
 gfx_cell_to_screen(struct gfx_grid_view const* view,
@@ -42,9 +42,9 @@ gfx_cell_to_screen(struct gfx_grid_view const* view,
                    SDL_Point cell);
 
 /**
- * @param out receives the cell under screen
- * 
- * @return false if screen is outside the camera viewport
+ * @param out receives the cell under screen.
+ *
+ * @return whether screen is inside the camera viewport.
  */
 bool
 gfx_screen_to_cell(struct gfx_grid_view const* view,
@@ -53,14 +53,14 @@ gfx_screen_to_cell(struct gfx_grid_view const* view,
                    SDL_Point* out);
 
 /**
- * @return the cells the camera overlaps, which may extend past any map
+ * @return the cells the camera overlaps, which may extend past any map.
  */
 SDL_Rect
 gfx_grid_view_bounds(struct gfx_grid_view const* view,
                      struct gfx_camera const* camera);
 
 /**
- * @return the cells the camera overlaps within a map of columns by rows
+ * @return the cells the camera overlaps within a map of columns by rows.
  */
 SDL_Rect
 gfx_visible_cells(struct gfx_grid_view const* view,

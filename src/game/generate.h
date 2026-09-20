@@ -10,13 +10,7 @@
 
 // forward declarations
 struct rand_state;
-struct rl_level;
 struct rl_world;
-
-bool
-rl_gen_level(struct rl_world* world,
-             struct rl_level* level,
-             struct rand_state* rng);
 
 /**
  * Generate a level below the deepest one.

@@ -22,15 +22,20 @@ alist_define_as(handle(rl_actor), rl_actor_handle);
  */
 alist_define_as(handle(rl_item), rl_item_handle);
 
+/**
+ * One level of the dungeon.
+ */
 struct rl_level
 {
   /** How deep this level is in the overall dungeon. */
   int depth;
+  /** Location of the stairs up, in tile coordinates. */
   SDL_Point stairs_up;
+  /** Location of the stairs down, in tile coordinates. */
   SDL_Point stairs_down;
-  /** A map of the current level. */
+  /** The tiles of this level. */
   grid(rl_tile) map;
-  /** Cells the player has seen before */
+  /** Cells the player has seen before. */
   grid(boolean) explored;
   /** Actors on this level, in turn order. */
   alist(rl_actor_handle) actors;
@@ -43,9 +48,17 @@ struct rl_level
  */
 alist_define_as(struct rl_level, rl_level);
 
+/**
+ * Allocate a level at depth with a map of width by height tiles.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_level(struct rl_level* level, int depth, int width, int height);
 
+/**
+ * Free the level.
+ */
 void
 rl_free_level(struct rl_level* level);
 

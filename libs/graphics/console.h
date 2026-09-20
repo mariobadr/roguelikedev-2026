@@ -35,14 +35,25 @@ struct gfx_console_cell
  */
 grid_define_as(struct gfx_console_cell, gfx_console);
 
+/**
+ * Draw cell into dst, skipping a transparent background or foreground.
+ */
 void
 gfx_draw_console_cell(SDL_Renderer* renderer,
                       struct gfx_tileset const* tileset,
                       struct gfx_console_cell const* cell,
                       SDL_FRect const* dst);
 
+/**
+ * Reset every cell to draw nothing.
+ */
 void gfx_clear_console_grid(grid(gfx_console) * console);
 
+/**
+ * Draw console from the screen position at.
+ *
+ * @param region the cells to draw, or NULL for all.
+ */
 void
 gfx_draw_console_grid(SDL_Renderer* renderer,
                       struct gfx_tileset const* tileset,
@@ -50,6 +61,9 @@ gfx_draw_console_grid(SDL_Renderer* renderer,
                       SDL_Rect const* region,
                       SDL_FPoint at);
 
+/**
+ * Draw text as a row of glyphs from the screen position at.
+ */
 void
 gfx_print_console(SDL_Renderer* renderer,
                   struct gfx_tileset const* font,

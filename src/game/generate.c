@@ -144,10 +144,10 @@ discard_level(struct rl_world* world,
   rl_free_level(level);
 }
 
-bool
-rl_gen_level(struct rl_world* world,
-             struct rl_level* level,
-             struct rand_state* rng)
+static bool
+try_generate_level(struct rl_world* world,
+                   struct rl_level* level,
+                   struct rand_state* rng)
 {
   size_t const actors_before = alist_len(&level->actors);
   size_t const items_before = alist_len(&level->items);
@@ -192,8 +192,8 @@ rl_push_level(struct rl_world* world,
   }
 
   // the arriving actor is on the level first, so it takes the first turn
-  if (!rl_gen_level(world, level, rng)) {
-    // rl_gen_level frees the level on failure
+  if (!try_generate_level(world, level, rng)) {
+    // try_generate_level frees the level on failure
     alist_pop(&world->levels);
     return false;
   }

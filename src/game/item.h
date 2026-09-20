@@ -17,7 +17,9 @@ enum rl_item_location
   RL_ITEM_LOCATION_HELD, //< held by an actor
 };
 
-/** An instance of an item. */
+/**
+ * An instance of an item.
+ */
 struct rl_item
 {
   /** This item's handle, so code holding a pointer can refer to it. */

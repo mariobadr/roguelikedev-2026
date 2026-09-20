@@ -24,28 +24,36 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
                               handle(rl_actor) attacker);
 
 /**
- * @return whether dst is an acceptable centre for the tile-targeted item def,
- * as seen through the player's field-of-view.
+ * @return whether dst is an acceptable centre for the tile-targeted item, as
+ * seen through the player's field-of-view.
  */
 bool
-rl_is_valid_item_target(struct rl_item_def const* def,
+rl_is_valid_item_target(struct rl_item_def const* item,
                         struct rl_world const* world,
                         SDL_Point dst);
 
 /**
- * @return whether def, used on centre, affects the world tile p.
+ * @return whether item, used on centre, affects the world tile p.
  */
 bool
-rl_item_affects_tile(struct rl_item_def const* def,
+rl_item_affects_tile(struct rl_item_def const* item,
                      struct rl_world const* world,
                      SDL_Point centre,
                      SDL_Point p);
 
+/**
+ * @return the region that item, used on centre, can affect.
+ */
 SDL_Rect
-rl_item_area_bounds(struct rl_item_def const* def, SDL_Point centre);
+rl_item_area_bounds(struct rl_item_def const* item, SDL_Point centre);
 
+/**
+ * Mark the tiles that item, used on centre, affects.
+ *
+ * @param mask one entry per tile of the item's area bounds.
+ */
 void
-rl_fill_item_area(struct rl_item_def const* def,
+rl_fill_item_area(struct rl_item_def const* item,
                   struct rl_world const* world,
                   SDL_Point centre,
                   grid(boolean) * mask);

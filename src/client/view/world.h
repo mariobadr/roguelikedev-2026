@@ -18,23 +18,27 @@ struct rl_world;
  */
 enum rl_world_selection_result
 {
-  RL_WORLD_SELECTION_NONE,
-  RL_WORLD_SELECTION_CONFIRMED,
-  RL_WORLD_SELECTION_CANCELLED,
+  RL_WORLD_SELECTION_NONE,      //< no selection pending
+  RL_WORLD_SELECTION_CONFIRMED, //< a tile was chosen
+  RL_WORLD_SELECTION_CANCELLED, //< selection was cancelled
 };
 
 /**
  * Allocate a world view.
+ *
+ * @return whether allocation succeeded.
  */
 bool
 rl_alloc_world_view(struct rl_view* view,
-                  struct rl_world const* world,
-                  SDL_FRect const* viewport,
-                  int cell_width,
-                  int cell_height);
+                    struct rl_world const* world,
+                    SDL_FRect const* viewport,
+                    int cell_width,
+                    int cell_height);
 
 /**
  * Consume a pending command.
+ *
+ * @return whether a command was pending.
  */
 bool
 rl_world_view_take_command(struct rl_view* view, struct rl_command* out);
@@ -47,11 +51,13 @@ rl_world_view_take_command(struct rl_view* view, struct rl_command* out);
  */
 bool
 rl_world_view_begin_select(struct rl_view* view,
-                         SDL_Point origin,
-                         struct rl_item_def const* def);
+                           SDL_Point origin,
+                           struct rl_item_def const* def);
 
 /**
  * Consume the result of a selection, if one is pending.
+ *
+ * @param out set when the result is RL_WORLD_SELECTION_CONFIRMED.
  */
 enum rl_world_selection_result
 rl_world_view_take_selection(struct rl_view* view, SDL_Point* out);

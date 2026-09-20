@@ -12,6 +12,11 @@ struct gfx_tileset;
 struct rl_view;
 struct rl_world;
 
+/**
+ * Allocate a view of what is in sight in world within viewport.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_in_sight_view(struct rl_view* view,
                        struct rl_world const* world,

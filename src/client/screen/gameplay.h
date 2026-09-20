@@ -12,6 +12,11 @@ struct gfx_tileset;
 struct rl_run;
 struct rl_screen;
 
+/**
+ * Allocate the main gameplay screen, which plays run.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_gameplay_screen(struct rl_screen* screen,
                          SDL_FRect const* bounds,

@@ -25,6 +25,9 @@ struct inpt_state;
  */
 array_define_as(enum rl_screen_id, rl_screen_id);
 
+/**
+ * The client application: its screens and the run they display.
+ */
 struct rl_client
 {
   /** Bitmap font used to draw everything. */
@@ -39,22 +42,41 @@ struct rl_client
   array(rl_screen_id) stack;
 };
 
+/**
+ * Allocate the client, drawing within bounds.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_client(struct rl_client* client,
                 SDL_FRect const* bounds,
                 SDL_Renderer* renderer);
 
+/**
+ * Free the client.
+ */
 void
 rl_free_client(struct rl_client* client);
 
+/**
+ * Update the client for one frame.
+ *
+ * @return whether the client should keep running.
+ */
 bool
 rl_update_client(struct rl_client* client,
                  struct inpt_state const* input,
                  float dt);
 
+/**
+ * Render the client.
+ */
 void
 rl_render_client(struct rl_client const* client, SDL_Renderer* renderer);
 
+/**
+ * Save the run, if there is one, before the application exits.
+ */
 void
 rl_exit_client(struct rl_client* client);
 

@@ -20,7 +20,7 @@ struct rl_game
 {
   /** How many turns have been completed. */
   Uint64 turns;
-  /** The random number generator */
+  /** The random number generator. */
   struct rand_state rng;
   /** The game world. */
   struct rl_world world;
@@ -29,7 +29,9 @@ struct rl_game
 /**
  * Generate a new, fully playable game into out.
  *
- * @param out must be zero-initialized.
+ * @param out must be zero-initialised.
+ *
+ * @return whether generation succeeded.
  */
 bool
 rl_new_game(struct rl_game* out, int width, int height, Uint64 seed);
@@ -41,7 +43,7 @@ void
 rl_free_game(struct rl_game* game);
 
 /**
- * Applies a command and, if it consumes a turn, advances the rest of the game.
+ * Apply a command and, if it consumes a turn, advances the rest of the game.
  *
  * Events triggered by the update are appended to the events list.
  *

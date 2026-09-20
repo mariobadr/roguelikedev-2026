@@ -19,19 +19,33 @@ struct rl_fov
   SDL_Point origin;
   /** The farthest out the actor can see. */
   int radius;
-  /** Cells the actor can see */
+  /** Cells the actor can see. */
   grid(boolean) visible;
 };
 
+/**
+ * Allocate a field of view for a map of width by height cells.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_fov(struct rl_fov* fov, int width, int height, int radius);
 
+/**
+ * Free the field of view.
+ */
 void
 rl_free_fov(struct rl_fov* fov);
 
+/**
+ * Make every cell not visible.
+ */
 void
 rl_clear_fov(struct rl_fov* fov);
 
+/**
+ * Update the visible cells for an actor at origin on map.
+ */
 void
 rl_update_fov(struct rl_fov* fov, grid(rl_tile) const* map, SDL_Point origin);
 

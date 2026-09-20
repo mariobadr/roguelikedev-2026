@@ -12,7 +12,7 @@
 typedef struct SDL_Renderer SDL_Renderer;
 
 /**
- * Loads the bitmap font used to render the game.
+ * Load the bitmap font used to render the game.
  *
  * @return whether the font was loaded successfully.
  */

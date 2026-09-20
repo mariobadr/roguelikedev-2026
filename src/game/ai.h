@@ -11,9 +11,17 @@ struct rl_actor;
 struct rl_fov;
 struct rl_world;
 
+/**
+ * Potentially wake actor.
+ *
+ * @return whether actor is awake.
+ */
 bool
 rl_wake_actor(struct rl_actor* actor, struct rl_fov const* fov);
 
+/**
+ * @return a command based on the world.
+ */
 struct rl_command
 rl_next_ai_command(struct rl_actor const* actor, struct rl_world const* world);
 

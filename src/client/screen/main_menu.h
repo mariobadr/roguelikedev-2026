@@ -12,6 +12,11 @@ struct gfx_tileset;
 struct rl_run;
 struct rl_screen;
 
+/**
+ * Allocate the main menu screen, which starts or resumes a run in run.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_main_menu_screen(struct rl_screen* screen,
                           SDL_FRect const* bounds,

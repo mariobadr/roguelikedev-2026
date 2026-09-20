@@ -9,6 +9,9 @@
 #include "game/fov.h"
 #include "game/handles.h"
 
+/**
+ * The player's progress and view of the level.
+ */
 struct rl_player
 {
   /** The actor this player controls. */
@@ -21,9 +24,17 @@ struct rl_player
   struct rl_fov fov;
 };
 
+/**
+ * Allocate a player for a map of width by height cells.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_player(struct rl_player* player, int width, int height);
 
+/**
+ * Free the player.
+ */
 void
 rl_free_player(struct rl_player* player);
 

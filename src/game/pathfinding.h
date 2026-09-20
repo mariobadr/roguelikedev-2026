@@ -11,6 +11,7 @@
 
 #include "game/tile.h"
 
+/** The distance to a tile that cannot be reached. */
 #define RL_INFINITE_DISTANCE SDL_MAX_SINT32
 
 /**
@@ -21,6 +22,11 @@ static SDL_Point const RL_PATH_DIRS[] = { { 1, 0 },
                                           { 0, 1 },
                                           { 0, -1 } };
 
+/**
+ * Fill distances with the number of steps from each tile of map to target.
+ *
+ * @return whether the map was built.
+ */
 bool
 rl_build_dijkstra_map(grid(int) * distances,
                       grid(rl_tile) const* map,

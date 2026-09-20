@@ -22,28 +22,34 @@ enum rl_item_type
 /** The different effects an item can have. */
 enum rl_item_effect
 {
-  RL_ITEM_EFFECT_HEAL,
-  RL_ITEM_EFFECT_DAMAGE_AREA,
-  RL_ITEM_EFFECT_DAMAGE_NEAREST,
+  RL_ITEM_EFFECT_HEAL,           //< restore hit points
+  RL_ITEM_EFFECT_DAMAGE_AREA,    //< damage actors in an area
+  RL_ITEM_EFFECT_DAMAGE_NEAREST, //< damage the nearest enemy
 };
 
 /** The different targetting requirements of an item. */
 enum rl_item_target
 {
-  RL_ITEM_TARGET_NONE,
-  RL_ITEM_TARGET_TILE,
-  /** Automatically targets the closest visible enemy. */
-  RL_ITEM_TARGET_CLOSEST,
+  RL_ITEM_TARGET_NONE,    //< no target
+  RL_ITEM_TARGET_TILE,    //< a chosen tile
+  RL_ITEM_TARGET_CLOSEST, //< closest visible enemy
 };
 
-/** Immutable data that defines an item. */
+/**
+ * Immutable data that defines an item.
+ */
 struct rl_item_def
 {
+  /** The category of the item. */
   enum rl_item_class class;
+  /** What the item does when used. */
   enum rl_item_effect effect;
+  /** What the item must be aimed at, if anything. */
   enum rl_item_target target;
 
+  /** The display name. */
   char const* name;
+  /** The strength of the effect, such as the healing or damage done. */
   int power;
   /** Radius, in tiles, of the area a tile-targeted item affects (Euclidean). */
   int area_radius;

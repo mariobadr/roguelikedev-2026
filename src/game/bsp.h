@@ -12,7 +12,9 @@
 // forward declarations
 struct rand_state;
 
-/** Return the number of nodes needed for a full BSP tree. */
+/**
+ * @return the number of nodes needed for a full BSP tree of max_depth.
+ */
 #define RL_BSP_MAX_NODES(max_depth) (((size_t)1 << ((max_depth) + 1)) - 1)
 
 /**
@@ -20,10 +22,10 @@ struct rand_state;
  */
 enum rl_bsp_split_axis
 {
-  RL_BSP_UNUSED,     //< Invalid node
-  RL_BSP_SPLIT_NONE, //< Leaf node
-  RL_BSP_SPLIT_X,    //< Node split on x-axis
-  RL_BSP_SPLIT_Y     //< Node split on y-axis
+  RL_BSP_UNUSED,     //< invalid node
+  RL_BSP_SPLIT_NONE, //< leaf node
+  RL_BSP_SPLIT_X,    //< node split on x-axis
+  RL_BSP_SPLIT_Y     //< node split on y-axis
 };
 
 /**
@@ -71,15 +73,15 @@ struct rl_bsp_policy
 };
 
 /**
- * Initializes a tree with the given root region.
+ * Initialise a tree with the given root region.
  *
  * All nodes start as leaves (i.e., RL_BSP_SPLIT_NONE) until split.
  *
- * @param tree      The tree to initialize.
+ * @param tree      The tree to initialise.
  * @param max_depth The maximum depth of the tree.
  * @param rect      The root region that will be split.
  *
- * @return whether initialization was successful
+ * @return whether initialisation was successful.
  */
 bool
 rl_bsp_tree_init(struct rl_bsp_tree* tree, int max_depth, SDL_Rect rect);

@@ -21,8 +21,9 @@ struct rl_corridor
   SDL_Rect segments[2];
   /** The actual number of segments. */
   int segment_count;
-  /** Indices of the two rooms this corridor connects. */
+  /** Index of the first room this corridor connects. */
   int room_a;
+  /** Index of the second room this corridor connects. */
   int room_b;
 };
 
@@ -47,12 +48,21 @@ struct rl_layout
   array(rl_corridor) corridors;
 };
 
+/**
+ * Generate a random layout of rooms and corridors within width by height
+ * cells.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_init_layout(struct rl_layout* layout,
                int width,
                int height,
                struct rand_state* rng);
 
+/**
+ * Free the layout.
+ */
 void
 rl_free_layout(struct rl_layout* layout);
 

@@ -14,7 +14,8 @@ struct rl_world;
 
 /**
  * Populate unoccupied room tiles, excluding reserved_room.
- * Running out of space is successful; allocation failure returns false.
+ *
+ * @return whether spawning succeeded. Running out of space is not a failure.
  */
 bool
 rl_spawn_actors(struct rl_level* level,
@@ -25,7 +26,8 @@ rl_spawn_actors(struct rl_level* level,
 
 /**
  * Populate unoccupied room tiles with items.
- * Running out of space is successful; allocation failure returns false.
+ *
+ * @return whether spawning succeeded. Running out of space is not a failure.
  */
 bool
 rl_spawn_items(struct rl_level* level,

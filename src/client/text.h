@@ -19,10 +19,16 @@ struct gfx_tileset;
 /** Maximum number of colour spans. */
 #define RL_TEXT_SPAN_CAPACITY 8
 
+/**
+ * A range of text drawn in a colour.
+ */
 struct rl_text_span
 {
+  /** Index of the first byte in the span. */
   size_t start;
+  /** Index one past the last byte in the span. */
   size_t end;
+  /** The colour of the span. */
   SDL_FColor colour;
 };
 
@@ -31,15 +37,29 @@ struct rl_text_span
  */
 struct rl_text
 {
+  /** The bytes of text, null-terminated. */
   char content[RL_TEXT_CAPACITY];
+  /** The number of bytes in content, excluding the null terminator. */
   size_t length;
+  /** The colour spans, in order. */
   struct rl_text_span spans[RL_TEXT_SPAN_CAPACITY];
+  /** The number of spans in use. */
   size_t span_count;
 };
 
+/**
+ * Append str to text, coloured by colour if it is not NULL.
+ *
+ * @return whether str was appended.
+ */
 bool
 rl_append_text(struct rl_text* text, SDL_FColor const* colour, char const* str);
 
+/**
+ * Append a formatted string to text, coloured by colour if it is not NULL.
+ *
+ * @return whether the string was appended.
+ */
 bool
 rl_append_text_format(struct rl_text* text,
                       SDL_FColor const* colour,

@@ -11,10 +11,15 @@
  */
 struct str_view
 {
-  char const* data; /**< Pointer to the first byte of the view. */
-  int length;       /**< Number of bytes in the view; must be nonnegative. */
+  /** Pointer to the first byte of the view. */
+  char const* data;
+  /** Number of bytes in the view; must be nonnegative. */
+  int length;
 };
 
+/**
+ * @return a view of the null-terminated str, excluding the terminator.
+ */
 static inline struct str_view
 str_view_from_cstr(char const* str)
 {

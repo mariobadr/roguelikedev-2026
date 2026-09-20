@@ -6,6 +6,7 @@
 
 #include <SDL3/SDL_events.h>
 
+// forward declarations
 struct inpt_state;
 
 /**

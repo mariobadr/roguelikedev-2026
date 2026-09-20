@@ -19,18 +19,23 @@ struct rand_state;
  */
 enum rl_command_type
 {
-  RL_COMMAND_NONE,        //< No action
-  RL_COMMAND_MOVE,        //< Move the actor
-  RL_COMMAND_ATTACK,      //< Attack an actor
-  RL_COMMAND_PICK_UP,     //< Pick up an item
-  RL_COMMAND_USE_ITEM,    //< Use an item
-  RL_COMMAND_TAKE_STAIRS, //< Take the stairs
-  RL_COMMAND_WAIT,        //< Consume a turn without acting
+  RL_COMMAND_NONE,        //< no action
+  RL_COMMAND_MOVE,        //< move the actor
+  RL_COMMAND_ATTACK,      //< attack an actor
+  RL_COMMAND_PICK_UP,     //< pick up an item
+  RL_COMMAND_USE_ITEM,    //< use an item
+  RL_COMMAND_TAKE_STAIRS, //< take the stairs
+  RL_COMMAND_WAIT,        //< consume a turn without acting
 };
 
+/**
+ * An item to use and where to use it.
+ */
 struct rl_item_use
 {
+  /** The item being used. */
   handle(rl_item) item;
+  /** The target location, in tile coordinates. */
   SDL_Point dst;
 };
 
@@ -56,7 +61,7 @@ struct rl_command
 };
 
 /**
- * Borrows actor from world for this call; the command stores actor handles.
+ * Borrow actor from world for this call; the command stores actor handles.
  *
  * @return a move or attack command.
  * Returns RL_COMMAND_NONE if actor is NULL, dead, or cannot move or attack.
@@ -67,6 +72,8 @@ rl_new_bump_command(struct rl_actor const* actor,
                     struct rl_world const* world);
 
 /**
+ * Apply cmd to world, recording what happens in events.
+ *
  * @return whether applying the command consumes a turn.
  */
 bool

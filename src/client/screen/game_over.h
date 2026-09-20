@@ -11,6 +11,11 @@
 struct gfx_tileset;
 struct rl_screen;
 
+/**
+ * Allocate the screen shown when the rogue has died.
+ *
+ * @return whether allocation succeeded.
+ */
 bool
 rl_alloc_game_over_screen(struct rl_screen* screen,
                           SDL_FRect const* bounds,

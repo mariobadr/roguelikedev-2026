@@ -32,22 +32,44 @@ enum rl_view_id
  */
 struct rl_view
 {
+  /**
+   * A pointer passed to all the view state callbacks.
+   */
   void* state;
 
+  /**
+   * A callback that is called before the view is destroyed.
+   */
   void (*free)(void* data);
 
-  void (*describe_ribbon)(void const* data,
-                          struct rl_ribbon_content* content);
+  /**
+   * An optional callback that fills in the ribbon text for the view's current
+   * state.
+   */
+  void (*describe_ribbon)(void const* data, struct rl_ribbon_content* content);
 
+  /**
+   * An optional callback that handles input. It returns whether the input was
+   * handled.
+   */
   bool (*update)(void* data, struct inpt_state const* istate);
 
+  /**
+   * An optional callback that is called before the view is rendered.
+   */
   void (*prepare)(void* data);
 
+  /**
+   * An optional callback that draws the view.
+   */
   void (*render)(void const* data,
                  SDL_Renderer* renderer,
                  struct gfx_tileset const* font);
 };
 
+/**
+ * Free the view.
+ */
 static inline void
 rl_free_view(struct rl_view* view)
 {
@@ -58,6 +80,9 @@ rl_free_view(struct rl_view* view)
   view->free(view->state);
 }
 
+/**
+ * Ask the view to fill in content; does nothing if it has no callback.
+ */
 static inline void
 rl_view_describe_ribbon(struct rl_view const* view,
                         struct rl_ribbon_content* content)
@@ -69,6 +94,11 @@ rl_view_describe_ribbon(struct rl_view const* view,
   view->describe_ribbon(view->state, content);
 }
 
+/**
+ * Let the view handle input.
+ *
+ * @return whether the input was handled.
+ */
 static inline bool
 rl_update_view(struct rl_view* view, struct inpt_state const* istate)
 {
@@ -79,6 +109,9 @@ rl_update_view(struct rl_view* view, struct inpt_state const* istate)
   return view->update(view->state, istate);
 }
 
+/**
+ * Prepare the view for rendering.
+ */
 static inline void
 rl_prepare_view(struct rl_view* view)
 {
@@ -89,6 +122,9 @@ rl_prepare_view(struct rl_view* view)
   view->prepare(view->state);
 }
 
+/**
+ * Render the view.
+ */
 static inline void
 rl_render_view(struct rl_view const* view,
                SDL_Renderer* renderer,

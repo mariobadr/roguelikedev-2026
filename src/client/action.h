@@ -7,7 +7,7 @@
 #include "game/command.h"
 
 /**
- * The actions a player can perform
+ * The actions a player can perform.
  */
 enum rl_action
 {
@@ -23,6 +23,9 @@ enum rl_action
   RL_ACTION_CANCEL,
 };
 
+/**
+ * The interactions an actor can have with its surroundings.
+ */
 enum rl_interaction
 {
   RL_INTERACTION_NONE,
@@ -35,7 +38,7 @@ enum rl_interaction
  */
 enum rl_interaction
 rl_available_interaction(struct rl_actor const* actor,
-                          struct rl_world const* world);
+                         struct rl_world const* world);
 
 /**
  * If actor is NULL or the action has no effect here, then the NONE command is

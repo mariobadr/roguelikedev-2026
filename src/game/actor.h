@@ -21,11 +21,11 @@ struct rl_actor
   int level;
   /** This actor's handle, so code holding a pointer can refer to it. */
   handle(rl_actor) handle;
-  /** Dispalyed name. */
+  /** Displayed name. */
   char const* name;
   /** Location in tile coordinates. */
   SDL_Point pos;
-  /** Whether the actor is "active". */
+  /** Whether the actor has noticed the player. */
   bool awake;
   /** The current number of hit points. */
   int hp;

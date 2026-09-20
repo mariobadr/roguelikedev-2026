@@ -50,11 +50,11 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
 }
 
 bool
-rl_is_valid_item_target(struct rl_item_def const* def,
+rl_is_valid_item_target(struct rl_item_def const* item,
                         struct rl_world const* world,
                         SDL_Point dst)
 {
-  (void)def;
+  (void)item;
 
   struct rl_level const* level = rl_get_current_level(world);
   if (!grid_contains(&level->map, dst.x, dst.y)) {
@@ -65,12 +65,12 @@ rl_is_valid_item_target(struct rl_item_def const* def,
 }
 
 bool
-rl_item_affects_tile(struct rl_item_def const* def,
+rl_item_affects_tile(struct rl_item_def const* item,
                      struct rl_world const* world,
                      SDL_Point centre,
                      SDL_Point p)
 {
-  int const radius = def->area_radius;
+  int const radius = item->area_radius;
   int const dx = p.x - centre.x;
   int const dy = p.y - centre.y;
   if (dx * dx + dy * dy > radius * radius) {
@@ -83,9 +83,9 @@ rl_item_affects_tile(struct rl_item_def const* def,
 }
 
 SDL_Rect
-rl_item_area_bounds(struct rl_item_def const* def, SDL_Point centre)
+rl_item_area_bounds(struct rl_item_def const* item, SDL_Point centre)
 {
-  int const radius = def->area_radius;
+  int const radius = item->area_radius;
   int const extent = 2 * radius + 1;
 
   SDL_Rect bounds = { 0 };
@@ -98,19 +98,19 @@ rl_item_area_bounds(struct rl_item_def const* def, SDL_Point centre)
 }
 
 void
-rl_fill_item_area(struct rl_item_def const* def,
+rl_fill_item_area(struct rl_item_def const* item,
                   struct rl_world const* world,
                   SDL_Point centre,
                   grid(boolean) * mask)
 {
-  SDL_Rect const bounds = rl_item_area_bounds(def, centre);
+  SDL_Rect const bounds = rl_item_area_bounds(item, centre);
   SDL_assert(grid_width(mask) == bounds.w);
   SDL_assert(grid_height(mask) == bounds.h);
 
   for (int y = 0; y < bounds.h; y++) {
     for (int x = 0; x < bounds.w; x++) {
       SDL_Point const p = { bounds.x + x, bounds.y + y };
-      *grid_at(mask, x, y) = rl_item_affects_tile(def, world, centre, p);
+      *grid_at(mask, x, y) = rl_item_affects_tile(item, world, centre, p);
     }
   }
 }
