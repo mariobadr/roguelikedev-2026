@@ -8,6 +8,8 @@ add_library(ginc_ui STATIC
     layout.h
     list.c
     list.h
+    progress.c
+    progress.h
     rectcut.h
     str_wrap.c
     str_wrap.h

@@ -9,12 +9,14 @@
 #include "game/fov.h"
 #include "game/world.h"
 
+#include "ui/progress.h"
 #include "ui/rectcut.h"
 
 #include "graphics/console.h"
 #include "graphics/tileset.h"
 
 #include "render/palette.h"
+#include "render/progress.h"
 
 #include "client/view.h"
 
@@ -26,8 +28,8 @@ struct actor_row
   SDL_FPoint name_origin;
   SDL_FPoint level_origin;
   SDL_FPoint hp_origin;
-  SDL_FRect bar;
-  SDL_FRect fill;
+  SDL_FPoint hp_bar_origin;
+  struct ui_progress hp_bar;
 };
 
 alist_define_as(struct actor_row, actor_row);
@@ -147,11 +149,9 @@ push_actor_row(struct view_state* s,
   // Leave a pixel above and below the bar on the HP line.
   bounds.y += 1.0f;
   bounds.h = SDL_max(1.0f, s->line_height - 2.0f);
-  row->bar = bounds;
-
-  float const fraction = (float)actor->hp / actor->stats.max_hp;
-  row->fill = bounds;
-  row->fill.w = SDL_floorf(bounds.w * fraction);
+  row->hp_bar_origin = (SDL_FPoint){ bounds.x, bounds.y };
+  row->hp_bar = ui_progress_layout(
+    (SDL_FPoint){ bounds.w, bounds.h }, actor->hp, actor->stats.max_hp);
 }
 
 static void
@@ -185,19 +185,6 @@ prepare_monsters(struct view_state* s, SDL_FRect* remaining)
 }
 
 static void
-draw_health_bar(SDL_Renderer* renderer, struct actor_row const* row)
-{
-  SDL_FColor const background = RL_COLOUR_GRAY[8];
-  SDL_SetRenderDrawColorFloat(
-    renderer, background.r, background.g, background.b, background.a);
-  SDL_RenderFillRect(renderer, &row->bar);
-
-  SDL_FColor const fill = RL_COLOUR_GREEN[5];
-  SDL_SetRenderDrawColorFloat(renderer, fill.r, fill.g, fill.b, fill.a);
-  SDL_RenderFillRect(renderer, &row->fill);
-}
-
-static void
 draw_actor(SDL_Renderer* renderer,
            struct gfx_tileset const* font,
            struct actor_row const* row)
@@ -220,7 +207,11 @@ draw_actor(SDL_Renderer* renderer,
                     RL_COLOUR_GRAY[5],
                     RL_COLOUR_BLACK,
                     row->hp_origin);
-  draw_health_bar(renderer, row);
+  rl_draw_progress(renderer,
+                   &row->hp_bar,
+                   RL_COLOUR_GREEN[5],
+                   RL_COLOUR_GRAY[8],
+                   row->hp_bar_origin);
 }
 
 static bool

@@ -8,6 +8,8 @@ add_library(rl_render STATIC
     graphics.h
     lighting.c
     lighting.h
+    progress.c
+    progress.h
     world.c
     world.h
     palette.h
@@ -28,5 +30,6 @@ target_link_libraries(rl_render
         ginc::container
         ginc::cp437
         ginc::graphics
+        ginc::ui
         SDL3::SDL3
 )
