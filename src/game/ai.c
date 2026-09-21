@@ -19,10 +19,6 @@ pick_direction(SDL_Point* direction,
     next.x = actor->pos.x + RL_PATH_DIRS[i].x;
     next.y = actor->pos.y + RL_PATH_DIRS[i].y;
 
-    if (!grid_contains(&level->map, next.x, next.y)) {
-      continue;
-    }
-
     int next_distance = *grid_at(&world->player.distances, next.x, next.y);
 
     if (next_distance >= best_distance) {

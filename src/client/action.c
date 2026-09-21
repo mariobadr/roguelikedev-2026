@@ -8,12 +8,8 @@
 
 enum rl_interaction
 rl_available_interaction(struct rl_actor const* actor,
-                          struct rl_world const* world)
+                         struct rl_world const* world)
 {
-  if (actor == NULL || !rl_actor_is_alive(actor)) {
-    return RL_INTERACTION_NONE;
-  }
-
   struct rl_level const* level = rl_get_current_level(world);
   if (handle_is_nonnull(rl_find_item(world, level, actor->pos))) {
     return RL_INTERACTION_PICK_UP;
@@ -54,10 +50,6 @@ rl_build_command(struct rl_actor const* actor,
                  struct rl_world const* world)
 {
   struct rl_command cmd = { 0 };
-
-  if (actor == NULL) {
-    return cmd;
-  }
 
   switch (action) {
     case RL_ACTION_MOVE_UP:

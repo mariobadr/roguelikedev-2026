@@ -83,7 +83,7 @@ static struct rl_save_info const*
 selected_save(struct screen_state const* s)
 {
   int const selected = s->saves_menu.selected;
-  if (selected < 0 || (size_t)selected >= alist_len(&s->saves)) {
+  if (selected < 0) {
     return NULL;
   }
 
@@ -138,7 +138,6 @@ refresh_saves(struct screen_state* s)
 {
   if (!rl_list_saves(&s->saves)) {
     SDL_Log("rl_list_saves failed: %s", SDL_GetError());
-    alist_clear(&s->saves);
     set_status(s, &RL_COLOUR_RED[4], "Could not read the save folder.");
   }
 
@@ -344,10 +343,6 @@ static void
 delete_selected_save(struct screen_state* s)
 {
   struct rl_save_info const* info = selected_save(s);
-  if (info == NULL) {
-    s->mode = MODE_BROWSE;
-    return;
-  }
 
   // the list is refreshed below, so keep the id rather than the pointer
   struct rl_save_id const id = info->id;
@@ -605,7 +600,7 @@ render_screen(void const* data, SDL_Renderer* renderer)
   SDL_assert(s != NULL);
 
   struct rl_save_info const* selected = selected_save(s);
-  if (s->mode == MODE_CONFIRM && selected != NULL) {
+  if (s->mode == MODE_CONFIRM) {
     render_confirm_delete(s, renderer, selected);
   } else {
     render_save_list(s, renderer);

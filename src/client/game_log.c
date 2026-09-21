@@ -194,7 +194,6 @@ rl_init_game_log(struct rl_game_log* log)
 {
   if (!alist_alloc(&log->messages, 8)) {
     SDL_Log("alist_alloc failed: %s", SDL_GetError());
-    rl_free_game_log(log);
     return false;
   }
 
@@ -207,16 +206,10 @@ rl_free_game_log(struct rl_game_log* log)
   alist_free(&log->messages);
 }
 
-bool
+void
 rl_log_text(struct rl_game_log* log, struct rl_text const* message)
 {
-  struct rl_text* slot = alist_push(&log->messages);
-  if (slot == NULL) {
-    return false;
-  }
-
-  *slot = *message;
-  return true;
+  *alist_push(&log->messages) = *message;
 }
 
 void

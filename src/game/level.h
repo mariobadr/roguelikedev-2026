@@ -24,6 +24,12 @@ alist_define_as(handle(rl_item), rl_item_handle);
 
 /**
  * One level of the dungeon.
+ *
+ * @invariant the border of map is unwalkable.
+ * @invariant stairs_up and stairs_down are on walkable tiles.
+ * @invariant every handle in actors is live, and each actor is on a walkable
+ * tile; dead actors may remain.
+ * @invariant every handle in items is live, and each item is on the map.
  */
 struct rl_level
 {

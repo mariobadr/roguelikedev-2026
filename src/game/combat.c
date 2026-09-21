@@ -17,21 +17,6 @@ are_adjacent(SDL_Point a, SDL_Point b)
   return dx + dy == 1;
 }
 
-static struct rl_actor*
-get_living_actor(struct rl_world* world, handle(rl_actor) actor_handle)
-{
-  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
-  if (actor == NULL) {
-    return NULL;
-  }
-
-  if (!rl_actor_is_alive(actor)) {
-    return NULL;
-  }
-
-  return actor;
-}
-
 static void
 enqueue_attack_event(struct rl_actor const* attacker,
                      struct rl_actor const* defender,
@@ -97,19 +82,9 @@ rl_attack_melee(struct rl_world* world,
                 alist(rl_event)* events,
                 struct rand_state* rng)
 {
-  if (handle_equal(attacker_handle, defender_handle)) {
-    // can't attack yourself (?)
-    return false;
-  }
-
-  struct rl_actor* attacker = get_living_actor(world, attacker_handle);
-  if (attacker == NULL) {
-    // attacker_handle is not valid
-    return false;
-  }
-
-  struct rl_actor* defender = get_living_actor(world, defender_handle);
-  if (defender == NULL) {
+  struct rl_actor* attacker = rl_borrow_mut_actor(world, attacker_handle);
+  struct rl_actor* defender = rl_borrow_mut_actor(world, defender_handle);
+  if (defender == NULL || !rl_actor_is_alive(defender)) {
     // defender_handle is not valid
     return false;
   }

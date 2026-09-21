@@ -39,9 +39,10 @@ struct rl_loot_table
  * First roll drop_percent, then choose one item in proportion to its weight.
  * Weights need not total 100; they apply only when the table produces a drop.
  * 
- * An empty table, zero total weight, or a drop_percent of 0 selects nothing
- * and does not draw from rng. A drop_percent of 100 skips the chance roll.
- * 
+ * An empty table or a drop_percent of 0 selects nothing and does not draw
+ * from rng.
+ *
+ * @param table if non-empty, must have at least one non-zero weight.
  * @param out written only if an item is selected.
  *
  * @return whether an item was selected.

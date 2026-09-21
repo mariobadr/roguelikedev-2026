@@ -13,12 +13,6 @@ rl_build_dijkstra_map(grid(int) * distances,
 
   int const length = grid_height(map) * grid_width(map);
 
-  if (!grid_contains(map, target.x, target.y) ||
-      !rl_is_walkable(*grid_at(map, target.x, target.y))) {
-    // can't reach the target?
-    return false;
-  }
-
   // TODO: this allocates the queue on *every* call. fix it?
   size_t* queue = SDL_calloc(length, sizeof(*queue));
   if (queue == NULL) {
@@ -48,8 +42,7 @@ rl_build_dijkstra_map(grid(int) * distances,
       int next_y = current_y + RL_PATH_DIRS[i].y;
 
       // only consider walkable tiles
-      if (grid_contains(map, next_x, next_y) &&
-          rl_is_walkable(*grid_at(map, next_x, next_y))) {
+      if (rl_is_walkable(*grid_at(map, next_x, next_y))) {
         int new_distance = *grid_at_index(distances, current_index) + 1;
 
         size_t neighbour = grid_index_of(map, next_x, next_y);

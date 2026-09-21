@@ -89,19 +89,15 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
     rl_append_text(hint, colour, "[WS] move");
   }
   struct rl_item const* item = rl_borrow_item(s->world, selected_item(s));
-  char const* action = NULL;
   if (item != NULL) {
-    if (rl_get_item_consumable_def(item->itype) != NULL) {
-      action = "[E] use";
-    } else if (rl_get_item_equippable_def(item->itype) != NULL) {
-      action = "[E] equip";
-    }
-  }
-  if (action != NULL) {
     if (can_move) {
       rl_append_text(hint, colour, "   ");
     }
-    rl_append_text(hint, colour, action);
+    if (rl_get_item_consumable_def(item->itype) != NULL) {
+      rl_append_text(hint, colour, "[E] use");
+    } else {
+      rl_append_text(hint, colour, "[E] equip");
+    }
   }
   if (hint->length > 0) {
     rl_append_text(hint, colour, "   ");
@@ -128,7 +124,7 @@ update_view(void* data, struct inpt_state const* istate)
         return false;
       }
       s->pending_item = selected_item(s);
-      return handle_is_nonnull(s->pending_item);
+      return true;
     default:
       break;
   }
@@ -163,9 +159,6 @@ render_view(void const* data,
     handle(rl_item) const item_handle =
       rl_find_held_item(s->world, rogue, first + row);
     struct rl_item const* item = rl_borrow_item(s->world, item_handle);
-    if (item == NULL) {
-      break;
-    }
 
     struct rl_text const text =
       item_text(item, first + row == s->menu.selected);

@@ -4,32 +4,12 @@
 #include "item.h"
 #include "item_def.h"
 
-static handle(rl_item) const*
-get_slot(struct rl_actor const* actor, enum rl_equipment_slot slot)
-{
-  switch (slot) {
-    case RL_EQUIPMENT_SLOT_WEAPON:
-      return &actor->equipment.weapon;
-    case RL_EQUIPMENT_SLOT_ARMOUR:
-      return &actor->equipment.armour;
-    case RL_EQUIPMENT_SLOT_NONE:
-      break;
-  }
-
-  return NULL;
-}
-
-static handle(rl_item)*
-edit_slot(struct rl_actor* actor, enum rl_equipment_slot slot)
-{
-  return (handle(rl_item)*)get_slot(actor, slot);
-}
-
 void
 rl_init_equipment(struct rl_equipment* equipment)
 {
-  equipment->weapon = handle_invalid(rl_item);
-  equipment->armour = handle_invalid(rl_item);
+  for (int slot = 0; slot < RL_EQUIPMENT_SLOT_COUNT; ++slot) {
+    equipment->slots[slot] = handle_invalid(rl_item);
+  }
 }
 
 enum rl_equipment_slot
@@ -51,8 +31,7 @@ rl_get_equipment_slot(enum rl_item_type type)
 handle(rl_item)
 rl_get_equipped_item(struct rl_actor const* actor, enum rl_equipment_slot slot)
 {
-  handle(rl_item) const* const item = get_slot(actor, slot);
-  return item != NULL ? *item : handle_invalid(rl_item);
+  return actor->equipment.slots[slot];
 }
 
 bool
@@ -70,23 +49,11 @@ rl_can_equip(struct rl_actor const* actor, struct rl_item const* item)
   return rl_get_equipment_slot(item->itype) != RL_EQUIPMENT_SLOT_NONE;
 }
 
-bool
+void
 rl_equip(struct rl_actor* actor, struct rl_item* item)
 {
-  if (!rl_can_equip(actor, item)) {
-    return false;
-  }
-
-  handle(rl_item)* const slot =
-    edit_slot(actor, rl_get_equipment_slot(item->itype));
-  if (handle_is_nonnull(*slot) && !handle_equal(*slot, item->handle)) {
-    return false;
-  }
-
-  *slot = item->handle;
+  actor->equipment.slots[rl_get_equipment_slot(item->itype)] = item->handle;
   item->ltype = RL_ITEM_LOCATION_EQUIPPED;
-
-  return true;
 }
 
 bool
@@ -97,10 +64,8 @@ rl_is_equipped_by(struct rl_actor const* actor, struct rl_item const* item)
     return false;
   }
 
-  handle(rl_item) const* const slot =
-    get_slot(actor, rl_get_equipment_slot(item->itype));
-
-  return slot != NULL && handle_equal(*slot, item->handle);
+  return handle_equal(
+    actor->equipment.slots[rl_get_equipment_slot(item->itype)], item->handle);
 }
 
 bool
@@ -109,16 +74,10 @@ rl_can_unequip(struct rl_actor const* actor, struct rl_item const* item)
   return rl_is_equipped_by(actor, item);
 }
 
-bool
+void
 rl_unequip(struct rl_actor* actor, struct rl_item* item)
 {
-  if (!rl_can_unequip(actor, item)) {
-    return false;
-  }
-
-  *edit_slot(actor, rl_get_equipment_slot(item->itype)) =
+  actor->equipment.slots[rl_get_equipment_slot(item->itype)] =
     handle_invalid(rl_item);
   item->ltype = RL_ITEM_LOCATION_HELD;
-
-  return true;
 }

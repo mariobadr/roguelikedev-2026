@@ -27,6 +27,10 @@ pool_define_as(struct rl_item, rl_item);
 
 /**
  * The game world.
+ *
+ * @invariant current_level is a valid index into levels.
+ * @invariant every level's map, and player.distances, have the same shape.
+ * @invariant player.actor is live.
  */
 struct rl_world
 {

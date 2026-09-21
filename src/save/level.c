@@ -147,6 +147,38 @@ read_map_grid(SDL_IOStream* src, struct rl_level* level)
   return RL_READ_OK;
 }
 
+static bool
+is_walkable_at(struct rl_level const* level, int x, int y)
+{
+  return rl_is_walkable(*grid_at(&level->map, x, y));
+}
+
+static enum rl_read_result
+validate_map(struct rl_level const* level)
+{
+  int const width = grid_width(&level->map);
+  int const height = grid_height(&level->map);
+
+  for (int x = 0; x < width; x++) {
+    if (is_walkable_at(level, x, 0) || is_walkable_at(level, x, height - 1)) {
+      return RL_READ_CORRUPT;
+    }
+  }
+
+  for (int y = 0; y < height; y++) {
+    if (is_walkable_at(level, 0, y) || is_walkable_at(level, width - 1, y)) {
+      return RL_READ_CORRUPT;
+    }
+  }
+
+  if (!is_walkable_at(level, level->stairs_up.x, level->stairs_up.y) ||
+      !is_walkable_at(level, level->stairs_down.x, level->stairs_down.y)) {
+    return RL_READ_CORRUPT;
+  }
+
+  return RL_READ_OK;
+}
+
 static enum rl_read_result
 read_explored_grid(SDL_IOStream* src, struct rl_level* level)
 {
@@ -259,6 +291,9 @@ rl_read_level(SDL_IOStream* src,
   }
   if (result == RL_READ_OK) {
     result = read_map_grid(src, out);
+  }
+  if (result == RL_READ_OK) {
+    result = validate_map(out);
   }
   if (result == RL_READ_OK) {
     result = read_explored_grid(src, out);

@@ -14,10 +14,6 @@ rl_new_bump_command(struct rl_actor const* actor,
   struct rl_command cmd = { 0 };
   cmd.type = RL_COMMAND_NONE;
 
-  if (actor == NULL) {
-    return cmd;
-  }
-
   cmd.actor = actor->handle;
   if (!rl_actor_is_alive(actor)) {
     return cmd;
@@ -29,10 +25,6 @@ rl_new_bump_command(struct rl_actor const* actor,
 
   // TODO: need to check other things?
   struct rl_level const* level = rl_get_current_level(world);
-  if (!grid_contains(&level->map, dst.x, dst.y)) {
-    return cmd;
-  }
-
   handle(rl_actor) const target = rl_find_actor(world, level, dst);
   if (handle_is_nonnull(target)) {
     cmd.type = RL_COMMAND_ATTACK;
@@ -55,7 +47,8 @@ rl_apply_command(struct rl_world* world,
     return false;
   }
 
-  if (rl_borrow_actor(world, cmd->actor) == NULL) {
+  struct rl_actor const* actor = rl_borrow_actor(world, cmd->actor);
+  if (actor == NULL || !rl_actor_is_alive(actor)) {
     return false;
   }
 
@@ -77,7 +70,7 @@ rl_apply_command(struct rl_world* world,
       return rl_equip_item(world, cmd->actor, cmd->target_item, events);
     case RL_COMMAND_UNEQUIP_ITEM:
       return rl_unequip_item(world, cmd->actor, cmd->target_item, events);
-    default:
+    case RL_COMMAND_NONE:
       break;
   }
 

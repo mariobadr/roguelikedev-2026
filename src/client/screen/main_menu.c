@@ -93,7 +93,6 @@ refresh_saves(struct screen_state* s)
 {
   if (!rl_list_saves(&s->saves)) {
     SDL_Log("rl_list_saves failed: %s", SDL_GetError());
-    alist_clear(&s->saves);
   }
 
   s->continue_id = rl_save_id_invalid();
@@ -254,9 +253,6 @@ select_item(struct screen_state* s, enum menu_item item)
       break;
     }
     case MENU_ITEM_CONTINUE: {
-      if (!rl_save_id_is_valid(s->continue_id)) {
-        break;
-      }
       struct rl_run_result const result = rl_resume_run(s->run, s->continue_id);
       if (handle_run_result(result)) {
         transition.type = RL_SCREEN_TRANSITION_PUSH;
@@ -271,7 +267,7 @@ select_item(struct screen_state* s, enum menu_item item)
     case MENU_ITEM_EXIT:
       transition.type = RL_SCREEN_TRANSITION_POP;
       break;
-    default:
+    case MENU_ITEM_COUNT:
       break;
   }
 

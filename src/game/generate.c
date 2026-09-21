@@ -171,10 +171,6 @@ rl_push_level(struct rl_world* world,
               handle(rl_actor) arriving,
               struct rand_state* rng)
 {
-  if (rl_borrow_actor(world, arriving) == NULL) {
-    return false;
-  }
-
   struct rl_level* level = alist_push(&world->levels);
   if (level == NULL) {
     return false;

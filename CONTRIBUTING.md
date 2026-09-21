@@ -37,6 +37,20 @@ struct gfx_tileset
 };
 ```
 
+To avoid repeated checks throughout the code (see [Error handling conventions](#error-handling-conventions)), list the struct's representation invariants.
+For that, you should use `@invariant` in its docstring.
+State each invariant once, on the struct that owns every member it mentions.
+For example,
+
+```c
+/**
+ * One level of the dungeon.
+ *
+ * @invariant the border of map is unwalkable.
+ */
+struct rl_level
+```
+
 ### Documenting `enum`s
 
 Give the enum a docstring, and put a short trailing comment on each member that needs one.
@@ -87,3 +101,28 @@ rl_create_actor(struct rl_world* world, enum rl_actor_type type, int level);
 bool
 rl_is_walkable(enum rl_tile tile);
 ```
+
+## Error handling conventions
+
+There are many situations where things may fail, especially with respect to memory allocation and container growth.
+You should handle allocation failure where a failure can already be reported (e.g., when creating the world, generating a level, or loading a save; these return `bool` and clean up after themselves).
+
+Growing a container during a turn (e.g., pushing an event) is treated as infallible.
+In other words, it will segfault.
+But if it did, then the container couldn't grow, which means we're out of memory (somehow in our very simple little roguelike).
+Running out of memory mid-turn is not recoverable, so it is not handled.
+
+You should also focus on validating untrusted input once, where it enters the game.
+For example:
+- Commands built by the client are validated when they are applied.
+- Save files are validated when they are loaded; a save that breaks an invariant of the world is rejected as corrupt.
+
+Past those boundaries, code may reasonably assume the world's invariants hold.
+Do not check for states that cannot occur (e.g., a stale handle in a level's actor list).
+If something must be explicit, consider documenting a caller obligation with `@param` (see [Documenting functions](#documenting-functions)).
+Or, for debug checks, use `SDL_assert` for an invariant violation that would otherwise be silent or hard to trace.
+Otherwise, write no check at all.
+
+Note that file I/O is always handled.
+Reading or writing a save can fail for reasons outside the game, and the failure is reported (via `SDL_Log`).
+This makes debugging easier.

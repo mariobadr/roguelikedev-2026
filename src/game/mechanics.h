@@ -91,7 +91,9 @@ rl_use_item(struct rl_world* world,
 /**
  * Ascending above the first level is not allowed.
  *
- * @return whether a living rogue can take the stairs at its current position.
+ * @param actor must be alive.
+ *
+ * @return whether the rogue can take the stairs at its current position.
  */
 bool
 rl_can_take_stairs(struct rl_world const* world, struct rl_actor const* actor);

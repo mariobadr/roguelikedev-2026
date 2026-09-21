@@ -42,16 +42,15 @@ static void
 layout_slots(struct rl_ribbon* ribbon, SDL_FRect slots[RL_RIBBON_SLOT_COUNT])
 {
   SDL_FRect const* viewport = &ribbon->viewport;
-  float const width = SDL_max(viewport->w, 0.0f);
-  float const height = SDL_max(viewport->h, 0.0f);
   float const gap = RIBBON_GAP_GLYPHS * ribbon->glyph_width;
   float const left_edge = viewport->x;
-  float const right_edge = viewport->x + width;
+  float const right_edge = viewport->x + viewport->w;
 
-  float const right_w = SDL_min(text_width(ribbon, RL_RIBBON_RIGHT), width);
+  float const right_w =
+    SDL_min(text_width(ribbon, RL_RIBBON_RIGHT), viewport->w);
   float const right_gap = right_w > 0.0f ? gap : 0.0f;
 
-  float const left_room = SDL_max(width - right_w - right_gap, 0.0f);
+  float const left_room = SDL_max(viewport->w - right_w - right_gap, 0.0f);
   float const left_w = SDL_min(text_width(ribbon, RL_RIBBON_LEFT), left_room);
   float const left_gap = left_w > 0.0f ? gap : 0.0f;
 
@@ -62,11 +61,12 @@ layout_slots(struct rl_ribbon* ribbon, SDL_FRect slots[RL_RIBBON_SLOT_COUNT])
   float const centre_w =
     ribbon->content.text[RL_RIBBON_CENTRE].length > 0 ? centre_room : 0.0f;
 
-  slots[RL_RIBBON_LEFT] = (SDL_FRect){ left_edge, viewport->y, left_w, height };
+  slots[RL_RIBBON_LEFT] =
+    (SDL_FRect){ left_edge, viewport->y, left_w, viewport->h };
   slots[RL_RIBBON_CENTRE] =
-    (SDL_FRect){ centre_x, viewport->y, centre_w, height };
+    (SDL_FRect){ centre_x, viewport->y, centre_w, viewport->h };
   slots[RL_RIBBON_RIGHT] =
-    (SDL_FRect){ right_edge - right_w, viewport->y, right_w, height };
+    (SDL_FRect){ right_edge - right_w, viewport->y, right_w, viewport->h };
 
   for (int slot = 0; slot < RL_RIBBON_SLOT_COUNT; ++slot) {
     ribbon->clips[slot] = frect_to_rect(&slots[slot]);

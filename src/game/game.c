@@ -107,10 +107,6 @@ update_actors(struct rl_world* world,
   for (size_t i = 0; i < alist_len(&level->actors); i++) {
     handle(rl_actor) const actor_handle = *alist_at(&level->actors, i);
     struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
-    if (actor == NULL) {
-      continue;
-    }
-
     if (handle_equal(actor->handle, rogue_handle)) {
       // the player is not controlled by the AI
       continue;
@@ -169,7 +165,7 @@ init_starting_equipment(struct rl_world* world, handle(rl_actor) rogue_handle)
   struct rl_actor* rogue = rl_borrow_mut_actor(world, rogue_handle);
   struct rl_item* weapon = rl_borrow_mut_item(world, weapon_handle);
   struct rl_item* armour = rl_borrow_mut_item(world, armour_handle);
-  if (rogue == NULL || weapon == NULL || armour == NULL) {
+  if (weapon == NULL || armour == NULL) {
     return false;
   }
 
@@ -178,7 +174,10 @@ init_starting_equipment(struct rl_world* world, handle(rl_actor) rogue_handle)
   armour->ltype = RL_ITEM_LOCATION_HELD;
   armour->on.actor = rogue_handle;
 
-  return rl_equip(rogue, weapon) && rl_equip(rogue, armour);
+  rl_equip(rogue, weapon);
+  rl_equip(rogue, armour);
+
+  return true;
 }
 
 // Initialize a zeroed game; the caller owns cleanup on failure.

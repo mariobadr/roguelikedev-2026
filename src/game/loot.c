@@ -22,20 +22,16 @@ rl_roll_loot(struct rl_loot_table const* table,
     total_weight += weight;
   }
 
-  if (total_weight == 0) {
-    return false;
-  }
-
   // first roll
   Uint64 roll = rand_next_up_to(rng, 100);
-  if (table->drop_percent < 100 && roll >= (Uint64)table->drop_percent) {
+  if (roll >= (Uint64)table->drop_percent) {
     // no item will be dropped
     return false;
   }
 
   // second roll
   roll = rand_next_up_to(rng, total_weight);
-  for (size_t i = 0; i < table->count; i++) {
+  for (size_t i = 0;; i++) {
     struct rl_loot_entry const* entry = &table->items[i];
 
     if (roll < entry->weight) {
@@ -46,6 +42,4 @@ rl_roll_loot(struct rl_loot_table const* table,
 
     roll -= entry->weight;
   }
-
-  return false;
 }

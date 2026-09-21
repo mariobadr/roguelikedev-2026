@@ -48,7 +48,6 @@ struct view_state
   float line_height;
   float actor_height;
   int columns;
-  bool fits;
   SDL_FRect rogue_bounds;
   SDL_FRect body;
 
@@ -65,11 +64,6 @@ static void
 layout_view(struct view_state* s, SDL_FRect const* viewport)
 {
   s->actor_height = 2.0f * s->line_height;
-  s->fits = viewport->w > 0.0f && viewport->h >= s->actor_height;
-  if (!s->fits) {
-    return;
-  }
-
   s->columns = (int)(viewport->w / s->glyph_width);
 
   SDL_FRect remaining = *viewport;
@@ -128,15 +122,14 @@ visible_item_count(struct view_state const* s)
   for (size_t i = 0; i < alist_len(&level->items); ++i) {
     struct rl_item const* item =
       rl_borrow_item(s->world, *alist_at(&level->items, i));
-    if (item != NULL &&
-        rl_is_tile_visible(&s->world->player.fov, item->on.map)) {
+    if (rl_is_tile_visible(&s->world->player.fov, item->on.map)) {
       ++count;
     }
   }
   return count;
 }
 
-static bool
+static void
 collect_monsters(struct view_state* s)
 {
   alist_clear(&s->monsters);
@@ -147,32 +140,21 @@ collect_monsters(struct view_state* s)
   for (size_t i = 0; i < alist_len(&level->actors); ++i) {
     struct rl_actor const* actor =
       rl_borrow_actor(s->world, *alist_at(&level->actors, i));
-    if (actor == NULL || handle_equal(actor->handle, rogue) ||
-        !rl_actor_is_alive(actor) ||
+    if (handle_equal(actor->handle, rogue) || !rl_actor_is_alive(actor) ||
         !rl_is_tile_visible(&s->world->player.fov, actor->pos)) {
       continue;
     }
 
-    handle(rl_actor)* entry = alist_push(&s->monsters);
-    if (entry == NULL) {
-      return false;
-    }
-    *entry = actor->handle;
+    *alist_push(&s->monsters) = actor->handle;
   }
-
-  return true;
 }
 
-static bool
+static void
 push_actor_row(struct view_state* s,
                struct rl_actor const* actor,
                SDL_FRect bounds)
 {
   struct actor_row* row = alist_push(&s->actors);
-  if (row == NULL) {
-    return false;
-  }
-
   row->name = actor->name;
   SDL_snprintf(row->hp_text,
                sizeof(row->hp_text),
@@ -197,8 +179,6 @@ push_actor_row(struct view_state* s,
   float const fraction = (float)actor->hp / actor->stats.max_hp;
   row->fill = bounds;
   row->fill.w = SDL_floorf(bounds.w * fraction);
-
-  return true;
 }
 
 static void
@@ -210,10 +190,6 @@ prepare_summary(struct view_state* s, int count, SDL_FRect* remaining)
                count,
                count == 1 ? "item" : "items");
 
-  if (s->columns <= 0) {
-    return;
-  }
-
   char const* cursor = s->summary_text;
   struct str_view span;
   while (remaining->h >= s->line_height) {
@@ -222,10 +198,6 @@ prepare_summary(struct view_state* s, int count, SDL_FRect* remaining)
     }
 
     struct text_row* row = alist_push(&s->summary);
-    if (row == NULL) {
-      return;
-    }
-
     SDL_FRect const line = ui_cut_top(remaining, s->line_height);
     row->span = span;
     row->origin = (SDL_FPoint){ line.x, line.y };
@@ -251,9 +223,7 @@ prepare_monsters(struct view_state* s, SDL_FRect* remaining)
   for (int i = 0; i < drawn; ++i) {
     struct rl_actor const* actor =
       rl_borrow_actor(s->world, *alist_at(&s->monsters, i));
-    if (!push_actor_row(s, actor, ui_cut_top(remaining, s->actor_height))) {
-      return;
-    }
+    push_actor_row(s, actor, ui_cut_top(remaining, s->actor_height));
     ui_cut_top(remaining, SDL_min(remaining->h, s->line_height));
   }
 
@@ -276,10 +246,6 @@ draw_text_span(SDL_Renderer* renderer,
 static void
 draw_health_bar(SDL_Renderer* renderer, struct actor_row const* row)
 {
-  if (row->bar.w <= 0.0f) {
-    return;
-  }
-
   SDL_FColor const background = RL_COLOUR_GRAY[8];
   SDL_SetRenderDrawColorFloat(
     renderer, background.r, background.g, background.b, background.a);
@@ -327,15 +293,11 @@ prepare_view(void* data)
   alist_clear(&s->summary);
   s->more_text[0] = '\0';
 
-  if (!s->fits || !collect_monsters(s)) {
-    return;
-  }
+  collect_monsters(s);
 
   struct rl_actor const* rogue =
     rl_borrow_actor(s->world, rl_get_rogue(s->world));
-  if (!push_actor_row(s, rogue, s->rogue_bounds)) {
-    return;
-  }
+  push_actor_row(s, rogue, s->rogue_bounds);
 
   SDL_FRect remaining = s->body;
 

@@ -40,23 +40,17 @@ struct rl_actor_stats
 rl_get_actor_stats(struct rl_world const* world, struct rl_actor const* actor)
 {
   struct rl_actor_stats stats = actor->stats;
-  handle(rl_item) const slots[] = {
-    actor->equipment.weapon,
-    actor->equipment.armour,
-  };
-
-  for (size_t i = 0; i < SDL_arraysize(slots); i++) {
-    struct rl_item const* item = rl_borrow_item(world, slots[i]);
-    if (item == NULL || !rl_is_equipped_by(actor, item)) {
+  for (int slot = 0; slot < RL_EQUIPMENT_SLOT_COUNT; ++slot) {
+    struct rl_item const* item =
+      rl_borrow_item(world, actor->equipment.slots[slot]);
+    if (item == NULL) {
       continue;
     }
 
     struct rl_item_equippable_def const* def =
       rl_get_item_equippable_def(item->itype);
-    if (def != NULL) {
-      stats.strength += def->strength_bonus;
-      stats.armor += def->armour_bonus;
-    }
+    stats.strength += def->strength_bonus;
+    stats.armor += def->armour_bonus;
   }
 
   return stats;

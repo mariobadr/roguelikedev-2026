@@ -42,10 +42,8 @@ rl_free_game_log(struct rl_game_log* log);
 
 /**
  * Append message to the log.
- *
- * @return whether message was appended.
  */
-bool
+void
 rl_log_text(struct rl_game_log* log, struct rl_text const* message);
 
 /**

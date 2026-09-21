@@ -329,7 +329,7 @@ rogue_is_dead(struct screen_state const* s)
   struct rl_world const* world = &s->run->game.world;
   struct rl_actor const* rogue = rl_borrow_actor(world, rl_get_rogue(world));
 
-  return rogue != NULL && !rl_actor_is_alive(rogue);
+  return !rl_actor_is_alive(rogue);
 }
 
 static void
@@ -369,7 +369,7 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
     rl_log_event(&s->log, event, &s->run->game.world);
   }
 
-  if (!s->game_over && rogue_is_dead(s)) {
+  if (rogue_is_dead(s)) {
     begin_game_over(s);
   }
 
@@ -401,10 +401,6 @@ begin_target_select(struct screen_state* s,
 static void
 resolve_pending_target(struct screen_state* s)
 {
-  if (s->pending_target_cmd.type == RL_COMMAND_NONE) {
-    return;
-  }
-
   SDL_Point dst;
   enum rl_world_selection_result result =
     rl_world_view_take_selection(&s->views[RL_VIEW_WORLD], &dst);
@@ -436,10 +432,6 @@ handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
   struct rl_item_consumable_def const* def =
     rl_get_item_consumable_def(item->itype);
   if (def == NULL) {
-    if (rl_get_item_equippable_def(item->itype) == NULL) {
-      return false;
-    }
-
     struct rl_command cmd = { 0 };
     cmd.actor = rl_get_rogue(&s->run->game.world);
     cmd.type = RL_COMMAND_EQUIP_ITEM;
@@ -573,10 +565,6 @@ render_screen(void const* data, SDL_Renderer* renderer)
   struct screen_state const* s = (struct screen_state*)data;
   SDL_assert(s != NULL);
 
-  bool const had_clip = SDL_RenderClipEnabled(renderer);
-  SDL_Rect previous_clip;
-  SDL_GetRenderClipRect(renderer, &previous_clip);
-
   for (int panel = 0; panel < PANEL_COUNT; ++panel) {
     SDL_FRect const* bounds = &s->panel_bounds[panel];
     SDL_Rect clip = {
@@ -585,14 +573,11 @@ render_screen(void const* data, SDL_Renderer* renderer)
       (int)bounds->w,
       (int)bounds->h,
     };
-    if (had_clip && !SDL_GetRectIntersection(&clip, &previous_clip, &clip)) {
-      continue;
-    }
     SDL_SetRenderClipRect(renderer, &clip);
     rl_render_view(&s->views[s->panel_views[panel]], renderer, s->font);
   }
 
-  SDL_SetRenderClipRect(renderer, had_clip ? &previous_clip : NULL);
+  SDL_SetRenderClipRect(renderer, NULL);
   SDL_FPoint const origin = { s->frame_bounds.x, s->frame_bounds.y };
   rl_draw_cp437_borders(renderer,
                         s->font,

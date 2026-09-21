@@ -151,9 +151,6 @@ update_move(struct view_state* s, struct inpt_state const* istate)
 {
   struct rl_actor const* rogue =
     rl_borrow_actor(s->world, rl_get_rogue(s->world));
-  if (rogue == NULL) {
-    return false;
-  }
 
   enum rl_action action = rl_handle_keyboard_input(istate);
   if (action == RL_ACTION_NONE) {

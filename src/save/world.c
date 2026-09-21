@@ -11,6 +11,7 @@
 
 #include "container/pool.h"
 
+#include "game/actor.h"
 #include "game/equipment.h"
 #include "game/experience.h"
 #include "game/world.h"
@@ -141,9 +142,7 @@ restore_equipment(struct rl_world* world, struct rl_item* item)
     return RL_READ_CORRUPT;
   }
 
-  if (!rl_equip(actor, item)) {
-    return RL_READ_CORRUPT;
-  }
+  rl_equip(actor, item);
 
   return RL_READ_OK;
 }
@@ -222,6 +221,11 @@ read_world_header(SDL_IOStream* src,
     return RL_READ_CORRUPT;
   }
 
+  if (!rl_actor_is_alive(rogue)) {
+    // only active runs are loaded, and their rogue is alive
+    return RL_READ_CORRUPT;
+  }
+
   Uint32 level_count = 0;
   RL_READ_OR_FAIL(src, SDL_ReadU32LE(src, &level_count));
   if (level_count > RL_SNAPSHOT_MAX_LEVELS) {
@@ -249,11 +253,17 @@ validate_level(struct rl_world const* world,
                array(boolean) * item_listed,
                int level_index)
 {
+  if (level_index > 0 &&
+      !grid_same_shape(&level->map, &alist_at(&world->levels, 0)->map)) {
+    return RL_READ_CORRUPT;
+  }
+
   for (size_t i = 0; i < alist_len(&level->actors); i++) {
     handle(rl_actor) const h = *alist_at(&level->actors, i);
     struct rl_actor const* actor = rl_borrow_actor(world, h);
     if (actor == NULL ||
-        !grid_contains(&level->map, actor->pos.x, actor->pos.y)) {
+        !grid_contains(&level->map, actor->pos.x, actor->pos.y) ||
+        !rl_is_walkable(*grid_at(&level->map, actor->pos.x, actor->pos.y))) {
       return RL_READ_CORRUPT;
     }
 

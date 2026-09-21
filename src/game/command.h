@@ -68,7 +68,7 @@ struct rl_command
  * Borrow actor from world for this call; the command stores actor handles.
  *
  * @return a move or attack command.
- * Returns RL_COMMAND_NONE if actor is NULL, dead, or cannot move or attack.
+ * Returns RL_COMMAND_NONE if actor is dead or cannot move or attack.
  */
 struct rl_command
 rl_new_bump_command(struct rl_actor const* actor,

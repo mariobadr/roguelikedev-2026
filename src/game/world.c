@@ -92,9 +92,6 @@ rl_create_actor(struct rl_world* world, enum rl_actor_type type, int level)
 
   handle(rl_actor) actor_handle;
   struct rl_actor* actor = pool_acquire(&world->actors, &actor_handle);
-  if (actor == NULL) {
-    return handle_invalid(rl_actor);
-  }
 
   *actor = rl_make_actor(type, level);
   actor->handle = actor_handle;
@@ -130,9 +127,6 @@ rl_create_item(struct rl_world* world, enum rl_item_type type)
 
   handle(rl_item) item_handle;
   struct rl_item* item = pool_acquire(&world->items, &item_handle);
-  if (item == NULL) {
-    return handle_invalid(rl_item);
-  }
 
   *item = rl_make_item(type);
   item->handle = item_handle;
@@ -180,15 +174,11 @@ rl_find_actor(struct rl_world const* world,
               struct rl_level const* level,
               SDL_Point pos)
 {
-  if (level == NULL) {
-    return handle_invalid(rl_actor);
-  }
-
   for (size_t i = 0; i < alist_len(&level->actors); i++) {
     handle(rl_actor) const actor_handle = *alist_at(&level->actors, i);
     struct rl_actor const* actor = rl_borrow_actor(world, actor_handle);
-    if (actor == NULL || !rl_actor_is_alive(actor)) {
-      // ignore stale handles and dead actors
+    if (!rl_actor_is_alive(actor)) {
+      // ignore dead actors
       continue;
     }
 
@@ -205,18 +195,9 @@ rl_find_item(struct rl_world const* world,
              struct rl_level const* level,
              SDL_Point pos)
 {
-  if (level == NULL) {
-    return handle_invalid(rl_item);
-  }
-
   for (size_t i = 0; i < alist_len(&level->items); i++) {
     handle(rl_item) const item_handle = *alist_at(&level->items, i);
     struct rl_item const* item = rl_borrow_item(world, item_handle);
-    if (item == NULL) {
-      // ignore stale handles
-      continue;
-    }
-
     if (item->on.map.x == pos.x && item->on.map.y == pos.y) {
       return item_handle;
     }
@@ -267,21 +248,11 @@ rl_find_held_item(struct rl_world const* world, handle(rl_actor) holder, int n)
 struct rl_level const*
 rl_get_current_level(struct rl_world const* world)
 {
-  int const index = world->current_level;
-  if (index < 0 || index >= alist_len(&world->levels)) {
-    return NULL;
-  }
-
-  return alist_at(&world->levels, index);
+  return alist_at(&world->levels, world->current_level);
 }
 
 struct rl_level*
 rl_edit_current_level(struct rl_world* world)
 {
-  int const index = world->current_level;
-  if (index < 0 || index >= alist_len(&world->levels)) {
-    return NULL;
-  }
-
-  return alist_at(&world->levels, index);
+  return alist_at(&world->levels, world->current_level);
 }

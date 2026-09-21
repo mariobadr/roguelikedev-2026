@@ -22,7 +22,7 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
   for (size_t i = 0; i < alist_len(&level->actors); i++) {
     struct rl_actor const* candidate =
       rl_borrow_actor(world, *alist_at(&level->actors, i));
-    if (candidate == NULL || handle_equal(candidate->handle, attacker)) {
+    if (handle_equal(candidate->handle, attacker)) {
       continue;
     }
 

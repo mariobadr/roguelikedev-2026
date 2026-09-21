@@ -109,8 +109,6 @@ apply_transition(struct rl_client* client,
     case RL_SCREEN_TRANSITION_SWAP:
       swap_top_screen(client, transition.target);
       break;
-    default:
-      break;
   }
 }
 
@@ -247,9 +245,7 @@ rl_render_client(struct rl_client const* client, SDL_Renderer* renderer)
   SDL_RenderClear(renderer);
 
   struct rl_screen const* screen = top_screen(client);
-  if (screen != NULL) {
-    screen->render(screen->state, renderer);
-  }
+  screen->render(screen->state, renderer);
 
   rl_draw_ribbon(&client->ribbon, renderer, &client->font);
 }
@@ -257,10 +253,6 @@ rl_render_client(struct rl_client const* client, SDL_Renderer* renderer)
 void
 rl_exit_client(struct rl_client* client)
 {
-  if (client == NULL) {
-    return;
-  }
-
   if (rl_save_id_is_valid(client->run.save_id)) {
     enum rl_save_result result = rl_save_run(&client->run);
     if (result == RL_SAVE_OK) {

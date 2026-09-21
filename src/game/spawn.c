@@ -76,10 +76,6 @@ can_spawn_at(struct rl_level const* level,
   for (size_t i = 0; i < alist_len(&level->actors); i++) {
     struct rl_actor const* actor =
       rl_borrow_actor(world, *alist_at(&level->actors, i));
-    if (actor == NULL) {
-      continue;
-    }
-
     if (actor->pos.x == pos.x && actor->pos.y == pos.y) {
       return false;
     }
@@ -88,10 +84,6 @@ can_spawn_at(struct rl_level const* level,
   for (size_t i = 0; i < alist_len(&level->items); i++) {
     struct rl_item const* item =
       rl_borrow_item(world, *alist_at(&level->items, i));
-    if (item == NULL || item->ltype != RL_ITEM_LOCATION_MAP) {
-      continue;
-    }
-
     if (item->on.map.x == pos.x && item->on.map.y == pos.y) {
       return false;
     }
@@ -109,9 +101,6 @@ find_spawn_points(array(rl_spawn_point) * out,
                   struct rand_state* rng)
 {
   array_clear(out);
-  if (array_cap(out) == 0) {
-    return;
-  }
 
   size_t seen = 0;
 
@@ -212,10 +201,7 @@ rl_spawn_items(struct rl_level* level,
   bool ok = true;
   for (size_t i = 0; i < array_len(&points); i++) {
     enum rl_item_type type;
-    if (!rl_roll_loot(&FLOOR_ITEMS, rng, &type)) {
-      ok = false;
-      break;
-    }
+    rl_roll_loot(&FLOOR_ITEMS, rng, &type);
 
     handle(rl_item) const item =
       rl_add_item_to_level(world, level, type, *array_at(&points, i));

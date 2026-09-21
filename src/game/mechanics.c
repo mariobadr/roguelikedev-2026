@@ -21,38 +21,17 @@ are_adjacent(SDL_Point a, SDL_Point b)
   return dx + dy == 1;
 }
 
-static struct rl_actor*
-get_living_actor(struct rl_world* world, handle(rl_actor) actor_handle)
-{
-  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
-  if (actor == NULL) {
-    return NULL;
-  }
-
-  if (!rl_actor_is_alive(actor)) {
-    return NULL;
-  }
-
-  return actor;
-}
-
-static bool
+static void
 enqueue_equipment_event(enum rl_event_type type,
                         handle(rl_actor) actor,
                         handle(rl_item) item,
                         alist(rl_event)* events)
 {
-  struct rl_event* event = alist_push(events);
-  if (event == NULL) {
-    return false;
-  }
-
-  *event = (struct rl_event){ 0 };
-  event->type = type;
-  event->as.equipment.actor = actor;
-  event->as.equipment.item = item;
-
-  return true;
+  struct rl_event event = { 0 };
+  event.type = type;
+  event.as.equipment.actor = actor;
+  event.as.equipment.item = item;
+  *alist_push(events) = event;
 }
 
 bool
@@ -61,9 +40,9 @@ rl_equip_item(struct rl_world* world,
               handle(rl_item) item_handle,
               alist(rl_event)* events)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_handle);
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   struct rl_item* item = rl_borrow_mut_item(world, item_handle);
-  if (actor == NULL || item == NULL) {
+  if (item == NULL) {
     return false;
   }
 
@@ -74,16 +53,8 @@ rl_equip_item(struct rl_world* world,
   handle(rl_item) const previous_handle =
     rl_get_equipped_item(actor, rl_get_equipment_slot(item->itype));
 
-  struct rl_item* previous = NULL;
   if (handle_is_nonnull(previous_handle)) {
-    previous = rl_borrow_mut_item(world, previous_handle);
-    if (previous == NULL || !rl_can_unequip(actor, previous)) {
-      return false;
-    }
-  }
-
-  if (previous != NULL) {
-    rl_unequip(actor, previous);
+    rl_unequip(actor, rl_borrow_mut_item(world, previous_handle));
     enqueue_equipment_event(
       RL_EVENT_UNEQUIP, actor_handle, previous_handle, events);
   }
@@ -100,9 +71,9 @@ rl_unequip_item(struct rl_world* world,
                 handle(rl_item) item_handle,
                 alist(rl_event)* events)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_handle);
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   struct rl_item* item = rl_borrow_mut_item(world, item_handle);
-  if (actor == NULL || item == NULL) {
+  if (item == NULL) {
     return false;
   }
 
@@ -123,10 +94,7 @@ rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events)
     return 0;
   }
 
-  struct rl_actor* actor = get_living_actor(world, rl_get_rogue(world));
-  if (actor == NULL) {
-    return 0;
-  }
+  struct rl_actor* actor = rl_borrow_mut_actor(world, rl_get_rogue(world));
 
   struct rl_actor_def const* def = rl_get_actor_def(actor->type);
   int const awarded = amount;
@@ -169,10 +137,6 @@ static bool
 can_move(struct rl_world const* world, SDL_Point dst)
 {
   struct rl_level const* level = rl_get_current_level(world);
-
-  if (!grid_contains(&level->map, dst.x, dst.y)) {
-    return false;
-  }
 
   if (!rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
     return false;
@@ -229,7 +193,7 @@ use_item_damage_area(struct rl_world* world,
   for (size_t i = 0; i < alist_len(&level->actors); i++) {
     struct rl_actor* defender =
       rl_borrow_mut_actor(world, *alist_at(&level->actors, i));
-    if (defender == NULL || !rl_actor_is_alive(defender)) {
+    if (!rl_actor_is_alive(defender)) {
       continue;
     }
 
@@ -269,11 +233,7 @@ use_item_lightning(struct rl_actor* actor,
 bool
 rl_move(struct rl_world* world, handle(rl_actor) actor_handle, SDL_Point dst)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_handle);
-  if (actor == NULL) {
-    return false;
-  }
-
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   if (!are_adjacent(actor->pos, dst)) {
     return false;
   }
@@ -292,11 +252,7 @@ rl_pick_up_item(struct rl_world* world,
                 SDL_Point dst,
                 alist(rl_event)* events)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_handle);
-  if (actor == NULL) {
-    return false;
-  }
-
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   if (actor->pos.x != dst.x || actor->pos.y != dst.y) {
     // actor is not at dst
     return false;
@@ -310,9 +266,7 @@ rl_pick_up_item(struct rl_world* world,
     return false;
   }
 
-  if (!rl_remove_item(level, item_handle)) {
-    return false;
-  }
+  rl_remove_item(level, item_handle);
 
   item->ltype = RL_ITEM_LOCATION_HELD;
   item->on.actor = actor->handle;
@@ -333,9 +287,6 @@ rl_drop_loot(struct rl_world* world,
              struct rand_state* rng)
 {
   struct rl_actor const* actor = rl_borrow_actor(world, actor_handle);
-  if (actor == NULL || rl_actor_is_alive(actor)) {
-    return;
-  }
 
   enum rl_item_type type;
   if (!rl_roll_loot(&rl_get_actor_def(actor->type)->loot, rng, &type)) {
@@ -375,8 +326,7 @@ enter_existing_level(struct rl_world* world,
 bool
 rl_can_take_stairs(struct rl_world const* world, struct rl_actor const* actor)
 {
-  if (actor == NULL || !rl_actor_is_alive(actor) ||
-      !handle_equal(actor->handle, rl_get_rogue(world))) {
+  if (!handle_equal(actor->handle, rl_get_rogue(world))) {
     return false;
   }
 
@@ -443,11 +393,7 @@ rl_use_item(struct rl_world* world,
             alist(rl_event)* events,
             struct rand_state* rng)
 {
-  struct rl_actor* actor = get_living_actor(world, actor_handle);
-  if (actor == NULL) {
-    return false;
-  }
-
+  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
   struct rl_item const* item = rl_borrow_item(world, item_handle);
   if (item == NULL) {
     return false;
@@ -479,8 +425,6 @@ rl_use_item(struct rl_world* world,
       break;
     case RL_ITEM_EFFECT_DAMAGE_NEAREST:
       used = use_item_lightning(actor, world, idef->power, events, rng);
-      break;
-    default:
       break;
   }
 
