@@ -6,6 +6,7 @@
 #include "game/item_def.h"
 #include "game/world.h"
 
+#include "render/graphics.h"
 #include "render/palette.h"
 
 #include "client/action.h"
@@ -65,10 +66,11 @@ static struct rl_text
 item_text(struct rl_item const* item, bool selected)
 {
   struct rl_item_def const* def = rl_get_item_def(item->itype);
+  SDL_FColor const colour = rl_get_item_gfx(item).fg;
   struct rl_text text = { 0 };
 
   rl_append_text(&text, &RL_COLOUR_YELLOW[3], selected ? "> " : "  ");
-  rl_append_text(&text, NULL, def->name);
+  rl_append_text(&text, &colour, def->name);
 
   return text;
 }
