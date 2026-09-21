@@ -99,9 +99,9 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   struct screen_state* s = (struct screen_state*)data;
   SDL_assert(s != NULL);
 
-  inpt_button const escape = istate->keys[SDL_SCANCODE_ESCAPE];
+  inpt_button const quit = istate->keys[SDL_SCANCODE_Q];
 
-  if (inpt_was_pressed(escape)) {
+  if (inpt_was_pressed(quit)) {
     transition.type = RL_SCREEN_TRANSITION_POP;
   }
 
@@ -116,7 +116,7 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   rl_append_text(
     &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Game Over");
   rl_append_text(
-    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Esc] Main Menu");
+    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Q] Main Menu");
 }
 
 static void

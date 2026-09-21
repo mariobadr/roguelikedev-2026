@@ -51,7 +51,7 @@ rl_handle_keyboard_input(struct inpt_state const* istate)
     return RL_ACTION_SHOW_LOG;
   }
 
-  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_ESCAPE])) {
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_Q])) {
     return RL_ACTION_CANCEL;
   }
 

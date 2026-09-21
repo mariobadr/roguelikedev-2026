@@ -126,7 +126,7 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
           s->selection.def, s->world, s->selection.cursor)) {
       rl_append_text(hint, colour, "   [E] confirm");
     }
-    rl_append_text(hint, colour, "   [Esc] cancel");
+    rl_append_text(hint, colour, "   [Q] cancel");
     return;
   }
 

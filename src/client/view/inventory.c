@@ -151,7 +151,7 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   if (hint->length > 0) {
     rl_append_text(hint, colour, "   ");
   }
-  rl_append_text(hint, colour, "[Esc] back");
+  rl_append_text(hint, colour, "[Q] back");
 }
 
 static bool

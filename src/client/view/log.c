@@ -74,7 +74,7 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
       &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[WS] scroll   ");
   }
   rl_append_text(
-    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Esc] back");
+    &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Q] back");
 }
 
 static bool

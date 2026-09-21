@@ -352,7 +352,7 @@ begin_game_over(struct screen_state* s)
 
   struct rl_text prompt = { 0 };
   rl_append_text(&prompt, NULL, "You have died. Press ");
-  rl_append_text(&prompt, &RL_COLOUR_YELLOW[3], "Escape");
+  rl_append_text(&prompt, &RL_COLOUR_YELLOW[3], "Q");
   rl_append_text(&prompt, NULL, " to exit.");
   rl_log_text(&s->log, &prompt);
 }
@@ -552,7 +552,7 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
     rl_append_text(
       &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Game Over");
     rl_append_text(
-      &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Esc] exit");
+      &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Q] exit");
     return;
   }
 

@@ -370,7 +370,7 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   s->repeat_cooldown = SDL_max(0.0f, s->repeat_cooldown - dt);
 
   // Screen-local shortcuts are edge-triggered and independent of key repeat.
-  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_ESCAPE])) {
+  if (inpt_was_pressed(istate->keys[SDL_SCANCODE_Q])) {
     if (s->mode == MODE_CONFIRM) {
       s->mode = MODE_BROWSE;
       s->status = (struct rl_text){ 0 };
@@ -582,14 +582,14 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   struct rl_text* hint = &content->text[RL_RIBBON_RIGHT];
   rl_append_text(hint, enabled, "[WS] move   ");
   if (s->mode == MODE_CONFIRM) {
-    rl_append_text(hint, enabled, "[E] select   [Esc] cancel");
+    rl_append_text(hint, enabled, "[E] select   [Q] cancel");
   } else {
     struct rl_save_info const* info = selected_save(s);
     bool const can_load = info != NULL && rl_save_is_continuable(info);
     rl_append_text(hint, can_load ? enabled : disabled, "[E] load");
     rl_append_text(hint, enabled, "   ");
     rl_append_text(hint, info != NULL ? enabled : disabled, "[D] delete");
-    rl_append_text(hint, enabled, "   [Esc] back");
+    rl_append_text(hint, enabled, "   [Q] back");
   }
 }
 
