@@ -10,6 +10,8 @@ add_library(rl_client STATIC
     screen/main_menu.h
     screen/save_files.c
     screen/save_files.h
+    view/character.c
+    view/character.h
     view/in_sight.c
     view/in_sight.h
     view/inventory.c

@@ -19,6 +19,7 @@ struct rl_ribbon_content;
  */
 enum rl_view_id
 {
+  RL_VIEW_CHARACTER,
   RL_VIEW_IN_SIGHT,
   RL_VIEW_INVENTORY,
   RL_VIEW_LOG,

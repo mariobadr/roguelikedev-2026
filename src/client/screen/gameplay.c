@@ -18,6 +18,7 @@
 #include "render/border.h"
 #include "render/palette.h"
 
+#include "client/view/character.h"
 #include "client/view/in_sight.h"
 #include "client/view/inventory.h"
 #include "client/view/log.h"
@@ -63,6 +64,7 @@ struct bottom_tab
 static struct bottom_tab const BOTTOM_TABS[] = {
   { .view = RL_VIEW_LOG, .label = "Log [L]" },
   { .view = RL_VIEW_INVENTORY, .label = "Inventory [I]" },
+  { .view = RL_VIEW_CHARACTER, .label = "Character [C]" },
 };
 
 struct screen_state
@@ -96,15 +98,15 @@ struct screen_state
 /**
  * Roughly:
  *
- * ┌──────────────────────────────┬───────────────┐
- * │                              │  right panel  │
- * │            main              │               │
- * │                              │               │
- * ├─────────┬───────────────┬────┤               │
- * │ Log [L] │ Inventory [I] │    │               │
- * ├─────────┴───────────────┴────┤               │
- * │         bottom panel         │               │
- * └──────────────────────────────┴───────────────┘
+ * ┌──────────────────────────────────────────────┬───────────────┐
+ * │                                              │  right panel  │
+ * │                    main                      │               │
+ * │                                              │               │
+ * ├─────────┬───────────────┬───────────────┬────┤               │
+ * │ Log [L] │ Inventory [I] │ Character [C] │    │               │
+ * ├─────────┴───────────────┴───────────────┴────┤               │
+ * │                 bottom panel                 │               │
+ * └──────────────────────────────────────────────┴───────────────┘
  */
 static void
 create_layout(struct screen_state* s,
@@ -175,7 +177,9 @@ add_border_boxes(struct screen_state* s, struct gfx_tileset const* font)
 
   b.left = CP437_BORDER_SINGLE;
   b.right = CP437_BORDER_SINGLE;
-  add_border_box(s, font, &s->tab_bounds[1], &b);
+  for (size_t tab = 1; tab < SDL_arraysize(BOTTOM_TABS); ++tab) {
+    add_border_box(s, font, &s->tab_bounds[tab], &b);
+  }
 }
 
 static bool
@@ -206,6 +210,13 @@ alloc_screen(struct screen_state* s,
                               &s->run->game.world,
                               &s->panel_bounds[PANEL_RIGHT],
                               font)) {
+    return false;
+  }
+
+  if (!rl_alloc_character_view(&s->views[RL_VIEW_CHARACTER],
+                               &s->run->game.world,
+                               &s->panel_bounds[PANEL_BOTTOM],
+                               font)) {
     return false;
   }
 
@@ -298,28 +309,15 @@ exit_screen(void* data)
 }
 
 static void
-show_inventory(struct screen_state* s)
+toggle_bottom_view(struct screen_state* s, enum rl_view_id view)
 {
   if (s->focused_panel == PANEL_BOTTOM &&
-      s->panel_views[PANEL_BOTTOM] == RL_VIEW_INVENTORY) {
+      s->panel_views[PANEL_BOTTOM] == view) {
     cancel_focus(s);
     return;
   }
 
-  s->panel_views[PANEL_BOTTOM] = RL_VIEW_INVENTORY;
-  s->focused_panel = PANEL_BOTTOM;
-}
-
-static void
-show_log(struct screen_state* s)
-{
-  if (s->focused_panel == PANEL_BOTTOM &&
-      s->panel_views[PANEL_BOTTOM] == RL_VIEW_LOG) {
-    cancel_focus(s);
-    return;
-  }
-
-  s->panel_views[PANEL_BOTTOM] = RL_VIEW_LOG;
+  s->panel_views[PANEL_BOTTOM] = view;
   s->focused_panel = PANEL_BOTTOM;
 }
 
@@ -522,9 +520,11 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
     // Targeting a tile, don't interrupt
     handle_action(s, istate);
   } else if (action == RL_ACTION_SHOW_INVENTORY) {
-    show_inventory(s);
+    toggle_bottom_view(s, RL_VIEW_INVENTORY);
   } else if (action == RL_ACTION_SHOW_LOG) {
-    show_log(s);
+    toggle_bottom_view(s, RL_VIEW_LOG);
+  } else if (action == RL_ACTION_SHOW_CHARACTER) {
+    toggle_bottom_view(s, RL_VIEW_CHARACTER);
   } else if (action == RL_ACTION_CANCEL) {
     if (!handle_action(s, istate)) {
       cancel_focus(s);
