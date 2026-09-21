@@ -2,6 +2,8 @@
 # Render library
 ###############################################################################
 add_library(rl_render STATIC
+    border.c
+    border.h
     graphics.c
     graphics.h
     lighting.c
@@ -24,6 +26,7 @@ target_link_libraries(rl_render
     PUBLIC
         rl::game
         ginc::container
+        ginc::cp437
         ginc::graphics
         SDL3::SDL3
 )

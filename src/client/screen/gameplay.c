@@ -3,13 +3,19 @@
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_render.h>
+
+#include "cp437/border.h"
 
 #include "game/actor.h"
 #include "game/game.h"
 #include "game/item_def.h"
 
+#include "graphics/console.h"
+
 #include "ui/rectcut.h"
 
+#include "render/border.h"
 #include "render/palette.h"
 
 #include "client/view/in_sight.h"
@@ -27,10 +33,10 @@
 #include "client/text.h"
 #include "client/view.h"
 
-/** The horizontal margin between UI panels, in logical pixels. */
-#define RL_UI_MARGIN_X 4.0f
-/** The vertical margin between UI panels, in logical pixels. */
-#define RL_UI_MARGIN_Y 4.0f
+/** The minimum bottom panel content height, in logical pixels. */
+#define RL_BOTTOM_HEIGHT 56.0f
+/** The minimum sidebar content width, in logical pixels. */
+#define RL_SIDEBAR_WIDTH 88.0f
 /** How long between subsequent keys. */
 #define KEY_REPEAT_COOLDOWN (0.115f)
 
@@ -43,13 +49,34 @@ enum panel_id
   PANEL_COUNT
 };
 
+/**
+ * A labelled tab for a view in the bottom panel.
+ */
+struct bottom_tab
+{
+  /** The view displayed when the tab is selected. */
+  enum rl_view_id view;
+  /** The label and keyboard shortcut shown in the tab. */
+  char const* label;
+};
+
+static struct bottom_tab const BOTTOM_TABS[] = {
+  { .view = RL_VIEW_LOG, .label = "Log [L]" },
+  { .view = RL_VIEW_INVENTORY, .label = "Inventory [I]" },
+};
+
 struct screen_state
 {
   struct gfx_tileset const* font;
   float repeat_cooldown;
 
   // UI state
+  /** The retained border grid shared by the gameplay panels. */
+  grid(cp437_border) border_grid;
+  SDL_FRect frame_bounds;
   SDL_FRect panel_bounds[PANEL_COUNT];
+  /** The tab interiors, including horizontal padding, in logical pixels. */
+  SDL_FRect tab_bounds[SDL_arraysize(BOTTOM_TABS)];
   enum rl_view_id panel_views[PANEL_COUNT];
   enum panel_id focused_panel;
 
@@ -73,25 +100,82 @@ struct screen_state
  * │                              │  right panel  │
  * │            main              │               │
  * │                              │               │
- * ├──────────────────────────────┤               │
+ * ├─────────┬───────────────┬────┤               │
+ * │ Log [L] │ Inventory [I] │    │               │
+ * ├─────────┴───────────────┴────┤               │
  * │         bottom panel         │               │
  * └──────────────────────────────┴───────────────┘
  */
 static void
-create_layout(SDL_FRect panels[PANEL_COUNT], SDL_FRect const* bounds)
+create_layout(struct screen_state* s,
+              SDL_FRect const* bounds,
+              struct gfx_tileset const* font)
 {
-  SDL_FRect screen = *bounds;
+  float const cell_w = (float)font->tile_width;
+  float const cell_h = (float)font->tile_height;
+  s->frame_bounds = *bounds;
+  s->frame_bounds.w = SDL_floorf(bounds->w / cell_w) * cell_w;
+  s->frame_bounds.h = SDL_floorf(bounds->h / cell_h) * cell_h;
 
-  ui_cut_left(&screen, RL_UI_MARGIN_X);
+  SDL_FRect content = s->frame_bounds;
+  ui_cut_left(&content, cell_w);
+  ui_cut_right(&content, cell_w);
+  ui_cut_top(&content, cell_h);
+  ui_cut_bottom(&content, cell_h);
 
-  SDL_FRect left = ui_cut_left(&screen, 384.0f);
-  ui_cut_left(&screen, RL_UI_MARGIN_X);
-  panels[PANEL_RIGHT] = screen;
+  float const sidebar_w = SDL_ceilf(RL_SIDEBAR_WIDTH / cell_w) * cell_w;
+  float const bottom_h = SDL_ceilf(RL_BOTTOM_HEIGHT / cell_h) * cell_h;
+  s->panel_bounds[PANEL_RIGHT] = ui_cut_right(&content, sidebar_w);
+  ui_cut_right(&content, cell_w);
+  s->panel_bounds[PANEL_BOTTOM] = ui_cut_bottom(&content, bottom_h);
+  ui_cut_bottom(&content, cell_h);
+  SDL_FRect tabs = ui_cut_bottom(&content, cell_h);
+  ui_cut_bottom(&content, cell_h);
+  s->panel_bounds[PANEL_MAIN] = content;
 
-  // Must stay a whole number of cells (see rl_draw_world).
-  panels[PANEL_MAIN] = ui_cut_top(&left, 288.0f);
-  ui_cut_top(&left, RL_UI_MARGIN_Y);
-  panels[PANEL_BOTTOM] = left;
+  for (size_t tab = 0; tab < SDL_arraysize(BOTTOM_TABS); ++tab) {
+    float const width =
+      rl_font_width(font, SDL_strlen(BOTTOM_TABS[tab].label)) + 2.0f * cell_w;
+    s->tab_bounds[tab] = ui_cut_left(&tabs, width);
+    ui_cut_left(&tabs, cell_w);
+  }
+}
+
+static void
+add_border_box(struct screen_state* s,
+               struct gfx_tileset const* font,
+               SDL_FRect const* content,
+               struct cp437_border_style const* style)
+{
+  SDL_Rect const rect = {
+    (int)((content->x - s->frame_bounds.x) / font->tile_width) - 1,
+    (int)((content->y - s->frame_bounds.y) / font->tile_height) - 1,
+    (int)(content->w / font->tile_width) + 2,
+    (int)(content->h / font->tile_height) + 2,
+  };
+  cp437_add_box(&s->border_grid, &rect, style);
+}
+
+static void
+add_border_boxes(struct screen_state* s, struct gfx_tileset const* font)
+{
+  struct cp437_border_style b = { 0 };
+  b.top = CP437_BORDER_SINGLE;
+  b.bottom = CP437_BORDER_SINGLE;
+  b.right = CP437_BORDER_SINGLE;
+  b.left = CP437_BORDER_DOUBLE;
+
+  add_border_box(s, font, &s->panel_bounds[PANEL_MAIN], &b);
+  add_border_box(s, font, &s->panel_bounds[PANEL_BOTTOM], &b);
+  add_border_box(s, font, &s->tab_bounds[0], &b);
+
+  b.left = CP437_BORDER_SINGLE;
+  b.right = CP437_BORDER_DOUBLE;
+  add_border_box(s, font, &s->panel_bounds[PANEL_RIGHT], &b);
+
+  b.left = CP437_BORDER_SINGLE;
+  b.right = CP437_BORDER_SINGLE;
+  add_border_box(s, font, &s->tab_bounds[1], &b);
 }
 
 static bool
@@ -103,7 +187,15 @@ alloc_screen(struct screen_state* s,
   s->run = run;
 
   // the layout is fixed
-  create_layout(s->panel_bounds, bounds);
+  create_layout(s, bounds, font);
+
+  if (!grid_alloc(&s->border_grid,
+                  (int)(s->frame_bounds.w / font->tile_width),
+                  (int)(s->frame_bounds.h / font->tile_height))) {
+    return false;
+  }
+
+  add_border_boxes(s, font);
 
   // this is the initial mapping
   s->panel_views[PANEL_MAIN] = RL_VIEW_WORLD;
@@ -171,6 +263,7 @@ free_screen(void* data)
 
   alist_free(&s->events);
   rl_free_game_log(&s->log);
+  grid_free(&s->border_grid);
   SDL_free(s);
 }
 
@@ -480,8 +573,47 @@ render_screen(void const* data, SDL_Renderer* renderer)
   struct screen_state const* s = (struct screen_state*)data;
   SDL_assert(s != NULL);
 
+  bool const had_clip = SDL_RenderClipEnabled(renderer);
+  SDL_Rect previous_clip;
+  SDL_GetRenderClipRect(renderer, &previous_clip);
+
   for (int panel = 0; panel < PANEL_COUNT; ++panel) {
+    SDL_FRect const* bounds = &s->panel_bounds[panel];
+    SDL_Rect clip = {
+      (int)bounds->x,
+      (int)bounds->y,
+      (int)bounds->w,
+      (int)bounds->h,
+    };
+    if (had_clip && !SDL_GetRectIntersection(&clip, &previous_clip, &clip)) {
+      continue;
+    }
+    SDL_SetRenderClipRect(renderer, &clip);
     rl_render_view(&s->views[s->panel_views[panel]], renderer, s->font);
+  }
+
+  SDL_SetRenderClipRect(renderer, had_clip ? &previous_clip : NULL);
+  SDL_FPoint const origin = { s->frame_bounds.x, s->frame_bounds.y };
+  rl_draw_cp437_borders(renderer,
+                        s->font,
+                        &s->border_grid,
+                        RL_COLOUR_GRAY[5],
+                        RL_COLOUR_BLACK,
+                        origin);
+
+  for (size_t tab = 0; tab < SDL_arraysize(BOTTOM_TABS); ++tab) {
+    bool const selected = s->panel_views[PANEL_BOTTOM] == BOTTOM_TABS[tab].view;
+    SDL_FColor const colour = selected ? RL_COLOUR_CYAN[3] : RL_COLOUR_GRAY[5];
+    SDL_FPoint const at = {
+      s->tab_bounds[tab].x + s->font->tile_width,
+      s->tab_bounds[tab].y,
+    };
+    gfx_print_console(renderer,
+                      s->font,
+                      str_view_from_cstr(BOTTOM_TABS[tab].label),
+                      colour,
+                      RL_COLOUR_BLACK,
+                      at);
   }
 }
 

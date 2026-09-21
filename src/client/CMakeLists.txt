@@ -54,6 +54,7 @@ target_link_libraries(rl_client
         rl::render
         ginc::core
         ginc::container
+        ginc::cp437
         ginc::graphics
         SDL3::SDL3
     PRIVATE
