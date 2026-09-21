@@ -10,7 +10,6 @@
 #include "game/world.h"
 
 #include "ui/rectcut.h"
-#include "ui/str_wrap.h"
 
 #include "graphics/console.h"
 #include "graphics/tileset.h"
@@ -19,19 +18,13 @@
 
 #include "client/view.h"
 
-struct text_row
-{
-  struct str_view span;
-  SDL_FPoint origin;
-};
-
-alist_define_as(struct text_row, text_row);
-
 struct actor_row
 {
   char const* name;
+  char level_text[16];
   char hp_text[32];
   SDL_FPoint name_origin;
+  SDL_FPoint level_origin;
   SDL_FPoint hp_origin;
   SDL_FRect bar;
   SDL_FRect fill;
@@ -47,15 +40,12 @@ struct view_state
   float glyph_width;
   float line_height;
   float actor_height;
-  int columns;
   SDL_FRect rogue_bounds;
   SDL_FRect body;
 
   // Presentation data
   alist(rl_actor_handle) monsters;
   alist(actor_row) actors;
-  alist(text_row) summary;
-  char summary_text[64];
   char more_text[32]; // empty when every monster fits
   SDL_FPoint more_origin;
 };
@@ -64,7 +54,6 @@ static void
 layout_view(struct view_state* s, SDL_FRect const* viewport)
 {
   s->actor_height = 2.0f * s->line_height;
-  s->columns = (int)(viewport->w / s->glyph_width);
 
   SDL_FRect remaining = *viewport;
   s->rogue_bounds = ui_cut_top(&remaining, s->actor_height);
@@ -92,10 +81,6 @@ init_view_state(struct view_state* s,
     return false;
   }
 
-  if (!alist_alloc(&s->summary, 4)) {
-    return false;
-  }
-
   return true;
 }
 
@@ -107,26 +92,9 @@ free_view(void* data)
     return;
   }
 
-  alist_free(&s->summary);
   alist_free(&s->actors);
   alist_free(&s->monsters);
   SDL_free(s);
-}
-
-static int
-visible_item_count(struct view_state const* s)
-{
-  struct rl_level const* level = rl_get_current_level(s->world);
-
-  int count = 0;
-  for (size_t i = 0; i < alist_len(&level->items); ++i) {
-    struct rl_item const* item =
-      rl_borrow_item(s->world, *alist_at(&level->items, i));
-    if (rl_is_tile_visible(&s->world->player.fov, item->on.map)) {
-      ++count;
-    }
-  }
-  return count;
 }
 
 static void
@@ -156,14 +124,19 @@ push_actor_row(struct view_state* s,
 {
   struct actor_row* row = alist_push(&s->actors);
   row->name = actor->name;
+  SDL_snprintf(row->level_text, sizeof(row->level_text), "Lv %d", actor->level);
   SDL_snprintf(row->hp_text,
                sizeof(row->hp_text),
                "%d/%d",
                actor->hp,
                actor->stats.max_hp);
 
-  SDL_FRect const name = ui_cut_top(&bounds, s->line_height);
+  SDL_FRect name = ui_cut_top(&bounds, s->line_height);
   row->name_origin = (SDL_FPoint){ name.x, name.y };
+
+  float const level_width = (float)SDL_strlen(row->level_text) * s->glyph_width;
+  SDL_FRect const level = ui_cut_right(&name, SDL_min(name.w, level_width));
+  row->level_origin = (SDL_FPoint){ level.x, level.y };
 
   float const text_width = (float)SDL_strlen(row->hp_text) * s->glyph_width;
   SDL_FRect const label = ui_cut_right(&bounds, SDL_min(bounds.w, text_width));
@@ -179,29 +152,6 @@ push_actor_row(struct view_state* s,
   float const fraction = (float)actor->hp / actor->stats.max_hp;
   row->fill = bounds;
   row->fill.w = SDL_floorf(bounds.w * fraction);
-}
-
-static void
-prepare_summary(struct view_state* s, int count, SDL_FRect* remaining)
-{
-  SDL_snprintf(s->summary_text,
-               sizeof(s->summary_text),
-               "You see %d %s nearby.",
-               count,
-               count == 1 ? "item" : "items");
-
-  char const* cursor = s->summary_text;
-  struct str_view span;
-  while (remaining->h >= s->line_height) {
-    if (!ui_wrap_next(&cursor, s->columns, &span)) {
-      break;
-    }
-
-    struct text_row* row = alist_push(&s->summary);
-    SDL_FRect const line = ui_cut_top(remaining, s->line_height);
-    row->span = span;
-    row->origin = (SDL_FPoint){ line.x, line.y };
-  }
 }
 
 static void
@@ -235,15 +185,6 @@ prepare_monsters(struct view_state* s, SDL_FRect* remaining)
 }
 
 static void
-draw_text_span(SDL_Renderer* renderer,
-               struct gfx_tileset const* font,
-               struct text_row const* row)
-{
-  gfx_print_console(
-    renderer, font, row->span, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, row->origin);
-}
-
-static void
 draw_health_bar(SDL_Renderer* renderer, struct actor_row const* row)
 {
   SDL_FColor const background = RL_COLOUR_GRAY[8];
@@ -269,6 +210,12 @@ draw_actor(SDL_Renderer* renderer,
                     row->name_origin);
   gfx_print_console(renderer,
                     font,
+                    str_view_from_cstr(row->level_text),
+                    RL_COLOUR_GRAY[5],
+                    RL_COLOUR_BLACK,
+                    row->level_origin);
+  gfx_print_console(renderer,
+                    font,
                     str_view_from_cstr(row->hp_text),
                     RL_COLOUR_GRAY[5],
                     RL_COLOUR_BLACK,
@@ -290,7 +237,6 @@ prepare_view(void* data)
 {
   struct view_state* s = (struct view_state*)data;
   alist_clear(&s->actors);
-  alist_clear(&s->summary);
   s->more_text[0] = '\0';
 
   collect_monsters(s);
@@ -300,13 +246,6 @@ prepare_view(void* data)
   push_actor_row(s, rogue, s->rogue_bounds);
 
   SDL_FRect remaining = s->body;
-
-  int const item_count = visible_item_count(s);
-  if (item_count > 0) {
-    prepare_summary(s, item_count, &remaining);
-    ui_cut_top(&remaining, SDL_min(remaining.h, s->line_height));
-  }
-
   prepare_monsters(s, &remaining);
 }
 
@@ -320,10 +259,6 @@ render_view(void const* data,
 
   for (size_t i = 0; i < alist_len(&s->actors); ++i) {
     draw_actor(renderer, font, alist_at(&s->actors, i));
-  }
-
-  for (size_t i = 0; i < alist_len(&s->summary); ++i) {
-    draw_text_span(renderer, font, alist_at(&s->summary, i));
   }
 
   if (s->more_text[0] != '\0') {
