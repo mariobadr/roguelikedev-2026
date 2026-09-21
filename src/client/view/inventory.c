@@ -17,6 +17,15 @@
 
 #include "ui/list.h"
 
+/** Held items of the same type, shown as one row. */
+struct item_group
+{
+  /** The first held item of this type. */
+  handle(rl_item) first;
+  /** How many items of this type are held. */
+  int count;
+};
+
 struct view_state
 {
   // the "model" data
@@ -27,20 +36,52 @@ struct view_state
   SDL_FRect slots[8];
   // the selected item, waiting to be "pulled"
   handle(rl_item) pending_item;
+  // the rows, in the order each item type was first found
+  struct item_group groups[RL_ITEM_TYPE_COUNT];
+  int group_count;
 };
+
+static void
+build_groups(struct view_state* s)
+{
+  handle(rl_actor) const rogue = rl_get_rogue(s->world);
+  int const count = rl_count_held_items(s->world, rogue);
+
+  s->group_count = 0;
+  for (int i = 0; i < count; ++i) {
+    handle(rl_item) const item_handle = rl_find_held_item(s->world, rogue, i);
+    struct rl_item const* item = rl_borrow_item(s->world, item_handle);
+
+    int g = 0;
+    while (g < s->group_count &&
+           rl_borrow_item(s->world, s->groups[g].first)->itype != item->itype) {
+      ++g;
+    }
+
+    if (g == s->group_count) {
+      SDL_assert(s->group_count < (int)SDL_arraysize(s->groups));
+      s->groups[g] = (struct item_group){ .first = item_handle, .count = 0 };
+      ++s->group_count;
+    }
+    ++s->groups[g].count;
+  }
+}
 
 static struct ui_list_menu_model
 menu_model(struct view_state const* s)
 {
   return (struct ui_list_menu_model){
-    .count = rl_count_held_items(s->world, rl_get_rogue(s->world)),
+    .count = s->group_count,
   };
 }
 
 static handle(rl_item)
 selected_item(struct view_state const* s)
 {
-  return rl_find_held_item(s->world, rl_get_rogue(s->world), s->menu.selected);
+  if (s->menu.selected < 0 || s->menu.selected >= s->group_count) {
+    return handle_invalid(rl_item);
+  }
+  return s->groups[s->menu.selected].first;
 }
 
 static void
@@ -59,11 +100,12 @@ init_view_state(struct view_state* s,
                SDL_arraysize(s->slots),
                line_height,
                2.0f);
+  build_groups(s);
   ui_list_menu_sync(&s->menu, menu_model(s));
 }
 
 static struct rl_text
-item_text(struct rl_item const* item, bool selected)
+item_text(struct rl_item const* item, int count, bool selected)
 {
   struct rl_item_def const* def = rl_get_item_def(item->itype);
   SDL_FColor const colour = rl_get_item_gfx(item).fg;
@@ -71,6 +113,11 @@ item_text(struct rl_item const* item, bool selected)
 
   rl_append_text(&text, &RL_COLOUR_YELLOW[3], selected ? "> " : "  ");
   rl_append_text(&text, &colour, def->name);
+  if (count > 1) {
+    char suffix[16];
+    SDL_snprintf(suffix, sizeof(suffix), " (x%d)", count);
+    rl_append_text(&text, &RL_COLOUR_GRAY[5], suffix);
+  }
 
   return text;
 }
@@ -140,7 +187,8 @@ prepare_view(void* data)
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
-  // Keep selection in bounds after consuming or equipping an item.
+  // Keep rows and selection in bounds after consuming or equipping an item.
+  build_groups(s);
   ui_list_menu_sync(&s->menu, menu_model(s));
 }
 
@@ -152,18 +200,16 @@ render_view(void const* data,
   struct view_state const* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
-  handle(rl_actor) const rogue = rl_get_rogue(s->world);
-  int const count = rl_count_held_items(s->world, rogue);
+  int const count = s->group_count;
   int const first = ui_list_offset(&s->menu.list, count);
 
   for (int row = 0; row < s->menu.list.slot_count && first + row < count;
        ++row) {
-    handle(rl_item) const item_handle =
-      rl_find_held_item(s->world, rogue, first + row);
-    struct rl_item const* item = rl_borrow_item(s->world, item_handle);
+    struct item_group const* group = &s->groups[first + row];
+    struct rl_item const* item = rl_borrow_item(s->world, group->first);
 
     struct rl_text const text =
-      item_text(item, first + row == s->menu.selected);
+      item_text(item, group->count, first + row == s->menu.selected);
 
     SDL_FPoint const at = {
       s->slots[row].x,

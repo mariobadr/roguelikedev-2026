@@ -19,6 +19,8 @@ rl_is_valid_item_type(enum rl_item_type type)
     case RL_ITEM_ARMOUR_LEATHER:
     case RL_ITEM_ARMOUR_MAIL:
       return true;
+    case RL_ITEM_TYPE_COUNT:
+      break;
   }
 
   return false;

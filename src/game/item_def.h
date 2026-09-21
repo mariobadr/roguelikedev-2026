@@ -23,6 +23,7 @@ enum rl_item_type
   RL_ITEM_WEAPON_SWORD,
   RL_ITEM_ARMOUR_LEATHER,
   RL_ITEM_ARMOUR_MAIL,
+  RL_ITEM_TYPE_COUNT, //< number of item types; not an item
 };
 
 /** The different effects an item can have. */
