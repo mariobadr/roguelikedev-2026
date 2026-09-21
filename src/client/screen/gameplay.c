@@ -535,8 +535,8 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
 
   resolve_pending_target(s);
 
-  for (int i = 0; i < RL_VIEW_COUNT; ++i) {
-    rl_prepare_view(&s->views[i]);
+  for (int panel = 0; panel < PANEL_COUNT; ++panel) {
+    rl_prepare_view(&s->views[s->panel_views[panel]]);
   }
 
   return transition;
