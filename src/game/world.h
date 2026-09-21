@@ -116,6 +116,18 @@ handle(rl_item)
 rl_create_item(struct rl_world* world, enum rl_item_type type);
 
 /**
+ * Create an item of the given type on level's floor at pos.
+ *
+ * @return the new item's handle, or an invalid handle if the item could not be
+ * created or added to level.
+ */
+handle(rl_item)
+rl_add_item_to_level(struct rl_world* world,
+                     struct rl_level* level,
+                     enum rl_item_type type,
+                     SDL_Point pos);
+
+/**
  * @return the handle of an item on level's floor at position, or an invalid
  * handle if no item was found.
  */

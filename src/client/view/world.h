@@ -9,7 +9,7 @@
 
 // forward declarations
 struct rl_command;
-struct rl_item_def;
+struct rl_item_consumable_def;
 struct rl_view;
 struct rl_world;
 
@@ -52,7 +52,7 @@ rl_world_view_take_command(struct rl_view* view, struct rl_command* out);
 bool
 rl_world_view_begin_select(struct rl_view* view,
                            SDL_Point origin,
-                           struct rl_item_def const* def);
+                           struct rl_item_consumable_def const* def);
 
 /**
  * Consume the result of a selection, if one is pending.

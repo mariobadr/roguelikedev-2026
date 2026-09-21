@@ -1,5 +1,7 @@
 #include "spawn.h"
 
+#include <SDL3/SDL_log.h>
+
 #include "container/array.h"
 #include "container/grid.h"
 #include "core/rand.h"
@@ -9,10 +11,23 @@
 #include "item_def.h"
 #include "layout.h"
 #include "level.h"
+#include "loot.h"
 #include "tile.h"
 #include "world.h"
 
 array_define_as(SDL_Point, rl_spawn_point);
+
+static struct rl_loot_entry const FLOOR_ITEM_TYPES[] = {
+  { .item = RL_ITEM_POTION_HEALTH_MINOR, .weight = 50 },
+  { .item = RL_ITEM_SCROLL_FIREBALL, .weight = 25 },
+  { .item = RL_ITEM_SCROLL_LIGHTNING, .weight = 25 },
+};
+
+static struct rl_loot_table const FLOOR_ITEMS = {
+  .drop_percent = 100,
+  .items = FLOOR_ITEM_TYPES,
+  .count = SDL_arraysize(FLOOR_ITEM_TYPES),
+};
 
 /**
  * @return how many actors should populate a level at depth.
@@ -45,19 +60,7 @@ rl_gen_actor_type(int depth, struct rand_state* rng)
 static int
 rl_gen_total_items(struct rand_state* rng)
 {
-  return (int)rand_next_between(rng, 8, 20);
-}
-
-/**
- * @return an item type appropriate for depth.
- */
-static enum rl_item_type
-rl_gen_item_type(int depth, struct rand_state* rng)
-{
-  (void)depth;
-
-  return (enum rl_item_type)rand_next_between(
-    rng, RL_ITEM_POTION_HEALTH_MINOR, RL_ITEM_SCROLL_LIGHTNING);
+  return (int)rand_next_between(rng, 2, 5);
 }
 
 static bool
@@ -192,29 +195,6 @@ rl_spawn_actors(struct rl_level* level,
   return ok;
 }
 
-static bool
-spawn_item(struct rl_world* world,
-           struct rl_level* level,
-           enum rl_item_type type,
-           SDL_Point pos)
-{
-  handle(rl_item) const item_handle = rl_create_item(world, type);
-  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
-  if (item == NULL) {
-    return false;
-  }
-
-  item->ltype = RL_ITEM_LOCATION_MAP;
-  item->on.map = pos;
-
-  if (!rl_add_item(level, item_handle)) {
-    pool_release(&world->items, item_handle);
-    return false;
-  }
-
-  return true;
-}
-
 bool
 rl_spawn_items(struct rl_level* level,
                struct rl_layout const* layout,
@@ -231,8 +211,15 @@ rl_spawn_items(struct rl_level* level,
 
   bool ok = true;
   for (size_t i = 0; i < array_len(&points); i++) {
-    enum rl_item_type const type = rl_gen_item_type(level->depth, rng);
-    if (!spawn_item(world, level, type, *array_at(&points, i))) {
+    enum rl_item_type type;
+    if (!rl_roll_loot(&FLOOR_ITEMS, rng, &type)) {
+      ok = false;
+      break;
+    }
+
+    handle(rl_item) const item =
+      rl_add_item_to_level(world, level, type, *array_at(&points, i));
+    if (!handle_is_nonnull(item)) {
       ok = false;
       break;
     }

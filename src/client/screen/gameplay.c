@@ -133,10 +133,10 @@ alloc_screen(struct screen_state* s,
 
   // the world view is only designed to work in the main panel right now
   if (!rl_alloc_world_view(&s->views[RL_VIEW_WORLD],
-                         &s->run->game.world,
-                         &s->panel_bounds[PANEL_MAIN],
-                         font->tile_width,
-                         font->tile_height)) {
+                           &s->run->game.world,
+                           &s->panel_bounds[PANEL_MAIN],
+                           font->tile_width,
+                           font->tile_height)) {
     return false;
   }
 
@@ -286,7 +286,7 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
 static bool
 begin_target_select(struct screen_state* s,
                     handle(rl_item) item,
-                    struct rl_item_def const* def)
+                    struct rl_item_consumable_def const* def)
 {
   handle(rl_actor) const rogue_handle = rl_get_rogue(&s->run->game.world);
   struct rl_actor const* rogue =
@@ -340,7 +340,22 @@ handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
     return false;
   }
 
-  struct rl_item_def const* def = rl_get_item_def(item->itype);
+  struct rl_item_consumable_def const* def =
+    rl_get_item_consumable_def(item->itype);
+  if (def == NULL) {
+    if (rl_get_item_equippable_def(item->itype) == NULL) {
+      return false;
+    }
+
+    struct rl_command cmd = { 0 };
+    cmd.actor = rl_get_rogue(&s->run->game.world);
+    cmd.type = RL_COMMAND_EQUIP_ITEM;
+    cmd.target_item = item_handle;
+    bool const handled = submit_command(s, &cmd);
+    cancel_focus(s);
+    return handled;
+  }
+
   bool handled = false;
 
   switch (def->target) {

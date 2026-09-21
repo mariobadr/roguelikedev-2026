@@ -28,9 +28,9 @@ rl_write_actor(SDL_IOStream* dst, struct rl_actor const* actor)
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->pos.y);
   ok &= SDL_WriteU8(dst, actor->awake ? 1 : 0);
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->hp);
-  ok &= SDL_WriteS32LE(dst, (Sint32)actor->max_hp);
-  ok &= SDL_WriteS32LE(dst, (Sint32)actor->strength);
-  ok &= SDL_WriteS32LE(dst, (Sint32)actor->armor);
+  ok &= SDL_WriteS32LE(dst, (Sint32)actor->stats.max_hp);
+  ok &= SDL_WriteS32LE(dst, (Sint32)actor->stats.strength);
+  ok &= SDL_WriteS32LE(dst, (Sint32)actor->stats.armor);
 
   return ok;
 }
@@ -77,9 +77,9 @@ rl_read_actor(SDL_IOStream* src, struct rl_actor* out)
   out->pos.y = (int)y;
   out->awake = awake != 0;
   out->hp = (int)hp;
-  out->max_hp = (int)max_hp;
-  out->strength = (int)strength;
-  out->armor = (int)armor;
+  out->stats.max_hp = (int)max_hp;
+  out->stats.strength = (int)strength;
+  out->stats.armor = (int)armor;
 
   return RL_READ_OK;
 }

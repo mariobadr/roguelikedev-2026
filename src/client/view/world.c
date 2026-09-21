@@ -33,7 +33,7 @@ enum world_mode
 struct world_selection
 {
   SDL_Point cursor;
-  struct rl_item_def const* def;
+  struct rl_item_consumable_def const* def;
   grid(boolean) mask;
   size_t capacity;
   SDL_Rect bounds;
@@ -260,10 +260,8 @@ prepare_view(void* data)
   int const rows = (int)s->camera.viewport.h / s->grid_view.cell_height;
   int const max_x = SDL_max(0, grid_width(map) - columns);
   int const max_y = SDL_max(0, grid_height(map) - rows);
-  SDL_Point const origin = {
-    SDL_clamp(focus.x - columns / 2, 0, max_x),
-    SDL_clamp(focus.y - rows / 2, 0, max_y)
-  };
+  SDL_Point const origin = { SDL_clamp(focus.x - columns / 2, 0, max_x),
+                             SDL_clamp(focus.y - rows / 2, 0, max_y) };
   s->camera.position = gfx_cell_to_world(&s->grid_view, origin);
 
   rl_prepare_world_renderer(&s->renderer, s->world, &s->camera, &s->grid_view);
@@ -307,10 +305,10 @@ free_view(void* data)
 
 bool
 rl_alloc_world_view(struct rl_view* view,
-                  struct rl_world const* world,
-                  SDL_FRect const* viewport,
-                  int cell_width,
-                  int cell_height)
+                    struct rl_world const* world,
+                    SDL_FRect const* viewport,
+                    int cell_width,
+                    int cell_height)
 {
   SDL_assert(SDL_fmodf(viewport->w, (float)cell_width) == 0.0f);
   SDL_assert(SDL_fmodf(viewport->h, (float)cell_height) == 0.0f);
@@ -353,8 +351,8 @@ rl_world_view_take_command(struct rl_view* view, struct rl_command* out)
 
 bool
 rl_world_view_begin_select(struct rl_view* view,
-                         SDL_Point origin,
-                         struct rl_item_def const* def)
+                           SDL_Point origin,
+                           struct rl_item_consumable_def const* def)
 {
   SDL_assert(def != NULL);
 

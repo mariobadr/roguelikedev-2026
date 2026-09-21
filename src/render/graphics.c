@@ -93,6 +93,30 @@ static struct tile_gfx_desc const item_gfx_table[] = {
     .fg_index = 5,
     .bg_colour = NULL,
   },
+  [RL_ITEM_WEAPON_DAGGER] = {
+    .glyph = '/',
+    .fg_colour = RL_COLOUR_CYAN,
+    .fg_index = 4,
+    .bg_colour = NULL,
+  },
+  [RL_ITEM_WEAPON_SWORD] = {
+    .glyph = '/',
+    .fg_colour = RL_COLOUR_CYAN,
+    .fg_index = 5,
+    .bg_colour = NULL,
+  },
+  [RL_ITEM_ARMOUR_LEATHER] = {
+    .glyph = '[',
+    .fg_colour = RL_COLOUR_ORANGE,
+    .fg_index = 8,
+    .bg_colour = NULL,
+  },
+  [RL_ITEM_ARMOUR_MAIL] = {
+    .glyph = '[',
+    .fg_colour = RL_COLOUR_ORANGE,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
 };
 
 struct gfx_console_cell

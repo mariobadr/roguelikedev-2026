@@ -10,7 +10,7 @@
 #include "save/game.h"
 
 #define RL_SAVE_MAGIC 0x564C5352u // "RLSV"
-#define RL_SAVE_VERSION 4u
+#define RL_SAVE_VERSION 5u
 
 // offset of the outcome field within the header written by write_header;
 // used by rl_patch_save_outcome to patch it in place without disturbing the
@@ -127,7 +127,7 @@ rl_summarise_save(struct rl_game const* game,
   info.turns = game->turns;
   info.depth = level->depth;
   info.hp = rogue->hp;
-  info.max_hp = rogue->max_hp;
+  info.max_hp = rogue->stats.max_hp;
 
   return info;
 }

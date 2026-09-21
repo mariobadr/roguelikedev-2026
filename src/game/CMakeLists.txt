@@ -14,6 +14,8 @@ add_library(rl_game STATIC
     combat.h
     command.c
     command.h
+    equipment.c
+    equipment.h
     event.h
     experience.c
     experience.h
@@ -32,6 +34,8 @@ add_library(rl_game STATIC
     layout.h
     level.c
     level.h
+    loot.c
+    loot.h
     mechanics.c
     mechanics.h
     pathfinding.c

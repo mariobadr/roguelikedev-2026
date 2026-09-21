@@ -99,6 +99,25 @@ build_pickup_log(struct rl_world const* world,
 }
 
 static struct rl_text
+build_drop_log(struct rl_world const* world, struct rl_event_drop const* event)
+{
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
+  struct rl_item const* item = rl_borrow_item(world, event->item);
+  struct rl_item_def const* idef = rl_get_item_def(item->itype);
+  SDL_FColor const actor_colour_ = actor_colour(actor);
+  SDL_FColor const item_colour = rl_get_item_gfx(item).fg;
+
+  struct rl_text msg = { 0 };
+
+  rl_append_text(&msg, &actor_colour_, actor->name);
+  rl_append_text(&msg, NULL, " dropped a ");
+  rl_append_text(&msg, &item_colour, idef->name);
+  rl_append_text(&msg, NULL, ".");
+
+  return msg;
+}
+
+static struct rl_text
 build_heal_log(struct rl_world const* world, struct rl_event_heal const* event)
 {
   struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
@@ -219,6 +238,9 @@ rl_log_event(struct rl_game_log* log,
       break;
     case RL_EVENT_PICKUP:
       msg = build_pickup_log(world, &event->as.pickup);
+      break;
+    case RL_EVENT_DROP:
+      msg = build_drop_log(world, &event->as.drop);
       break;
     case RL_EVENT_HEAL:
       msg = build_heal_log(world, &event->as.heal);

@@ -59,7 +59,8 @@ enqueue_death_event(struct rl_actor const* actor,
 }
 
 int
-rl_resolve_attack(struct rl_actor const* attacker,
+rl_resolve_attack(struct rl_world const* world,
+                  struct rl_actor const* attacker,
                   struct rl_actor* defender,
                   int power,
                   alist(rl_event)* events,
@@ -70,9 +71,11 @@ rl_resolve_attack(struct rl_actor const* attacker,
     damage = -1;
   } else {
     // integer division truncates, but we avoid floating point (yay!)
-    int const base = (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
+    int const base =
+      (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
     // our random base damage is then mitigated by armor
-    damage = base - (base * defender->armor / (defender->armor + ARMOR_SCALING));
+    int const armour = rl_get_actor_stats(world, defender).armor;
+    damage = base - (base * armour / (armour + ARMOR_SCALING));
 
     // don't let HP dip below 0
     defender->hp = SDL_max(0, defender->hp - damage);
@@ -117,8 +120,8 @@ rl_attack_melee(struct rl_world* world,
   }
 
   // from the good old WoW days
-  int const ap = 2 * attacker->strength;
-  rl_resolve_attack(attacker, defender, ap, events, rng);
+  int const ap = 2 * rl_get_actor_stats(world, attacker).strength;
+  rl_resolve_attack(world, attacker, defender, ap, events, rng);
 
   return true;
 }

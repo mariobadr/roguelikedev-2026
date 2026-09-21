@@ -50,7 +50,7 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
 }
 
 bool
-rl_is_valid_item_target(struct rl_item_def const* item,
+rl_is_valid_item_target(struct rl_item_consumable_def const* item,
                         struct rl_world const* world,
                         SDL_Point dst)
 {
@@ -65,7 +65,7 @@ rl_is_valid_item_target(struct rl_item_def const* item,
 }
 
 bool
-rl_item_affects_tile(struct rl_item_def const* item,
+rl_item_affects_tile(struct rl_item_consumable_def const* item,
                      struct rl_world const* world,
                      SDL_Point centre,
                      SDL_Point p)
@@ -83,7 +83,7 @@ rl_item_affects_tile(struct rl_item_def const* item,
 }
 
 SDL_Rect
-rl_item_area_bounds(struct rl_item_def const* item, SDL_Point centre)
+rl_item_area_bounds(struct rl_item_consumable_def const* item, SDL_Point centre)
 {
   int const radius = item->area_radius;
   int const extent = 2 * radius + 1;
@@ -98,7 +98,7 @@ rl_item_area_bounds(struct rl_item_def const* item, SDL_Point centre)
 }
 
 void
-rl_fill_item_area(struct rl_item_def const* item,
+rl_fill_item_area(struct rl_item_consumable_def const* item,
                   struct rl_world const* world,
                   SDL_Point centre,
                   grid(boolean) * mask)

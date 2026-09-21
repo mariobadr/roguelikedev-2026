@@ -12,9 +12,10 @@
 /** Where an item can be found. */
 enum rl_item_location
 {
-  RL_ITEM_LOCATION_NONE, //< not placed yet
-  RL_ITEM_LOCATION_MAP,  //< on a level's floor
-  RL_ITEM_LOCATION_HELD, //< held by an actor
+  RL_ITEM_LOCATION_NONE,     //< not placed yet
+  RL_ITEM_LOCATION_MAP,      //< on a level's floor
+  RL_ITEM_LOCATION_HELD,     //< held by an actor
+  RL_ITEM_LOCATION_EQUIPPED, //< equipped on an actor
 };
 
 /**
@@ -33,7 +34,7 @@ struct rl_item
   {
     /** When ltype is map. */
     SDL_Point map;
-    /** When ltype is held. */
+    /** When ltype is held or equipped */
     handle(rl_actor) actor;
   } on;
 };

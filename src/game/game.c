@@ -2,11 +2,13 @@
 
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_log.h>
 
 #include "actor.h"
 #include "actor_def.h"
 #include "ai.h"
 #include "command.h"
+#include "equipment.h"
 #include "experience.h"
 #include "generate.h"
 #include "mechanics.h"
@@ -47,19 +49,35 @@ award_kill_xp(struct rl_world* world,
   rl_gain_xp(world, rl_xp_reward(rogue->level, victim->level), events);
 }
 
+static void
+drop_death_loot(struct rl_world* world,
+                struct rl_event const* event,
+                alist(rl_event)* events,
+                struct rand_state* rng)
+{
+  if (event->type != RL_EVENT_DEATH) {
+    // no loot to drop
+    return;
+  }
+
+  handle(rl_actor) const victim = event->as.death.actor;
+  rl_drop_loot(world, victim, events, rng);
+}
+
 static bool
 resolve_command(struct rl_world* world,
                 struct rl_command const* cmd,
                 alist(rl_event)* events,
                 struct rand_state* rng)
 {
+  // only process the command's original events
   size_t const first_event = alist_len(events);
   bool const turn_taken = rl_apply_command(world, cmd, events, rng);
-  // XP awards append events; only process the command's original events.
   size_t const end_event = alist_len(events);
 
   for (size_t i = first_event; i < end_event; i++) {
     award_kill_xp(world, alist_at(events, i), events);
+    drop_death_loot(world, alist_at(events, i), events, rng);
   }
 
   return turn_taken;
@@ -140,6 +158,29 @@ rl_free_game(struct rl_game* game)
   SDL_zerop(game);
 }
 
+static bool
+init_starting_equipment(struct rl_world* world, handle(rl_actor) rogue_handle)
+{
+  handle(rl_item) const weapon_handle =
+    rl_create_item(world, RL_ITEM_WEAPON_DAGGER);
+  handle(rl_item) const armour_handle =
+    rl_create_item(world, RL_ITEM_ARMOUR_LEATHER);
+
+  struct rl_actor* rogue = rl_borrow_mut_actor(world, rogue_handle);
+  struct rl_item* weapon = rl_borrow_mut_item(world, weapon_handle);
+  struct rl_item* armour = rl_borrow_mut_item(world, armour_handle);
+  if (rogue == NULL || weapon == NULL || armour == NULL) {
+    return false;
+  }
+
+  weapon->ltype = RL_ITEM_LOCATION_HELD;
+  weapon->on.actor = rogue_handle;
+  armour->ltype = RL_ITEM_LOCATION_HELD;
+  armour->on.actor = rogue_handle;
+
+  return rl_equip(rogue, weapon) && rl_equip(rogue, armour);
+}
+
 // Initialize a zeroed game; the caller owns cleanup on failure.
 static bool
 init_game(struct rl_game* game, int width, int height, Uint64 seed)
@@ -159,8 +200,13 @@ init_game(struct rl_game* game, int width, int height, Uint64 seed)
     // oh noes
     return false;
   }
-  rogue->awake = true;
-  game->world.player.actor = rogue->handle;
+
+  rogue->awake = true; // not really necessary
+  if (!init_starting_equipment(&game->world, rogue_handle)) {
+    return false;
+  }
+
+  game->world.player.actor = rogue_handle;
 
   // the rogue starts at the entry point of the first level
   if (!rl_push_level(&game->world, width, height, rogue_handle, &game->rng)) {

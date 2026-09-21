@@ -11,6 +11,7 @@
 
 #include "container/pool.h"
 
+#include "game/equipment.h"
 #include "game/experience.h"
 #include "game/world.h"
 
@@ -113,11 +114,35 @@ read_actors(SDL_IOStream* src, struct rl_world* world, struct rl_reader* r)
     actor->pos = tmp.pos;
     actor->awake = tmp.awake;
     actor->hp = tmp.hp;
-    actor->max_hp = tmp.max_hp;
-    actor->strength = tmp.strength;
-    actor->armor = tmp.armor;
+    actor->stats = tmp.stats;
 
     *array_at(&r->actor_handles, id) = h;
+  }
+
+  return RL_READ_OK;
+}
+
+static enum rl_read_result
+restore_equipment(struct rl_world* world, struct rl_item* item)
+{
+  if (item->ltype != RL_ITEM_LOCATION_EQUIPPED) {
+    return RL_READ_OK;
+  }
+
+  struct rl_actor* actor = rl_borrow_mut_actor(world, item->on.actor);
+  if (actor == NULL) {
+    return RL_READ_CORRUPT;
+  }
+
+  enum rl_equipment_slot const slot = rl_get_equipment_slot(item->itype);
+  if (slot == RL_EQUIPMENT_SLOT_NONE ||
+      handle_is_nonnull(rl_get_equipped_item(actor, slot))) {
+    // the item is not equippable, or two items claim one slot
+    return RL_READ_CORRUPT;
+  }
+
+  if (!rl_equip(actor, item)) {
+    return RL_READ_CORRUPT;
   }
 
   return RL_READ_OK;
@@ -154,6 +179,11 @@ read_items(SDL_IOStream* src, struct rl_world* world, struct rl_reader* r)
 
     item->ltype = tmp.ltype;
     item->on = tmp.on;
+
+    enum rl_read_result const equipment_result = restore_equipment(world, item);
+    if (equipment_result != RL_READ_OK) {
+      return equipment_result;
+    }
 
     *array_at(&r->item_handles, id) = h;
   }

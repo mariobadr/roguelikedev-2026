@@ -45,8 +45,7 @@ void
 rl_update_visibility(struct rl_world* world)
 {
   struct rl_level* level = rl_edit_current_level(world);
-  struct rl_actor const* rogue =
-    rl_borrow_actor(world, rl_get_rogue(world));
+  struct rl_actor const* rogue = rl_borrow_actor(world, rl_get_rogue(world));
 
   rl_update_fov(&world->player.fov, &level->map, rogue->pos);
   update_explored(level, &world->player.fov);
@@ -137,6 +136,29 @@ rl_create_item(struct rl_world* world, enum rl_item_type type)
 
   *item = rl_make_item(type);
   item->handle = item_handle;
+
+  return item_handle;
+}
+
+handle(rl_item)
+rl_add_item_to_level(struct rl_world* world,
+                     struct rl_level* level,
+                     enum rl_item_type type,
+                     SDL_Point pos)
+{
+  handle(rl_item) const item_handle = rl_create_item(world, type);
+  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
+  if (item == NULL) {
+    return handle_invalid(rl_item);
+  }
+
+  item->ltype = RL_ITEM_LOCATION_MAP;
+  item->on.map = pos;
+
+  if (!rl_add_item(level, item_handle)) {
+    pool_release(&world->items, item_handle);
+    return handle_invalid(rl_item);
+  }
 
   return item_handle;
 }

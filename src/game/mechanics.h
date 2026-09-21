@@ -43,6 +43,39 @@ rl_pick_up_item(struct rl_world* world,
                 alist(rl_event)* events);
 
 /**
+ * Try to equip an item, replacing whatever occupies the matching slot.
+ *
+ * The replaced item returns to the actor's inventory.
+ *
+ * @return whether the item was equipped.
+ */
+bool
+rl_equip_item(struct rl_world* world,
+              handle(rl_actor) actor_handle,
+              handle(rl_item) item_handle,
+              alist(rl_event)* events);
+
+/**
+ * Try to unequip an item, returning it to the actor's inventory.
+ *
+ * @return whether the item was unequipped.
+ */
+bool
+rl_unequip_item(struct rl_world* world,
+                handle(rl_actor) actor_handle,
+                handle(rl_item) item_handle,
+                alist(rl_event)* events);
+
+/**
+ * Roll for at most one item and drop it where the actor died.
+ */
+void
+rl_drop_loot(struct rl_world* world,
+             handle(rl_actor) actor_handle,
+             alist(rl_event)* events,
+             struct rand_state* rng);
+
+/**
  * Try to use an item.
  *
  * @return whether the item was used successfully.

@@ -8,7 +8,12 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "game/actor_def.h"
+#include "game/equipment.h"
 #include "game/handles.h"
+#include "game/item_def.h"
+
+// forward declarations
+struct rl_world;
 
 /**
  * An actor in the game.
@@ -29,12 +34,10 @@ struct rl_actor
   bool awake;
   /** The current number of hit points. */
   int hp;
-  /** The maximum number of hit points. */
-  int max_hp;
-  /** Impacts the amount of damage done. */
-  int strength;
-  /** Impacts the amount of damage mitigated. */
-  int armor;
+  /** The actor's stats at its current level, before equipment bonuses. */
+  struct rl_actor_stats stats;
+  /** Equipped items. */
+  struct rl_equipment equipment;
 };
 
 /**
@@ -53,6 +56,12 @@ rl_make_actor(enum rl_actor_type type, int level);
  */
 int
 rl_heal_actor(struct rl_actor* actor, int amount);
+
+/**
+ * @return the actor's stats including equipment bonuses.
+ */
+struct rl_actor_stats
+rl_get_actor_stats(struct rl_world const* world, struct rl_actor const* actor);
 
 /**
  * @return whether actor is alive.

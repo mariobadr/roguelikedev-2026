@@ -1,25 +1,49 @@
 #include "actor_def.h"
 
+#include "item_def.h"
+
+static struct rl_loot_entry const RL_RAT_LOOT[] = {
+  { .item = RL_ITEM_POTION_HEALTH_MINOR, .weight = 8 },
+  { .item = RL_ITEM_SCROLL_FIREBALL, .weight = 5 },
+  { .item = RL_ITEM_SCROLL_LIGHTNING, .weight = 5 },
+  { .item = RL_ITEM_WEAPON_SWORD, .weight = 1 },
+  { .item = RL_ITEM_ARMOUR_MAIL, .weight = 1 },
+};
+
 static struct rl_actor_def const RL_ACTOR_DEFS[] = {
   [RL_ACTOR_ROGUE] = {
     .class = RL_ACTOR_HUMANOID,
     .name = "Rogue",
-    .base_hp = 30,
-    .hp_per_level = 3,
-    .base_strength = 6,
-    .strength_per_level = 2,
-    .base_armor = 9,
-    .armor_per_level = 2,
+    .base = {
+      .max_hp = 30,
+      .strength = 6,
+      .armor = 0,
+    },
+    .per_level = {
+      .max_hp = 3,
+      .strength = 2,
+      .armor = 0,
+    },
+    .loot = { 0 },
   },
   [RL_ACTOR_RAT] = {
     .class = RL_ACTOR_BEAST,
     .name = "Rat",
-    .base_hp = 16,
-    .hp_per_level = 2,
-    .base_strength = 4,
-    .strength_per_level = 1,
-    .base_armor = 5,
-    .armor_per_level = 1,
+    .base = {
+      .max_hp = 16,
+      .strength = 4,
+      .armor = 3,
+    },
+    .per_level = {
+      .max_hp = 2,
+      .strength = 1,
+      .armor = 1,
+    },
+    .loot = {
+      .drop_percent = 20,
+      .items = RL_RAT_LOOT,
+      .count = SDL_arraysize(RL_RAT_LOOT),
+    },
   },
 };
 

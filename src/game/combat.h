@@ -22,7 +22,8 @@ struct rand_state;
  * @return the damage dealt, or -1 on a miss.
  */
 int
-rl_resolve_attack(struct rl_actor const* attacker,
+rl_resolve_attack(struct rl_world const* world,
+                  struct rl_actor const* attacker,
                   struct rl_actor* defender,
                   int power,
                   alist(rl_event)* events,

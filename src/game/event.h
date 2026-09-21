@@ -24,6 +24,9 @@ enum rl_event_type
   RL_EVENT_LEVEL_CHANGE, //< an actor moves to another level
   RL_EVENT_XP_GAIN,      //< an actor gains experience
   RL_EVENT_LEVEL_UP,     //< an actor gains one or more levels
+  RL_EVENT_EQUIP,        //< an actor equips an item
+  RL_EVENT_UNEQUIP,      //< an actor removes an equipped item
+  RL_EVENT_DROP,         //< an actor drops an item
 };
 
 /**
@@ -63,6 +66,24 @@ struct rl_event_awaken
  * An actor picks up an item.
  */
 struct rl_event_pickup
+{
+  /** Handle of the actor. */
+  handle(rl_actor) actor;
+  /** Handle of the item. */
+  handle(rl_item) item;
+};
+
+/** An actor equips or unequips an item. */
+struct rl_event_equipment
+{
+  handle(rl_actor) actor;
+  handle(rl_item) item;
+};
+
+/**
+ * An actor drops an item.
+ */
+struct rl_event_drop
 {
   /** Handle of the actor. */
   handle(rl_actor) actor;
@@ -149,6 +170,8 @@ struct rl_event
     struct rl_event_level_change level_change;
     struct rl_event_xp_gain xp_gain;
     struct rl_event_level_up level_up;
+    struct rl_event_equipment equipment;
+    struct rl_event_drop drop;
   } as;
 };
 

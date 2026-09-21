@@ -12,7 +12,7 @@
 #include "game/handles.h"
 
 // forward declarations
-struct rl_item_def;
+struct rl_item_consumable_def;
 struct rl_world;
 
 /**
@@ -28,7 +28,7 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
  * seen through the player's field-of-view.
  */
 bool
-rl_is_valid_item_target(struct rl_item_def const* item,
+rl_is_valid_item_target(struct rl_item_consumable_def const* item,
                         struct rl_world const* world,
                         SDL_Point dst);
 
@@ -36,7 +36,7 @@ rl_is_valid_item_target(struct rl_item_def const* item,
  * @return whether item, used on centre, affects the world tile p.
  */
 bool
-rl_item_affects_tile(struct rl_item_def const* item,
+rl_item_affects_tile(struct rl_item_consumable_def const* item,
                      struct rl_world const* world,
                      SDL_Point centre,
                      SDL_Point p);
@@ -45,7 +45,8 @@ rl_item_affects_tile(struct rl_item_def const* item,
  * @return the region that item, used on centre, can affect.
  */
 SDL_Rect
-rl_item_area_bounds(struct rl_item_def const* item, SDL_Point centre);
+rl_item_area_bounds(struct rl_item_consumable_def const* item,
+                    SDL_Point centre);
 
 /**
  * Mark the tiles that item, used on centre, affects.
@@ -53,7 +54,7 @@ rl_item_area_bounds(struct rl_item_def const* item, SDL_Point centre);
  * @param mask one entry per tile of the item's area bounds.
  */
 void
-rl_fill_item_area(struct rl_item_def const* item,
+rl_fill_item_area(struct rl_item_consumable_def const* item,
                   struct rl_world const* world,
                   SDL_Point centre,
                   grid(boolean) * mask);

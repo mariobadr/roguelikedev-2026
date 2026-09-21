@@ -174,8 +174,11 @@ push_actor_row(struct view_state* s,
   }
 
   row->name = actor->name;
-  SDL_snprintf(
-    row->hp_text, sizeof(row->hp_text), "%d/%d", actor->hp, actor->max_hp);
+  SDL_snprintf(row->hp_text,
+               sizeof(row->hp_text),
+               "%d/%d",
+               actor->hp,
+               actor->stats.max_hp);
 
   SDL_FRect const name = ui_cut_top(&bounds, s->line_height);
   row->name_origin = (SDL_FPoint){ name.x, name.y };
@@ -191,7 +194,7 @@ push_actor_row(struct view_state* s,
   bounds.h = SDL_max(1.0f, s->line_height - 2.0f);
   row->bar = bounds;
 
-  float const fraction = (float)actor->hp / actor->max_hp;
+  float const fraction = (float)actor->hp / actor->stats.max_hp;
   row->fill = bounds;
   row->fill.w = SDL_floorf(bounds.w * fraction);
 
@@ -266,12 +269,8 @@ draw_text_span(SDL_Renderer* renderer,
                struct gfx_tileset const* font,
                struct text_row const* row)
 {
-  gfx_print_console(renderer,
-                    font,
-                    row->span,
-                    RL_COLOUR_GRAY[5],
-                    RL_COLOUR_BLACK,
-                    row->origin);
+  gfx_print_console(
+    renderer, font, row->span, RL_COLOUR_GRAY[5], RL_COLOUR_BLACK, row->origin);
 }
 
 static void

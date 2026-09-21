@@ -88,11 +88,20 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   if (can_move) {
     rl_append_text(hint, colour, "[WS] move");
   }
-  if (handle_is_nonnull(selected_item(s))) {
+  struct rl_item const* item = rl_borrow_item(s->world, selected_item(s));
+  char const* action = NULL;
+  if (item != NULL) {
+    if (rl_get_item_consumable_def(item->itype) != NULL) {
+      action = "[E] use";
+    } else if (rl_get_item_equippable_def(item->itype) != NULL) {
+      action = "[E] equip";
+    }
+  }
+  if (action != NULL) {
     if (can_move) {
       rl_append_text(hint, colour, "   ");
     }
-    rl_append_text(hint, colour, "[E] select");
+    rl_append_text(hint, colour, action);
   }
   if (hint->length > 0) {
     rl_append_text(hint, colour, "   ");
@@ -133,7 +142,7 @@ prepare_view(void* data)
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
-  // Keep selection in bounds after consuming an item.
+  // Keep selection in bounds after consuming or equipping an item.
   ui_list_menu_sync(&s->menu, menu_model(s));
 }
 

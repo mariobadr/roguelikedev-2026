@@ -4,6 +4,8 @@
 #ifndef GINC_ROGUELIKE_ACTOR_DEF_H
 #define GINC_ROGUELIKE_ACTOR_DEF_H
 
+#include "game/loot.h"
+
 /** Actor categories. */
 enum rl_actor_class
 {
@@ -20,6 +22,17 @@ enum rl_actor_type
   RL_ACTOR_RAT    //< a dangerous mouse
 };
 
+/** Combat stats. */
+struct rl_actor_stats
+{
+  /** The maximum number of hit points. */
+  int max_hp;
+  /** Impacts the amount of damage done. */
+  int strength;
+  /** Impacts the amount of damage mitigated. */
+  int armor;
+};
+
 /**
  * Immutable data that defines an actor.
  */
@@ -30,20 +43,12 @@ struct rl_actor_def
 
   /** The display name. */
   char const* name;
-  /** The maximum hit points at level 1. */
-  int base_hp;
-  /** The maximum hit points gained per level. */
-  int hp_per_level;
-
-  /** The strength at level 1. */
-  int base_strength;
-  /** The strength gained per level. */
-  int strength_per_level;
-
-  /** The armor at level 1. */
-  int base_armor;
-  /** The armor gained per level. */
-  int armor_per_level;
+  /** The stats at level 1. */
+  struct rl_actor_stats base;
+  /** The stats gained per level. */
+  struct rl_actor_stats per_level;
+  /** What the actor may drop when it dies. */
+  struct rl_loot_table loot;
 };
 
 /**

@@ -4,9 +4,11 @@
 
 #include "actor.h"
 #include "combat.h"
+#include "equipment.h"
 #include "experience.h"
 #include "generate.h"
 #include "item_def.h"
+#include "loot.h"
 #include "targeting.h"
 #include "world.h"
 
@@ -34,6 +36,86 @@ get_living_actor(struct rl_world* world, handle(rl_actor) actor_handle)
   return actor;
 }
 
+static bool
+enqueue_equipment_event(enum rl_event_type type,
+                        handle(rl_actor) actor,
+                        handle(rl_item) item,
+                        alist(rl_event)* events)
+{
+  struct rl_event* event = alist_push(events);
+  if (event == NULL) {
+    return false;
+  }
+
+  *event = (struct rl_event){ 0 };
+  event->type = type;
+  event->as.equipment.actor = actor;
+  event->as.equipment.item = item;
+
+  return true;
+}
+
+bool
+rl_equip_item(struct rl_world* world,
+              handle(rl_actor) actor_handle,
+              handle(rl_item) item_handle,
+              alist(rl_event)* events)
+{
+  struct rl_actor* actor = get_living_actor(world, actor_handle);
+  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
+  if (actor == NULL || item == NULL) {
+    return false;
+  }
+
+  if (!rl_can_equip(actor, item)) {
+    return false;
+  }
+
+  handle(rl_item) const previous_handle =
+    rl_get_equipped_item(actor, rl_get_equipment_slot(item->itype));
+
+  struct rl_item* previous = NULL;
+  if (handle_is_nonnull(previous_handle)) {
+    previous = rl_borrow_mut_item(world, previous_handle);
+    if (previous == NULL || !rl_can_unequip(actor, previous)) {
+      return false;
+    }
+  }
+
+  if (previous != NULL) {
+    rl_unequip(actor, previous);
+    enqueue_equipment_event(
+      RL_EVENT_UNEQUIP, actor_handle, previous_handle, events);
+  }
+
+  rl_equip(actor, item);
+  enqueue_equipment_event(RL_EVENT_EQUIP, actor_handle, item_handle, events);
+
+  return true;
+}
+
+bool
+rl_unequip_item(struct rl_world* world,
+                handle(rl_actor) actor_handle,
+                handle(rl_item) item_handle,
+                alist(rl_event)* events)
+{
+  struct rl_actor* actor = get_living_actor(world, actor_handle);
+  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
+  if (actor == NULL || item == NULL) {
+    return false;
+  }
+
+  if (!rl_can_unequip(actor, item)) {
+    return false;
+  }
+
+  rl_unequip(actor, item);
+  enqueue_equipment_event(RL_EVENT_UNEQUIP, actor_handle, item_handle, events);
+
+  return true;
+}
+
 int
 rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events)
 {
@@ -55,10 +137,10 @@ rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events)
     amount -= needed;
     world->player.xp = 0;
     actor->level++;
-    actor->max_hp += def->hp_per_level;
-    actor->hp += def->hp_per_level;
-    actor->strength += def->strength_per_level;
-    actor->armor += def->armor_per_level;
+    actor->stats.max_hp += def->per_level.max_hp;
+    actor->hp += def->per_level.max_hp;
+    actor->stats.strength += def->per_level.strength;
+    actor->stats.armor += def->per_level.armor;
     gained++;
     needed = rl_xp_required(actor->level);
   }
@@ -110,7 +192,7 @@ use_item_heal(struct rl_actor* actor,
               alist(rl_event)* events,
               struct rand_state* rng)
 {
-  if (actor->hp >= actor->max_hp) {
+  if (actor->hp >= actor->stats.max_hp) {
     struct rl_event event = { 0 };
     event.type = RL_EVENT_FEEDBACK;
     event.as.feedback.message = "You are already at full health.";
@@ -138,7 +220,7 @@ use_item_heal(struct rl_actor* actor,
 static bool
 use_item_damage_area(struct rl_world* world,
                      struct rl_actor* actor,
-                     struct rl_item_def const* idef,
+                     struct rl_item_consumable_def const* idef,
                      SDL_Point centre,
                      alist(rl_event)* events,
                      struct rand_state* rng)
@@ -155,7 +237,7 @@ use_item_damage_area(struct rl_world* world,
       continue;
     }
 
-    rl_resolve_attack(actor, defender, idef->power, events, rng);
+    rl_resolve_attack(world, actor, defender, idef->power, events, rng);
   }
 
   return true;
@@ -179,7 +261,7 @@ use_item_lightning(struct rl_actor* actor,
     return false;
   }
 
-  rl_resolve_attack(actor, nearest, power, events, rng);
+  rl_resolve_attack(world, actor, nearest, power, events, rng);
 
   return true;
 }
@@ -242,6 +324,33 @@ rl_pick_up_item(struct rl_world* world,
   *alist_push(events) = event;
 
   return true;
+}
+
+void
+rl_drop_loot(struct rl_world* world,
+             handle(rl_actor) actor_handle,
+             alist(rl_event)* events,
+             struct rand_state* rng)
+{
+  struct rl_actor const* actor = rl_borrow_actor(world, actor_handle);
+  if (actor == NULL || rl_actor_is_alive(actor)) {
+    return;
+  }
+
+  enum rl_item_type type;
+  if (!rl_roll_loot(&rl_get_actor_def(actor->type)->loot, rng, &type)) {
+    return;
+  }
+
+  struct rl_level* level = rl_edit_current_level(world);
+  handle(rl_item) const item_handle =
+    rl_add_item_to_level(world, level, type, actor->pos);
+
+  struct rl_event* event = alist_push(events);
+  *event = (struct rl_event){ 0 };
+  event->type = RL_EVENT_DROP;
+  event->as.drop.actor = actor_handle;
+  event->as.drop.item = item_handle;
 }
 
 /**
@@ -349,7 +458,12 @@ rl_use_item(struct rl_world* world,
     return false;
   }
 
-  struct rl_item_def const* idef = rl_get_item_def(item->itype);
+  struct rl_item_consumable_def const* idef =
+    rl_get_item_consumable_def(item->itype);
+  if (idef == NULL) {
+    return false;
+  }
+
   if (idef->target == RL_ITEM_TARGET_TILE &&
       !rl_is_valid_item_target(idef, world, target)) {
     return false;
