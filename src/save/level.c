@@ -274,8 +274,8 @@ rl_read_level(SDL_IOStream* src,
   Sint32 height = 0;
   RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &height));
 
-  if (width < 1 || width > RL_SNAPSHOT_MAX_DIM || height < 1 ||
-      height > RL_SNAPSHOT_MAX_DIM) {
+  if (width < 1 || width > RL_MAX_MAP_WIDTH || height < 1 ||
+      height > RL_MAX_MAP_HEIGHT) {
     return RL_READ_CORRUPT;
   }
 

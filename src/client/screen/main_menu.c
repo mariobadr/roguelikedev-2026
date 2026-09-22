@@ -5,6 +5,8 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 
+#include "game/level.h"
+
 #include "graphics/console.h"
 #include "save/save.h"
 #include "ui/anchor.h"
@@ -20,8 +22,8 @@
 #include "client/screen.h"
 #include "client/text.h"
 
-#define RL_NEW_GAME_WIDTH 48
-#define RL_NEW_GAME_HEIGHT 48
+#define RL_NEW_GAME_WIDTH RL_MAX_MAP_WIDTH
+#define RL_NEW_GAME_HEIGHT RL_MAX_MAP_HEIGHT
 #define RL_SAVE_LIST_INITIAL_CAP 8
 
 #define KEY_REPEAT_COOLDOWN (0.115f)

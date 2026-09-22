@@ -40,7 +40,6 @@ array_define_as(struct rl_id_entry, rl_id_entry);
 #define RL_SNAPSHOT_MAX_LEVELS 128u
 #define RL_SNAPSHOT_MAX_ACTORS 512u
 #define RL_SNAPSHOT_MAX_ITEMS 512u
-#define RL_SNAPSHOT_MAX_DIM 256
 
 /**
  * Maps the ids assigned to actors and items in a snapshot back to their

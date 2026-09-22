@@ -22,9 +22,15 @@ alist_define_as(handle(rl_actor), rl_actor_handle);
  */
 alist_define_as(handle(rl_item), rl_item_handle);
 
+/** The maximum width of a level's map, in tiles. */
+#define RL_MAX_MAP_WIDTH 48
+/** The maximum height of a level's map, in tiles. */
+#define RL_MAX_MAP_HEIGHT 48
+
 /**
  * One level of the dungeon.
  *
+ * @invariant map is at most RL_MAX_MAP_WIDTH by RL_MAX_MAP_HEIGHT tiles.
  * @invariant the border of map is unwalkable.
  * @invariant stairs_up and stairs_down are on walkable tiles.
  * @invariant every handle in actors is live, and each actor is on a walkable
