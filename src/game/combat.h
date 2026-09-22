@@ -10,6 +10,16 @@
 struct rl_actor;
 struct rand_state;
 
+/**
+ * The different ways damage reaches a defender.
+ */
+enum rl_attack_kind
+{
+  RL_ATTACK_MELEE,     //< a strike from an adjacent tile
+  RL_ATTACK_FIRE,      //< a burst of flame
+  RL_ATTACK_LIGHTNING, //< an arcing bolt
+};
+
 /** The inclusive bounds of a roll. */
 struct rl_roll_range
 {

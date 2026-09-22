@@ -91,6 +91,7 @@ can_move(struct rl_world const* world, SDL_Point dst)
 static void
 enqueue_attack_events(struct rl_actor const* attacker,
                       struct rl_actor const* defender,
+                      enum rl_attack_kind kind,
                       struct rl_attack attack,
                       alist(rl_event)* events)
 {
@@ -98,6 +99,7 @@ enqueue_attack_events(struct rl_actor const* attacker,
   event.type = RL_EVENT_ATTACK;
   event.as.attack.attacker = attacker->handle;
   event.as.attack.defender = defender->handle;
+  event.as.attack.kind = kind;
   event.as.attack.damage = attack.damage;
   event.as.attack.critical = attack.critical;
   *alist_push(events) = event;
@@ -131,12 +133,13 @@ rl_attack_melee(struct rl_world const* world,
   struct rl_attack const attack =
     rl_resolve_attack(defender, ap, crit_chance, armour, rng);
 
-  enqueue_attack_events(attacker, defender, attack, events);
+  enqueue_attack_events(attacker, defender, RL_ATTACK_MELEE, attack, events);
 }
 
 void
 rl_attack_magic(struct rl_actor const* attacker,
                 struct rl_actor* defender,
+                enum rl_attack_kind kind,
                 int power,
                 alist(rl_event)* events,
                 struct rand_state* rng)
@@ -145,7 +148,7 @@ rl_attack_magic(struct rl_actor const* attacker,
 
   struct rl_attack const attack = rl_resolve_attack(defender, power, 0, 0, rng);
 
-  enqueue_attack_events(attacker, defender, attack, events);
+  enqueue_attack_events(attacker, defender, kind, attack, events);
 }
 
 static bool
@@ -200,7 +203,7 @@ use_item_damage_area(struct rl_world* world,
       continue;
     }
 
-    rl_attack_magic(actor, defender, power, events, rng);
+    rl_attack_magic(actor, defender, RL_ATTACK_FIRE, power, events, rng);
   }
 
   return true;
@@ -224,7 +227,7 @@ use_item_lightning(struct rl_actor* actor,
     return false;
   }
 
-  rl_attack_magic(actor, nearest, power, events, rng);
+  rl_attack_magic(actor, nearest, RL_ATTACK_LIGHTNING, power, events, rng);
 
   return true;
 }

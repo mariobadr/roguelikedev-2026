@@ -54,6 +54,7 @@ rl_attack_melee(struct rl_world const* world,
 void
 rl_attack_magic(struct rl_actor const* attacker,
                 struct rl_actor* defender,
+                enum rl_attack_kind kind,
                 int power,
                 alist(rl_event)* events,
                 struct rand_state* rng);

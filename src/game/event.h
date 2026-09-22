@@ -8,6 +8,7 @@
 
 #include "container/alist.h"
 
+#include "game/combat.h"
 #include "game/handles.h"
 
 /**
@@ -37,6 +38,8 @@ struct rl_event_attack
   handle(rl_actor) attacker;
   /** Handle of the defending actor. */
   handle(rl_actor) defender;
+  /** How the damage was delivered. */
+  enum rl_attack_kind kind;
   /** Amount of damage done; -1 is a miss. */
   int damage;
   /** Whether the hit was critical. */

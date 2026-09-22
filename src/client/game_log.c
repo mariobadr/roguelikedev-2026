@@ -16,6 +16,47 @@ actor_colour(struct rl_actor const* actor)
   return rl_get_actor_gfx(actor).fg;
 }
 
+/**
+ * How an attack of one kind is described.
+ */
+struct attack_phrasing
+{
+  /** The noun following the attacker's name, or NULL to name no instrument. */
+  char const* instrument;
+  /** The colour of the instrument. */
+  SDL_FColor const* colour;
+  /** The verb for a hit. */
+  char const* hit;
+  /** The verb for a critical hit. */
+  char const* critical;
+  /** The verb for a miss. */
+  char const* miss;
+};
+
+static struct attack_phrasing const ATTACK_PHRASINGS[] = {
+  [RL_ATTACK_MELEE] = {
+    .instrument = NULL,
+    .colour = NULL,
+    .hit = " hits ",
+    .critical = " critically hits ",
+    .miss = " misses ",
+  },
+  [RL_ATTACK_FIRE] = {
+    .instrument = "fireball",
+    .colour = &RL_COLOUR_ORANGE[5],
+    .hit = " scorches ",
+    .critical = " incinerates ",
+    .miss = " fails to burn ",
+  },
+  [RL_ATTACK_LIGHTNING] = {
+    .instrument = "lightning",
+    .colour = &RL_COLOUR_YELLOW[4],
+    .hit = " shocks ",
+    .critical = " electrocutes ",
+    .miss = " arcs past ",
+  },
+};
+
 static struct rl_text
 build_attack_log(struct rl_world const* world,
                  struct rl_event_attack const* event)
@@ -24,16 +65,22 @@ build_attack_log(struct rl_world const* world,
   struct rl_actor const* defender = rl_borrow_actor(world, event->defender);
   SDL_FColor const attacker_colour = actor_colour(attacker);
   SDL_FColor const defender_colour = actor_colour(defender);
+  struct attack_phrasing const* phrasing = &ATTACK_PHRASINGS[event->kind];
 
   struct rl_text msg = { 0 };
 
-  // <attacker> <hits or misses> <defender>
+  // <attacker>['s <instrument>] <hits or misses> <defender>
   rl_append_text(&msg, &attacker_colour, attacker->name);
-  char const* verb = " hits ";
+  if (phrasing->instrument != NULL) {
+    rl_append_text(&msg, NULL, "'s ");
+    rl_append_text(&msg, phrasing->colour, phrasing->instrument);
+  }
+
+  char const* verb = phrasing->hit;
   if (event->damage < 0) {
-    verb = " misses ";
+    verb = phrasing->miss;
   } else if (event->critical) {
-    verb = " critically hits ";
+    verb = phrasing->critical;
   }
   rl_append_text(&msg, NULL, verb);
   rl_append_text(&msg, &defender_colour, defender->name);
