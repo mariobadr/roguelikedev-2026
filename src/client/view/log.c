@@ -61,6 +61,15 @@ init_view_state(struct view_state* s,
 }
 
 static void
+reset_view(void* data)
+{
+  struct view_state* s = (struct view_state*)data;
+  SDL_assert(s != NULL);
+
+  s->follow_tail = true;
+}
+
+static void
 describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
   struct view_state const* s = (struct view_state const*)data;
@@ -144,6 +153,7 @@ rl_alloc_log_view(struct rl_view* view,
   init_view_state(view->state, log, viewport, line_height);
 
   view->free = SDL_free;
+  view->reset = reset_view;
   view->describe_ribbon = describe_ribbon;
   view->handle_input = handle_input;
   view->prepare = prepare_view;

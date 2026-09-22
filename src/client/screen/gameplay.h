@@ -15,6 +15,8 @@ struct rl_screen;
 /**
  * Allocate the main gameplay screen, which plays run.
  *
+ * @param run must hold a game whenever the screen is entered.
+ *
  * @return whether allocation succeeded.
  */
 bool

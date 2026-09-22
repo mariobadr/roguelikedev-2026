@@ -123,8 +123,6 @@ init_view_state(struct view_state* s,
   float const line_height = (float)font->tile_height;
 
   s->world = world;
-  s->menu.selected = -1;
-  s->pending_item = handle_invalid(rl_item);
 
   SDL_FRect remaining = *viewport;
   float const half = SDL_floorf(remaining.w / 2.0f / glyph_width) * glyph_width;
@@ -142,8 +140,6 @@ init_view_state(struct view_state* s,
 
   ui_list_init(
     &s->menu.list, &left, s->slots, SDL_arraysize(s->slots), line_height, 2.0f);
-  build_groups(s);
-  ui_list_menu_sync(&s->menu, menu_model(s));
 }
 
 static struct rl_text
@@ -342,6 +338,18 @@ render_view(void const* data,
 }
 
 static void
+reset_view(void* data)
+{
+  struct view_state* s = (struct view_state*)data;
+  SDL_assert(s != NULL);
+
+  s->menu.selected = -1;
+  s->pending_item = handle_invalid(rl_item);
+  build_groups(s);
+  ui_list_menu_sync(&s->menu, menu_model(s));
+}
+
+static void
 free_view(void* data)
 {
   struct view_state* s = (struct view_state*)data;
@@ -369,6 +377,7 @@ rl_alloc_inv_view(struct rl_view* view,
   init_view_state(s, world, viewport, font);
 
   view->free = free_view;
+  view->reset = reset_view;
   view->describe_ribbon = describe_ribbon;
   view->handle_input = handle_input;
   view->prepare = prepare_view;

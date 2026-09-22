@@ -43,6 +43,9 @@ struct rl_view
    */
   void (*free)(void* data);
 
+  /** An optional callback that is called once the world holds a new game. */
+  void (*reset)(void* data);
+
   /**
    * An optional callback that fills in the ribbon text for the view's current
    * state.
@@ -74,6 +77,19 @@ rl_free_view(struct rl_view* view)
   }
 
   view->free(view->state);
+}
+
+/**
+ * Reset the view.
+ */
+static inline void
+rl_reset_view(struct rl_view* view)
+{
+  if (view->reset == NULL) {
+    return;
+  }
+
+  view->reset(view->state);
 }
 
 /**

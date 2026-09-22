@@ -289,6 +289,18 @@ render_view(void const* data,
 }
 
 static void
+reset_view(void* data)
+{
+  struct view_state* s = (struct view_state*)data;
+  SDL_assert(s != NULL);
+
+  s->mode = WORLD_MODE_MOVE;
+  s->pending_command = (struct rl_command){ 0 };
+  s->selection.def = NULL;
+  s->pending_select = RL_WORLD_SELECTION_NONE;
+}
+
+static void
 free_view(void* data)
 {
   struct view_state* s = (struct view_state*)data;
@@ -323,6 +335,7 @@ rl_alloc_world_view(struct rl_view* view,
   }
 
   view->free = free_view;
+  view->reset = reset_view;
   view->describe_ribbon = describe_ribbon;
   view->handle_input = handle_input;
   view->prepare = prepare_view;

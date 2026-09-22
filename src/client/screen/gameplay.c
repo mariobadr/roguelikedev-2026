@@ -300,6 +300,10 @@ enter_screen(void* data)
 
   alist_clear(&s->events);
   alist_clear(&s->log.messages);
+
+  for (int i = 0; i < RL_VIEW_COUNT; ++i) {
+    rl_reset_view(&s->views[i]);
+  }
 }
 
 static void
