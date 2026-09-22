@@ -49,16 +49,11 @@ struct rl_view
    */
   void (*describe_ribbon)(void const* data, struct rl_ribbon_content* content);
 
-  /**
-   * An optional callback that handles input. It returns whether the input was
-   * handled.
-   */
-  bool (*update)(void* data, struct inpt_state const* istate);
+  /** An optional callback that returns whether it handled the input. */
+  bool (*handle_input)(void* data, struct inpt_state const* istate);
 
-  /**
-   * An optional callback that is called before the view is rendered.
-   */
-  void (*prepare)(void* data);
+  /** An optional callback called every frame before the view is rendered. */
+  void (*prepare)(void* data, float dt);
 
   /**
    * An optional callback that draws the view.
@@ -101,26 +96,26 @@ rl_view_describe_ribbon(struct rl_view const* view,
  * @return whether the input was handled.
  */
 static inline bool
-rl_update_view(struct rl_view* view, struct inpt_state const* istate)
+rl_view_handle_input(struct rl_view* view, struct inpt_state const* istate)
 {
-  if (view->update == NULL) {
+  if (view->handle_input == NULL) {
     return false;
   }
 
-  return view->update(view->state, istate);
+  return view->handle_input(view->state, istate);
 }
 
 /**
  * Prepare the view for rendering.
  */
 static inline void
-rl_prepare_view(struct rl_view* view)
+rl_prepare_view(struct rl_view* view, float dt)
 {
   if (view->prepare == NULL) {
     return;
   }
 
-  view->prepare(view->state);
+  view->prepare(view->state, dt);
 }
 
 /**

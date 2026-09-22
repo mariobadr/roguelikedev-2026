@@ -215,7 +215,7 @@ draw_actor(SDL_Renderer* renderer,
 }
 
 static bool
-update_view(void* data, struct inpt_state const* istate)
+handle_input(void* data, struct inpt_state const* istate)
 {
   (void)data;
   (void)istate;
@@ -224,8 +224,9 @@ update_view(void* data, struct inpt_state const* istate)
 }
 
 static void
-prepare_view(void* data)
+prepare_view(void* data, float dt)
 {
+  (void)dt;
   struct view_state* s = (struct view_state*)data;
   alist_clear(&s->actors);
   s->more_text[0] = '\0';
@@ -281,7 +282,7 @@ rl_alloc_in_sight_view(struct rl_view* view,
 
   view->free = free_view;
   view->describe_ribbon = NULL;
-  view->update = update_view;
+  view->handle_input = handle_input;
   view->prepare = prepare_view;
   view->render = render_view;
 

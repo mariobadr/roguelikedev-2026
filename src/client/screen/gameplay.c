@@ -470,7 +470,7 @@ handle_action(struct screen_state* s, struct inpt_state const* istate)
   enum rl_view_id const view_id = s->panel_views[s->focused_panel];
   struct rl_view* view = &s->views[view_id];
 
-  bool handled = rl_update_view(view, istate);
+  bool handled = rl_view_handle_input(view, istate);
 
   switch (view_id) {
     case RL_VIEW_INVENTORY: {
@@ -496,28 +496,9 @@ handle_action(struct screen_state* s, struct inpt_state const* istate)
   return handled;
 }
 
-static struct rl_screen_transition
-update_screen(void* data, struct inpt_state const* istate, float dt)
+static void
+handle_input(struct screen_state* s, struct inpt_state const* istate)
 {
-  struct rl_screen_transition transition = { 0 };
-  struct screen_state* s = (struct screen_state*)data;
-  SDL_assert(s != NULL);
-
-  if (s->game_over) {
-    // Only leaving is possible, and it must not wait on the key repeat timer.
-    if (rl_handle_keyboard_input(istate) == RL_ACTION_CANCEL) {
-      transition.type = RL_SCREEN_TRANSITION_SWAP;
-      transition.target =
-        rogue_has_won(s) ? RL_SCREEN_VICTORY : RL_SCREEN_GAME_OVER;
-    }
-    return transition;
-  }
-
-  s->repeat_cooldown = SDL_max(0.0f, s->repeat_cooldown - dt);
-  if (s->repeat_cooldown > 0.0f) {
-    return transition;
-  }
-
   enum rl_action action = rl_handle_keyboard_input(istate);
 
   if (s->pending_target_cmd.type != RL_COMMAND_NONE) {
@@ -538,9 +519,31 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
   }
 
   resolve_pending_target(s);
+}
+
+static struct rl_screen_transition
+update_screen(void* data, struct inpt_state const* istate, float dt)
+{
+  struct rl_screen_transition transition = { 0 };
+  struct screen_state* s = (struct screen_state*)data;
+  SDL_assert(s != NULL);
+
+  if (s->game_over) {
+    // Only leaving is possible, and it must not wait on the key repeat timer.
+    if (rl_handle_keyboard_input(istate) == RL_ACTION_CANCEL) {
+      transition.type = RL_SCREEN_TRANSITION_SWAP;
+      transition.target =
+        rogue_has_won(s) ? RL_SCREEN_VICTORY : RL_SCREEN_GAME_OVER;
+    }
+  } else {
+    s->repeat_cooldown = SDL_max(0.0f, s->repeat_cooldown - dt);
+    if (s->repeat_cooldown <= 0.0f) {
+      handle_input(s, istate);
+    }
+  }
 
   for (int panel = 0; panel < PANEL_COUNT; ++panel) {
-    rl_prepare_view(&s->views[s->panel_views[panel]]);
+    rl_prepare_view(&s->views[s->panel_views[panel]], dt);
   }
 
   return transition;

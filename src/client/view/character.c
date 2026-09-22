@@ -228,8 +228,9 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
 }
 
 static void
-prepare_view(void* data)
+prepare_view(void* data, float dt)
 {
+  (void)dt;
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
@@ -294,7 +295,7 @@ rl_alloc_character_view(struct rl_view* view,
 
   view->free = SDL_free;
   view->describe_ribbon = describe_ribbon;
-  view->update = NULL;
+  view->handle_input = NULL;
   view->prepare = prepare_view;
   view->render = render_view;
 

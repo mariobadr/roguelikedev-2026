@@ -229,7 +229,7 @@ update_select(struct view_state* s, struct inpt_state const* istate)
 }
 
 static bool
-update_view(void* data, struct inpt_state const* istate)
+handle_input(void* data, struct inpt_state const* istate)
 {
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
@@ -242,8 +242,9 @@ update_view(void* data, struct inpt_state const* istate)
 }
 
 static void
-prepare_view(void* data)
+prepare_view(void* data, float dt)
 {
+  (void)dt;
   struct view_state* s = (struct view_state*)data;
   SDL_assert(s != NULL);
 
@@ -323,7 +324,7 @@ rl_alloc_world_view(struct rl_view* view,
 
   view->free = free_view;
   view->describe_ribbon = describe_ribbon;
-  view->update = update_view;
+  view->handle_input = handle_input;
   view->prepare = prepare_view;
   view->render = render_view;
 
