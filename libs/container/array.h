@@ -49,10 +49,10 @@
 /**
  * Allocates a zero-initialized array with capacity for `n` elements.
  *
- * @param a pointer to an alist struct.
+ * @param a pointer to an array struct.
  * @param n Number of elements to allocate capacity for.
  *
- * @return whether allocation failed.
+ * @return whether allocation succeeded.
  */
 #define array_alloc(a, n)                                                      \
   ((a)->data = SDL_calloc((size_t)(n), sizeof(*(a)->data)),                    \

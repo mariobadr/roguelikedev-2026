@@ -43,7 +43,7 @@
  * @param a pointer to an alist struct.
  * @param n Number of elements to allocate capacity for.
  *
- * @return whether allocation failed.
+ * @return whether allocation succeeded.
  */
 #define alist_alloc(a, n)                                                      \
   ((a)->data = SDL_calloc((size_t)(n), sizeof(*(a)->data)),                    \
