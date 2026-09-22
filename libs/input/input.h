@@ -17,6 +17,16 @@
 typedef Uint8 inpt_button;
 
 /**
+ * The physical input devices whose use is tracked.
+ */
+enum inpt_device
+{
+  INPT_DEVICE_KEYBOARD,
+  INPT_DEVICE_MOUSE,
+  INPT_DEVICE_COUNT,
+};
+
+/**
  * Mouse device state tracked between frames.
  */
 struct inpt_mouse
@@ -36,6 +46,8 @@ struct inpt_state
   inpt_button keys[SDL_SCANCODE_COUNT];
   /** Mouse button and cursor state.*/
   struct inpt_mouse mouse;
+  /** Timestamp (ns) of each device's most recent use, or 0 if never used. */
+  Uint64 last_used[INPT_DEVICE_COUNT];
 };
 
 /**
@@ -76,6 +88,12 @@ inpt_was_pressed(inpt_button button);
  */
 bool
 inpt_was_released(inpt_button button);
+
+/**
+ * @return the most recently used device, or the keyboard if none was used.
+ */
+enum inpt_device
+inpt_preferred_device(struct inpt_state const* istate);
 
 /**
  * Initialize the input state.

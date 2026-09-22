@@ -39,6 +39,20 @@ inpt_was_released(inpt_button button)
   return (button & BUTTON_WAS_RELEASED_MASK) != 0;
 }
 
+enum inpt_device
+inpt_preferred_device(struct inpt_state const* istate)
+{
+  enum inpt_device preferred = INPT_DEVICE_KEYBOARD;
+
+  for (int i = 0; i < INPT_DEVICE_COUNT; ++i) {
+    if (istate->last_used[i] > istate->last_used[preferred]) {
+      preferred = (enum inpt_device)i;
+    }
+  }
+
+  return preferred;
+}
+
 void
 inpt_init_state(struct inpt_state* istate)
 {

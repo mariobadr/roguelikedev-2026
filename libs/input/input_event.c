@@ -14,6 +14,10 @@ static void
 handle_key_event(struct inpt_state* istate, SDL_KeyboardEvent const* event)
 {
   inpt_set_button(&istate->keys[event->scancode], event->down);
+
+  if (event->down) {
+    istate->last_used[INPT_DEVICE_KEYBOARD] = event->timestamp;
+  }
 }
 
 /**
@@ -28,6 +32,10 @@ handle_mouse_motion_event(struct inpt_state* istate,
 {
   istate->mouse.position.x = event->x;
   istate->mouse.position.y = event->y;
+
+  if (event->xrel != 0.0f || event->yrel != 0.0f) {
+    istate->last_used[INPT_DEVICE_MOUSE] = event->timestamp;
+  }
 }
 
 /**
@@ -44,6 +52,10 @@ handle_mouse_button_event(struct inpt_state* istate,
 
   istate->mouse.position.x = event->x;
   istate->mouse.position.y = event->y;
+
+  if (event->down) {
+    istate->last_used[INPT_DEVICE_MOUSE] = event->timestamp;
+  }
 }
 
 bool
@@ -59,6 +71,10 @@ inpt_handle_event(struct inpt_state* istate, SDL_Event const* event)
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
       handle_mouse_button_event(istate, &event->button);
+      return true;
+
+    case SDL_EVENT_MOUSE_WHEEL:
+      istate->last_used[INPT_DEVICE_MOUSE] = event->wheel.timestamp;
       return true;
 
     case SDL_EVENT_KEY_DOWN:
