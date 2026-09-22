@@ -25,6 +25,18 @@ rl_spawn_actors(struct rl_level* level,
                 struct rand_state* rng);
 
 /**
+ * Spawn the boss for the level's depth, if any, in boss_room as close to the
+ * stairs down as possible.
+ *
+ * @return whether spawning succeeded. A depth without a boss is not a failure.
+ */
+bool
+rl_spawn_boss(struct rl_level* level,
+              struct rl_layout const* layout,
+              struct rl_world* world,
+              int boss_room);
+
+/**
  * Populate unoccupied room tiles with items.
  *
  * @return whether spawning succeeded. Running out of space is not a failure.

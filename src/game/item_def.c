@@ -2,65 +2,119 @@
 
 #include <stddef.h>
 
+#include <SDL3/SDL_stdinc.h>
+
+static struct rl_item_tier const CONSUMABLE_TIERS[] = {
+  { .min_level = 1, .label = "Minor" },
+  { .min_level = 3, .label = "Lesser" },
+  { .min_level = 5, .label = "Greater" },
+  { .min_level = 8, .label = "Major" },
+};
+
+static struct rl_item_tier const WEAPON_TIERS[] = {
+  { .min_level = 1, .label = "Chipped" },
+  { .min_level = 3, .label = "Worn" },
+  { .min_level = 5, .label = "Fine" },
+  { .min_level = 8, .label = "Masterwork" },
+};
+
+static struct rl_item_tier const ARMOUR_TIERS[] = {
+  { .min_level = 1, .label = "Tattered" },
+  { .min_level = 3, .label = "Worn" },
+  { .min_level = 5, .label = "Sturdy" },
+  { .min_level = 8, .label = "Masterwork" },
+};
+
 static struct rl_item_def const RL_ITEM_DEFS[] = {
-  [RL_ITEM_POTION_HEALTH_MINOR] = {
+  [RL_ITEM_POTION_HEALTH] = {
     .class = RL_ITEM_CLASS_POTION,
-    .name = "Minor Health Potion",
+    .name = "%s Health Potion",
+    .tiers = CONSUMABLE_TIERS,
+    .tier_count = SDL_arraysize(CONSUMABLE_TIERS),
     .as.consumable = {
       .effect = RL_ITEM_EFFECT_HEAL,
       .target = RL_ITEM_TARGET_NONE,
-      .power = 10,
+      .power = 15,
+      .power_per_level = 5,
     },
   },
   [RL_ITEM_SCROLL_FIREBALL] = {
     .class = RL_ITEM_CLASS_SCROLL,
-    .name = "Scroll of Minor Fireball",
+    .name = "Scroll of %s Fireball",
+    .tiers = CONSUMABLE_TIERS,
+    .tier_count = SDL_arraysize(CONSUMABLE_TIERS),
     .as.consumable = {
       .effect = RL_ITEM_EFFECT_DAMAGE_AREA,
       .target = RL_ITEM_TARGET_TILE,
-      .power = 8,
+      .power = 16,
+      .power_per_level = 5,
       .area_radius = 3,
     },
   },
   [RL_ITEM_SCROLL_LIGHTNING] = {
     .class = RL_ITEM_CLASS_SCROLL,
-    .name = "Scroll of Minor Lightning",
+    .name = "Scroll of %s Lightning",
+    .tiers = CONSUMABLE_TIERS,
+    .tier_count = SDL_arraysize(CONSUMABLE_TIERS),
     .as.consumable = {
       .effect = RL_ITEM_EFFECT_DAMAGE_NEAREST,
       .target = RL_ITEM_TARGET_CLOSEST,
-      .power = 12,
+      .power = 24,
+      .power_per_level = 6,
     },
   },
   [RL_ITEM_WEAPON_DAGGER] = {
     .class = RL_ITEM_CLASS_WEAPON,
-    .name = "Chipped Dagger",
+    .name = "%s Dagger",
+    .tiers = WEAPON_TIERS,
+    .tier_count = SDL_arraysize(WEAPON_TIERS),
     .as.equippable = {
-      .strength_bonus = 2,
-      .armour_bonus = 0,
+      .base = {
+        .strength = 0,
+        .agility = 2,
+        .armour = 0,
+      },
+      .per_level = {
+        .strength = 0,
+        .agility = 2,
+        .armour = 0,
+      },
     },
   },
   [RL_ITEM_WEAPON_SWORD] = {
     .class = RL_ITEM_CLASS_WEAPON,
-    .name = "Chipped Sword",
+    .name = "%s Sword",
+    .tiers = WEAPON_TIERS,
+    .tier_count = SDL_arraysize(WEAPON_TIERS),
     .as.equippable = {
-      .strength_bonus = 4,
-      .armour_bonus = 0,
+      .base = {
+        .strength = 2,
+        .agility = 0,
+        .armour = 0,
+      },
+      .per_level = {
+        .strength = 2,
+        .agility = 0,
+        .armour = 0,
+      },
     },
   },
   [RL_ITEM_ARMOUR_LEATHER] = {
     .class = RL_ITEM_CLASS_ARMOUR,
-    .name = "Leather Armour",
+    .name = "%s Armour",
+    .tiers = ARMOUR_TIERS,
+    .tier_count = SDL_arraysize(ARMOUR_TIERS),
     .as.equippable = {
-      .strength_bonus = 0,
-      .armour_bonus = 9,
-    },
-  },
-  [RL_ITEM_ARMOUR_MAIL] = {
-    .class = RL_ITEM_CLASS_ARMOUR,
-    .name = "Chainmail Armour",
-    .as.equippable = {
-      .strength_bonus = 0,
-      .armour_bonus = 20,
+      .base = {
+        .strength = 0,
+        .agility = 0,
+        .armour = 9,
+      },
+      .per_level = {
+        .strength = 0,
+        .agility = 0,
+        .armour = 2,
+      },
     },
   },
 };
@@ -95,4 +149,16 @@ rl_get_item_equippable_def(enum rl_item_type type)
     default:
       return NULL;
   }
+}
+
+struct rl_item_tier const*
+rl_get_item_tier(enum rl_item_type type, int level)
+{
+  struct rl_item_def const* def = rl_get_item_def(type);
+  int i = 0;
+  while (i + 1 < def->tier_count && level >= def->tiers[i + 1].min_level) {
+    ++i;
+  }
+
+  return &def->tiers[i];
 }

@@ -24,8 +24,7 @@ enum rl_event_type
   RL_EVENT_LEVEL_CHANGE, //< an actor moves to another level
   RL_EVENT_XP_GAIN,      //< an actor gains experience
   RL_EVENT_LEVEL_UP,     //< an actor gains one or more levels
-  RL_EVENT_EQUIP,        //< an actor equips an item
-  RL_EVENT_UNEQUIP,      //< an actor removes an equipped item
+  RL_EVENT_EQUIP,        //< an actor equips an item it picked up
   RL_EVENT_DROP,         //< an actor drops an item
 };
 
@@ -40,6 +39,8 @@ struct rl_event_attack
   handle(rl_actor) defender;
   /** Amount of damage done; -1 is a miss. */
   int damage;
+  /** Whether the hit was critical. */
+  bool critical;
 };
 
 /**
@@ -73,11 +74,17 @@ struct rl_event_pickup
   handle(rl_item) item;
 };
 
-/** An actor equips or unequips an item. */
+/**
+ * An actor equips an item it picked up.
+ */
 struct rl_event_equipment
 {
+  /** Handle of the actor. */
   handle(rl_actor) actor;
+  /** Handle of the equipped item. */
   handle(rl_item) item;
+  /** Handle of the item left on the floor, or invalid if the slot was empty. */
+  handle(rl_item) replaced;
 };
 
 /**

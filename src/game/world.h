@@ -112,15 +112,21 @@ struct rl_actor*
 rl_borrow_mut_actor(struct rl_world* world, handle(rl_actor) actor_handle);
 
 /**
- * Add a new, unplaced item of the given type to the world.
+ * Add a new, unplaced item of the given type to the world, at the tier that
+ * level reaches.
+ *
+ * @param level must be at least 1.
  *
  * @return the new item's handle, or an invalid handle if allocation failed.
  */
 handle(rl_item)
-rl_create_item(struct rl_world* world, enum rl_item_type type);
+rl_create_item(struct rl_world* world, enum rl_item_type type, int level);
 
 /**
- * Create an item of the given type on level's floor at pos.
+ * Create an item of the given type on level's floor at pos, at the tier that
+ * item_level reaches.
+ *
+ * @param item_level must be at least 1.
  *
  * @return the new item's handle, or an invalid handle if the item could not be
  * created or added to level.
@@ -129,6 +135,7 @@ handle(rl_item)
 rl_add_item_to_level(struct rl_world* world,
                      struct rl_level* level,
                      enum rl_item_type type,
+                     int item_level,
                      SDL_Point pos);
 
 /**

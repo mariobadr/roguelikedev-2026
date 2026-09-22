@@ -66,10 +66,6 @@ rl_apply_command(struct rl_world* world,
         world, cmd->actor, cmd->use_item.item, cmd->use_item.dst, events, rng);
     case RL_COMMAND_WAIT:
       return true;
-    case RL_COMMAND_EQUIP_ITEM:
-      return rl_equip_item(world, cmd->actor, cmd->target_item, events);
-    case RL_COMMAND_UNEQUIP_ITEM:
-      return rl_unequip_item(world, cmd->actor, cmd->target_item, events);
     case RL_COMMAND_NONE:
       break;
   }

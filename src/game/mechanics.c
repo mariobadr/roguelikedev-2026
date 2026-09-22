@@ -21,72 +21,6 @@ are_adjacent(SDL_Point a, SDL_Point b)
   return dx + dy == 1;
 }
 
-static void
-enqueue_equipment_event(enum rl_event_type type,
-                        handle(rl_actor) actor,
-                        handle(rl_item) item,
-                        alist(rl_event)* events)
-{
-  struct rl_event event = { 0 };
-  event.type = type;
-  event.as.equipment.actor = actor;
-  event.as.equipment.item = item;
-  *alist_push(events) = event;
-}
-
-bool
-rl_equip_item(struct rl_world* world,
-              handle(rl_actor) actor_handle,
-              handle(rl_item) item_handle,
-              alist(rl_event)* events)
-{
-  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
-  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
-  if (item == NULL) {
-    return false;
-  }
-
-  if (!rl_can_equip(actor, item)) {
-    return false;
-  }
-
-  handle(rl_item) const previous_handle =
-    rl_get_equipped_item(actor, rl_get_equipment_slot(item->itype));
-
-  if (handle_is_nonnull(previous_handle)) {
-    rl_unequip(actor, rl_borrow_mut_item(world, previous_handle));
-    enqueue_equipment_event(
-      RL_EVENT_UNEQUIP, actor_handle, previous_handle, events);
-  }
-
-  rl_equip(actor, item);
-  enqueue_equipment_event(RL_EVENT_EQUIP, actor_handle, item_handle, events);
-
-  return true;
-}
-
-bool
-rl_unequip_item(struct rl_world* world,
-                handle(rl_actor) actor_handle,
-                handle(rl_item) item_handle,
-                alist(rl_event)* events)
-{
-  struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
-  struct rl_item* item = rl_borrow_mut_item(world, item_handle);
-  if (item == NULL) {
-    return false;
-  }
-
-  if (!rl_can_unequip(actor, item)) {
-    return false;
-  }
-
-  rl_unequip(actor, item);
-  enqueue_equipment_event(RL_EVENT_UNEQUIP, actor_handle, item_handle, events);
-
-  return true;
-}
-
 int
 rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events)
 {
@@ -106,11 +40,15 @@ rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events)
     world->player.xp = 0;
     actor->level++;
     actor->stats.max_hp += def->per_level.max_hp;
-    actor->hp += def->per_level.max_hp;
     actor->stats.strength += def->per_level.strength;
+    actor->stats.agility += def->per_level.agility;
     actor->stats.armor += def->per_level.armor;
     gained++;
     needed = rl_xp_required(actor->level);
+  }
+
+  if (gained > 0) {
+    actor->hp = actor->stats.max_hp;
   }
 
   world->player.xp += amount;
@@ -165,8 +103,8 @@ use_item_heal(struct rl_actor* actor,
   }
 
   // TODO: make this more sophisticated?
-  int const amount =
-    (int)rand_next_between(rng, power * 8 / 10, power * 12 / 10);
+  struct rl_roll_range const range = rl_get_roll_range(power);
+  int const amount = (int)rand_next_between(rng, range.min, range.max);
   // apply the effect
   int const effective = rl_heal_actor(actor, amount);
 
@@ -185,6 +123,7 @@ static bool
 use_item_damage_area(struct rl_world* world,
                      struct rl_actor* actor,
                      struct rl_item_consumable_def const* idef,
+                     int power,
                      SDL_Point centre,
                      alist(rl_event)* events,
                      struct rand_state* rng)
@@ -201,7 +140,7 @@ use_item_damage_area(struct rl_world* world,
       continue;
     }
 
-    rl_resolve_attack(world, actor, defender, idef->power, events, rng);
+    rl_attack_magic(actor, defender, power, events, rng);
   }
 
   return true;
@@ -225,7 +164,7 @@ use_item_lightning(struct rl_actor* actor,
     return false;
   }
 
-  rl_resolve_attack(world, actor, nearest, power, events, rng);
+  rl_attack_magic(actor, nearest, power, events, rng);
 
   return true;
 }
@@ -271,10 +210,32 @@ rl_pick_up_item(struct rl_world* world,
   item->ltype = RL_ITEM_LOCATION_HELD;
   item->on.actor = actor->handle;
 
+  enum rl_equipment_slot const slot = rl_get_equipment_slot(item->itype);
+  if (slot == RL_EQUIPMENT_SLOT_NONE) {
+    struct rl_event event = { 0 };
+    event.type = RL_EVENT_PICKUP;
+    event.as.pickup.actor = actor->handle;
+    event.as.pickup.item = item_handle;
+    *alist_push(events) = event;
+    return true;
+  }
+
+  handle(rl_item) const previous_handle = rl_get_equipped_item(actor, slot);
+  if (handle_is_nonnull(previous_handle)) {
+    struct rl_item* previous = rl_borrow_mut_item(world, previous_handle);
+    rl_unequip(actor, previous);
+    previous->ltype = RL_ITEM_LOCATION_MAP;
+    previous->on.map = dst;
+    rl_add_item(level, previous_handle);
+  }
+
+  rl_equip(actor, item);
+
   struct rl_event event = { 0 };
-  event.type = RL_EVENT_PICKUP;
-  event.as.pickup.actor = actor->handle;
-  event.as.pickup.item = item_handle;
+  event.type = RL_EVENT_EQUIP;
+  event.as.equipment.actor = actor->handle;
+  event.as.equipment.item = item_handle;
+  event.as.equipment.replaced = previous_handle;
   *alist_push(events) = event;
 
   return true;
@@ -288,14 +249,16 @@ rl_drop_loot(struct rl_world* world,
 {
   struct rl_actor const* actor = rl_borrow_actor(world, actor_handle);
 
+  struct rl_loot_table const* loot = &rl_get_actor_def(actor->type)->loot;
+
   enum rl_item_type type;
-  if (!rl_roll_loot(&rl_get_actor_def(actor->type)->loot, rng, &type)) {
+  if (!rl_roll_loot(loot, rng, &type)) {
     return;
   }
 
   struct rl_level* level = rl_edit_current_level(world);
-  handle(rl_item) const item_handle =
-    rl_add_item_to_level(world, level, type, actor->pos);
+  handle(rl_item) const item_handle = rl_add_item_to_level(
+    world, level, type, actor->level + loot->level_bonus, actor->pos);
 
   struct rl_event* event = alist_push(events);
   *event = (struct rl_event){ 0 };
@@ -415,16 +378,18 @@ rl_use_item(struct rl_world* world,
     return false;
   }
 
+  int const power = rl_get_item_power(item);
   bool used = false;
   switch (idef->effect) {
     case RL_ITEM_EFFECT_HEAL:
-      used = use_item_heal(actor, idef->power, events, rng);
+      used = use_item_heal(actor, power, events, rng);
       break;
     case RL_ITEM_EFFECT_DAMAGE_AREA:
-      used = use_item_damage_area(world, actor, idef, target, events, rng);
+      used =
+        use_item_damage_area(world, actor, idef, power, target, events, rng);
       break;
     case RL_ITEM_EFFECT_DAMAGE_NEAREST:
-      used = use_item_lightning(actor, world, idef->power, events, rng);
+      used = use_item_lightning(actor, world, power, events, rng);
       break;
   }
 

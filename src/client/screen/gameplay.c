@@ -230,7 +230,7 @@ alloc_screen(struct screen_state* s,
   if (!rl_alloc_inv_view(&s->views[RL_VIEW_INVENTORY],
                          &s->run->game.world,
                          &s->panel_bounds[PANEL_BOTTOM],
-                         (float)font->tile_height)) {
+                         font)) {
     return false;
   }
 
@@ -330,6 +330,12 @@ rogue_is_dead(struct screen_state const* s)
   return !rl_actor_is_alive(rogue);
 }
 
+static bool
+rogue_has_won(struct screen_state const* s)
+{
+  return s->run->game.won && !rogue_is_dead(s);
+}
+
 static void
 begin_game_over(struct screen_state* s)
 {
@@ -349,7 +355,10 @@ begin_game_over(struct screen_state* s)
   }
 
   struct rl_text prompt = { 0 };
-  rl_append_text(&prompt, NULL, "You have died. Press ");
+  rl_append_text(&prompt,
+                 NULL,
+                 rogue_has_won(s) ? "You have slain the dragon! Press "
+                                  : "You have died. Press ");
   rl_append_text(&prompt, &RL_COLOUR_YELLOW[3], "Q");
   rl_append_text(&prompt, NULL, " to exit.");
   rl_log_text(&s->log, &prompt);
@@ -367,7 +376,7 @@ submit_command(struct screen_state* s, struct rl_command const* cmd)
     rl_log_event(&s->log, event, &s->run->game.world);
   }
 
-  if (rogue_is_dead(s)) {
+  if (rogue_is_dead(s) || rogue_has_won(s)) {
     begin_game_over(s);
   }
 
@@ -430,13 +439,7 @@ handle_item_selection(struct screen_state* s, handle(rl_item) item_handle)
   struct rl_item_consumable_def const* def =
     rl_get_item_consumable_def(item->itype);
   if (def == NULL) {
-    struct rl_command cmd = { 0 };
-    cmd.actor = rl_get_rogue(&s->run->game.world);
-    cmd.type = RL_COMMAND_EQUIP_ITEM;
-    cmd.target_item = item_handle;
-    bool const handled = submit_command(s, &cmd);
-    cancel_focus(s);
-    return handled;
+    return false;
   }
 
   bool handled = false;
@@ -504,7 +507,8 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
     // Only leaving is possible, and it must not wait on the key repeat timer.
     if (rl_handle_keyboard_input(istate) == RL_ACTION_CANCEL) {
       transition.type = RL_SCREEN_TRANSITION_SWAP;
-      transition.target = RL_SCREEN_GAME_OVER;
+      transition.target =
+        rogue_has_won(s) ? RL_SCREEN_VICTORY : RL_SCREEN_GAME_OVER;
     }
     return transition;
   }
@@ -549,8 +553,9 @@ describe_ribbon(void const* data, struct rl_ribbon_content* content)
   SDL_assert(s != NULL);
 
   if (s->game_over) {
-    rl_append_text(
-      &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Game Over");
+    rl_append_text(&content->text[RL_RIBBON_LEFT],
+                   &RL_COLOUR_CYAN[3],
+                   rogue_has_won(s) ? "Victory" : "Game Over");
     rl_append_text(
       &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Q] exit");
     return;

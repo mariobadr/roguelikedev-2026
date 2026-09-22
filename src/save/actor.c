@@ -12,6 +12,12 @@ is_valid_actor_type(enum rl_actor_type type)
   switch (type) {
     case RL_ACTOR_ROGUE:
     case RL_ACTOR_RAT:
+    case RL_ACTOR_GOBLIN:
+    case RL_ACTOR_TROLL:
+    case RL_ACTOR_RAT_KING:
+    case RL_ACTOR_GOBLIN_CHIEF:
+    case RL_ACTOR_TROLL_WARLORD:
+    case RL_ACTOR_DRAGON:
       return true;
   }
 
@@ -30,6 +36,7 @@ rl_write_actor(SDL_IOStream* dst, struct rl_actor const* actor)
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->hp);
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->stats.max_hp);
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->stats.strength);
+  ok &= SDL_WriteS32LE(dst, (Sint32)actor->stats.agility);
   ok &= SDL_WriteS32LE(dst, (Sint32)actor->stats.armor);
 
   return ok;
@@ -61,10 +68,12 @@ rl_read_actor(SDL_IOStream* src, struct rl_actor* out)
   Sint32 hp = 0;
   Sint32 max_hp = 0;
   Sint32 strength = 0;
+  Sint32 agility = 0;
   Sint32 armor = 0;
   RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &hp));
   RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &max_hp));
   RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &strength));
+  RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &agility));
   RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &armor));
 
   if (max_hp <= 0 || hp > max_hp) {
@@ -79,6 +88,7 @@ rl_read_actor(SDL_IOStream* src, struct rl_actor* out)
   out->hp = (int)hp;
   out->stats.max_hp = (int)max_hp;
   out->stats.strength = (int)strength;
+  out->stats.agility = (int)agility;
   out->stats.armor = (int)armor;
 
   return RL_READ_OK;

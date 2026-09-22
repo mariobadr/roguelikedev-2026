@@ -47,7 +47,7 @@ static struct tile_gfx_desc const tile_gfx_table[] = {
     .bg_colour = NULL,
   },
   [RL_TILE_FLOOR] = {
-    .glyph = ' ',
+    .glyph = '.',
     .fg_colour = NULL,
     .bg_colour = RL_COLOUR_GRAY,
     .bg_index = 9,
@@ -56,15 +56,13 @@ static struct tile_gfx_desc const tile_gfx_table[] = {
     .glyph = '<',
     .fg_colour = RL_COLOUR_CYAN,
     .fg_index = 3,
-    .bg_colour = RL_COLOUR_GRAY,
-    .bg_index = 9,
+    .bg_colour = NULL,
   },
   [RL_TILE_STAIRS_DOWN] = {
     .glyph = '>',
     .fg_colour = RL_COLOUR_CYAN,
     .fg_index = 3,
-    .bg_colour = RL_COLOUR_GRAY,
-    .bg_index = 9,
+    .bg_colour = NULL,
   },
 };
 
@@ -75,7 +73,7 @@ rl_get_tile_gfx(enum rl_tile tile)
 }
 
 static struct tile_gfx_desc const item_gfx_table[] = {
-  [RL_ITEM_POTION_HEALTH_MINOR] = {
+  [RL_ITEM_POTION_HEALTH] = {
     .glyph = '!',
     .fg_colour = RL_COLOUR_GREEN,
     .fg_index = 5,
@@ -95,23 +93,17 @@ static struct tile_gfx_desc const item_gfx_table[] = {
   },
   [RL_ITEM_WEAPON_DAGGER] = {
     .glyph = '/',
-    .fg_colour = RL_COLOUR_CYAN,
-    .fg_index = 4,
+    .fg_colour = RL_COLOUR_ORANGE,
+    .fg_index = 9,
     .bg_colour = NULL,
   },
   [RL_ITEM_WEAPON_SWORD] = {
     .glyph = '/',
-    .fg_colour = RL_COLOUR_CYAN,
-    .fg_index = 5,
+    .fg_colour = RL_COLOUR_ORANGE,
+    .fg_index = 9,
     .bg_colour = NULL,
   },
   [RL_ITEM_ARMOUR_LEATHER] = {
-    .glyph = '[',
-    .fg_colour = RL_COLOUR_ORANGE,
-    .fg_index = 8,
-    .bg_colour = NULL,
-  },
-  [RL_ITEM_ARMOUR_MAIL] = {
     .glyph = '[',
     .fg_colour = RL_COLOUR_ORANGE,
     .fg_index = 9,
@@ -135,6 +127,42 @@ static struct tile_gfx_desc const actor_gfx_table[] = {
   [RL_ACTOR_RAT] = {
     .glyph = 'r',
     .fg_colour = RL_COLOUR_ORANGE,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
+  [RL_ACTOR_GOBLIN] = {
+    .glyph = 'g',
+    .fg_colour = RL_COLOUR_ORANGE,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
+  [RL_ACTOR_TROLL] = {
+    .glyph = 't',
+    .fg_colour = RL_COLOUR_ORANGE,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
+  [RL_ACTOR_RAT_KING] = {
+    .glyph = 'R',
+    .fg_colour = RL_COLOUR_RED,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
+  [RL_ACTOR_GOBLIN_CHIEF] = {
+    .glyph = 'G',
+    .fg_colour = RL_COLOUR_RED,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
+  [RL_ACTOR_TROLL_WARLORD] = {
+    .glyph = 'T',
+    .fg_colour = RL_COLOUR_RED,
+    .fg_index = 9,
+    .bg_colour = NULL,
+  },
+  [RL_ACTOR_DRAGON] = {
+    .glyph = 'D',
+    .fg_colour = RL_COLOUR_RED,
     .fg_index = 9,
     .bg_colour = NULL,
   },

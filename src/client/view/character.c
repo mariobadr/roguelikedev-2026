@@ -6,7 +6,7 @@
 #include "game/actor.h"
 #include "game/equipment.h"
 #include "game/experience.h"
-#include "game/item_def.h"
+#include "game/item.h"
 #include "game/world.h"
 
 #include "graphics/tileset.h"
@@ -27,6 +27,7 @@ enum stat_row
   STAT_LEVEL,
   STAT_HP,
   STAT_STRENGTH,
+  STAT_AGILITY,
   STAT_ARMOUR,
   STAT_COUNT,
 };
@@ -150,6 +151,9 @@ stat_text(struct rl_actor const* rogue,
     case STAT_STRENGTH:
       append_stat(&text, "Strength", total->strength, rogue->stats.strength);
       break;
+    case STAT_AGILITY:
+      append_stat(&text, "Agility", total->agility, rogue->stats.agility);
+      break;
     case STAT_ARMOUR:
       append_stat(&text, "Armour", total->armor, rogue->stats.armor);
       break;
@@ -173,7 +177,9 @@ slot_text(struct rl_world const* world,
   struct rl_item const* item =
     rl_borrow_item(world, rl_get_equipped_item(rogue, slot));
   if (item != NULL) {
-    rl_append_text(&text, NULL, rl_get_item_def(item->itype)->name);
+    char name[RL_TEXT_CAPACITY];
+    rl_format_item_name(item, name, sizeof(name));
+    rl_append_text(&text, NULL, name);
   } else {
     rl_append_text(&text, &RL_COLOUR_GRAY[5], "(none)");
   }

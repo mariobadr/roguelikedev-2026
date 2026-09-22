@@ -8,6 +8,9 @@
 
 #include "game/handles.h"
 
+/** The depth of the deepest level, which has no stairs down. */
+#define RL_FINAL_DEPTH 10
+
 // forward declarations
 struct rand_state;
 struct rl_world;

@@ -16,13 +16,12 @@ enum rl_item_class
 /** Possible items found in the game. */
 enum rl_item_type
 {
-  RL_ITEM_POTION_HEALTH_MINOR,
+  RL_ITEM_POTION_HEALTH,
   RL_ITEM_SCROLL_FIREBALL,
   RL_ITEM_SCROLL_LIGHTNING,
   RL_ITEM_WEAPON_DAGGER,
   RL_ITEM_WEAPON_SWORD,
   RL_ITEM_ARMOUR_LEATHER,
-  RL_ITEM_ARMOUR_MAIL,
   RL_ITEM_TYPE_COUNT, //< number of item types; not an item
 };
 
@@ -51,10 +50,25 @@ struct rl_item_consumable_def
   enum rl_item_effect effect;
   /** What the item must be aimed at, if anything. */
   enum rl_item_target target;
-  /** The strength of the effect. */
+  /** The strength of the effect at level 1. */
   int power;
+  /** The strength gained per level. */
+  int power_per_level;
   /** Radius, in tiles, of the area a tile-targeted item affects. */
   int area_radius;
+};
+
+/**
+ * Stat bonuses granted by an equipped item.
+ */
+struct rl_item_bonuses
+{
+  /** Added to the wearer's strength. */
+  int strength;
+  /** Added to the wearer's agility. */
+  int agility;
+  /** Added to the wearer's armour. */
+  int armour;
 };
 
 /**
@@ -62,19 +76,39 @@ struct rl_item_consumable_def
  */
 struct rl_item_equippable_def
 {
-  int strength_bonus;
-  int armour_bonus;
+  /** The bonuses at level 1. */
+  struct rl_item_bonuses base;
+  /** The bonuses gained per level. */
+  struct rl_item_bonuses per_level;
+};
+
+/**
+ * A qualifier given to items that reach a level.
+ */
+struct rl_item_tier
+{
+  /** The lowest level that earns this tier. */
+  int min_level;
+  /** The qualifier, such as "Minor". */
+  char const* label;
 };
 
 /**
  * Immutable data that defines an item.
+ *
+ * @invariant tiers are in ascending min_level order and the first has a
+ * min_level of 1.
  */
 struct rl_item_def
 {
   /** The category of the item. */
   enum rl_item_class class;
-  /** The display name. */
+  /** The display name; a format with one %s for the tier. */
   char const* name;
+  /** The tiers. */
+  struct rl_item_tier const* tiers;
+  /** The number of tiers. */
+  int tier_count;
 
   union
   {
@@ -100,5 +134,13 @@ rl_get_item_consumable_def(enum rl_item_type type);
  */
 struct rl_item_equippable_def const*
 rl_get_item_equippable_def(enum rl_item_type type);
+
+/**
+ * @param level must be at least 1.
+ *
+ * @return the highest tier that level reaches for type.
+ */
+struct rl_item_tier const*
+rl_get_item_tier(enum rl_item_type type, int level);
 
 #endif // GINC_ROGUELIKE_ITEM_DEF_H

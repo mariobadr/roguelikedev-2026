@@ -14,20 +14,34 @@ struct rl_world;
 struct rl_actor;
 struct rand_state;
 
+/** The inclusive bounds of a roll. */
+struct rl_roll_range
+{
+  /** The lowest possible result. */
+  int min;
+  /** The highest possible result. */
+  int max;
+};
+
 /**
- * Resolve an attack from an attacker against a defender.
+ * @return the range a roll of power can land in.
+ */
+struct rl_roll_range
+rl_get_roll_range(int power);
+
+/**
+ * Resolve a magic attack, which ignores armour, against a defender.
  *
  * Appends the resulting attack (and, possibly, death) events.
  *
  * @return the damage dealt, or -1 on a miss.
  */
 int
-rl_resolve_attack(struct rl_world const* world,
-                  struct rl_actor const* attacker,
-                  struct rl_actor* defender,
-                  int power,
-                  alist(rl_event)* events,
-                  struct rand_state* rng);
+rl_attack_magic(struct rl_actor const* attacker,
+                struct rl_actor* defender,
+                int power,
+                alist(rl_event)* events,
+                struct rand_state* rng);
 
 /**
  * Try a melee attack between two actors in world.

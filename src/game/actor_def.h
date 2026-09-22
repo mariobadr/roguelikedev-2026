@@ -18,8 +18,15 @@ enum rl_actor_class
  */
 enum rl_actor_type
 {
-  RL_ACTOR_ROGUE, //< the player
-  RL_ACTOR_RAT    //< a dangerous mouse
+  RL_ACTOR_ROGUE,  //< the player
+  RL_ACTOR_RAT,    //< a dangerous mouse
+  RL_ACTOR_GOBLIN, //< an ugly goblin
+  RL_ACTOR_TROLL,  //< a huge troll
+  // bosses
+  RL_ACTOR_RAT_KING,      //< the king of rats
+  RL_ACTOR_GOBLIN_CHIEF,  //< the leader of the goblins
+  RL_ACTOR_TROLL_WARLORD, //< a troll clad for war
+  RL_ACTOR_DRAGON,        //< an ancient dragon
 };
 
 /** Combat stats. */
@@ -29,6 +36,8 @@ struct rl_actor_stats
   int max_hp;
   /** Impacts the amount of damage done. */
   int strength;
+  /** Impacts the chance of a critical hit. */
+  int agility;
   /** Impacts the amount of damage mitigated. */
   int armor;
 };

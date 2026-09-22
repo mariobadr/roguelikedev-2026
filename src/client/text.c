@@ -92,6 +92,28 @@ rl_append_text_format(struct rl_text* text,
   return rl_append_text(text, colour, buffer);
 }
 
+void
+rl_truncate_text(struct rl_text* text, size_t length)
+{
+  if (text->length <= length) {
+    return;
+  }
+
+  text->length = length;
+  text->content[length] = '\0';
+
+  size_t kept = 0;
+  for (size_t i = 0; i < text->span_count; ++i) {
+    struct rl_text_span span = text->spans[i];
+    if (span.start >= length) {
+      break;
+    }
+    span.end = SDL_min(span.end, length);
+    text->spans[kept++] = span;
+  }
+  text->span_count = kept;
+}
+
 static void
 draw_text_range(SDL_Renderer* renderer,
                 struct gfx_tileset const* font,

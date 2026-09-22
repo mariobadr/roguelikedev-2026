@@ -24,6 +24,8 @@ struct rl_game
   struct rand_state rng;
   /** The game world. */
   struct rl_world world;
+  /** Whether the rogue has slain the dragon. */
+  bool won;
 };
 
 /**

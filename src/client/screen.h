@@ -22,6 +22,7 @@ enum rl_screen_id
   RL_SCREEN_SAVE_FILES, //< browse saved runs
   RL_SCREEN_GAMEPLAY,   //< the main screen
   RL_SCREEN_GAME_OVER,  //< the rogue has died
+  RL_SCREEN_VICTORY,    //< the rogue has slain the dragon
   RL_SCREEN_COUNT,      //< the number of screens
 };
 

@@ -57,18 +57,6 @@ bool
 rl_is_equipped_by(struct rl_actor const* actor, struct rl_item const* item);
 
 /**
- * @return whether rl_equip would accept item.
- */
-bool
-rl_can_equip(struct rl_actor const* actor, struct rl_item const* item);
-
-/**
- * @return whether rl_unequip would accept item.
- */
-bool
-rl_can_unequip(struct rl_actor const* actor, struct rl_item const* item);
-
-/**
  * @return the equipped item's handle, or an invalid handle if the slot is
  * empty.
  */
@@ -78,7 +66,8 @@ rl_get_equipped_item(struct rl_actor const* actor, enum rl_equipment_slot slot);
 /**
  * Put item into the actor's compatible slot and mark it equipped.
  *
- * @param item must pass rl_can_equip, and its slot must be empty.
+ * @param item must be equippable and held by actor, and its slot must be
+ * empty.
  */
 void
 rl_equip(struct rl_actor* actor, struct rl_item* item);
@@ -86,7 +75,7 @@ rl_equip(struct rl_actor* actor, struct rl_item* item);
 /**
  * Empty the slot holding item, moving it to inventory.
  *
- * @param item must pass rl_can_unequip.
+ * @param item must be equipped by actor.
  */
 void
 rl_unequip(struct rl_actor* actor, struct rl_item* item);

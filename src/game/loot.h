@@ -31,6 +31,8 @@ struct rl_loot_table
   struct rl_loot_entry const* items;
   /** The number of entries in items. */
   size_t count;
+  /** Added to the dropping actor's level to give the item's level. */
+  int level_bonus;
 };
 
 /**
@@ -38,7 +40,7 @@ struct rl_loot_table
  *
  * First roll drop_percent, then choose one item in proportion to its weight.
  * Weights need not total 100; they apply only when the table produces a drop.
- * 
+ *
  * An empty table or a drop_percent of 0 selects nothing and does not draw
  * from rng.
  *

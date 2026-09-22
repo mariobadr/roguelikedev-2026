@@ -19,15 +19,13 @@ struct rand_state;
  */
 enum rl_command_type
 {
-  RL_COMMAND_NONE,         //< no action
-  RL_COMMAND_MOVE,         //< move the actor
-  RL_COMMAND_ATTACK,       //< attack an actor
-  RL_COMMAND_PICK_UP,      //< pick up an item
-  RL_COMMAND_USE_ITEM,     //< use an item
-  RL_COMMAND_TAKE_STAIRS,  //< take the stairs
-  RL_COMMAND_WAIT,         //< consume a turn without acting
-  RL_COMMAND_EQUIP_ITEM,   //< equip a held item
-  RL_COMMAND_UNEQUIP_ITEM, //< unequip an item
+  RL_COMMAND_NONE,        //< no action
+  RL_COMMAND_MOVE,        //< move the actor
+  RL_COMMAND_ATTACK,      //< attack an actor
+  RL_COMMAND_PICK_UP,     //< pick up an item
+  RL_COMMAND_USE_ITEM,    //< use an item
+  RL_COMMAND_TAKE_STAIRS, //< take the stairs
+  RL_COMMAND_WAIT,        //< consume a turn without acting
 };
 
 /**
@@ -57,8 +55,6 @@ struct rl_command
     SDL_Point dst;
     /** ATTACK */
     handle(rl_actor) target_actor;
-    /** EQUIP ITEM, UNEQUIP ITEM */
-    handle(rl_item) target_item;
     /** USE ITEM */
     struct rl_item_use use_item;
   };

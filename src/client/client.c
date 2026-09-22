@@ -178,7 +178,15 @@ rl_alloc_client(struct rl_client* client,
 
   if (!rl_alloc_game_over_screen(&client->screens[RL_SCREEN_GAME_OVER],
                                  &content_bounds,
-                                 &client->font)) {
+                                 &client->font,
+                                 RL_RUN_DEAD)) {
+    return false;
+  }
+
+  if (!rl_alloc_game_over_screen(&client->screens[RL_SCREEN_VICTORY],
+                                 &content_bounds,
+                                 &client->font,
+                                 RL_RUN_VICTORY)) {
     return false;
   }
 

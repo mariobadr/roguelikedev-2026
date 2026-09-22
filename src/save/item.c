@@ -11,13 +11,12 @@ bool
 rl_is_valid_item_type(enum rl_item_type type)
 {
   switch (type) {
-    case RL_ITEM_POTION_HEALTH_MINOR:
+    case RL_ITEM_POTION_HEALTH:
     case RL_ITEM_SCROLL_FIREBALL:
     case RL_ITEM_SCROLL_LIGHTNING:
     case RL_ITEM_WEAPON_DAGGER:
     case RL_ITEM_WEAPON_SWORD:
     case RL_ITEM_ARMOUR_LEATHER:
-    case RL_ITEM_ARMOUR_MAIL:
       return true;
     case RL_ITEM_TYPE_COUNT:
       break;
@@ -56,6 +55,7 @@ rl_write_item(SDL_IOStream* dst,
 
   bool ok = true;
   ok &= SDL_WriteU32LE(dst, (Uint32)item->itype);
+  ok &= SDL_WriteS32LE(dst, (Sint32)item->level);
   ok &= SDL_WriteU32LE(dst, (Uint32)item->ltype);
 
   switch (item->ltype) {
@@ -86,6 +86,14 @@ rl_read_item(SDL_IOStream* src, struct rl_reader const* r, struct rl_item* out)
     return RL_READ_CORRUPT;
   }
 
+  Sint32 level = 0;
+  RL_READ_OR_FAIL(src, SDL_ReadS32LE(src, &level));
+  if (level < 1 ||
+      rl_get_item_tier((enum rl_item_type)itype_value, (int)level)->min_level !=
+        (int)level) {
+    return RL_READ_CORRUPT;
+  }
+
   Uint32 ltype_value = 0;
   RL_READ_OR_FAIL(src, SDL_ReadU32LE(src, &ltype_value));
   if (!is_valid_item_location((enum rl_item_location)ltype_value)) {
@@ -93,6 +101,7 @@ rl_read_item(SDL_IOStream* src, struct rl_reader const* r, struct rl_item* out)
   }
 
   out->itype = (enum rl_item_type)itype_value;
+  out->level = (int)level;
   out->ltype = (enum rl_item_location)ltype_value;
 
   if (out->ltype == RL_ITEM_LOCATION_EQUIPPED &&

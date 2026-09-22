@@ -76,8 +76,11 @@ place_stairs(struct rl_level* level, struct rl_layout const* layout)
   level->stairs_up = centre_of(array_at(&layout->rooms, RL_GEN_ENTRY_ROOM));
   level->stairs_down = centre_of(array_at(&layout->rooms, room_count - 1));
 
-  *grid_at(&level->map, level->stairs_down.x, level->stairs_down.y) =
-    RL_TILE_STAIRS_DOWN;
+  // the final level has nothing below it
+  if (level->depth < RL_FINAL_DEPTH) {
+    *grid_at(&level->map, level->stairs_down.x, level->stairs_down.y) =
+      RL_TILE_STAIRS_DOWN;
+  }
 
   // the first level has nothing above it
   if (level->depth > 1) {
@@ -94,6 +97,12 @@ populate_level(struct rl_world* world,
                struct rl_layout const* layout,
                struct rand_state* rng)
 {
+  // the boss guards the stairs down in the last room, so it spawns first
+  int const boss_room = (int)array_len(&layout->rooms) - 1;
+  if (!rl_spawn_boss(level, layout, world, boss_room)) {
+    return false;
+  }
+
   // spawn the actors
   if (!rl_spawn_actors(level, layout, world, RL_GEN_ENTRY_ROOM, rng)) {
     return false;

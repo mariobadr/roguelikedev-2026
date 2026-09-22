@@ -34,21 +34,6 @@ rl_get_equipped_item(struct rl_actor const* actor, enum rl_equipment_slot slot)
   return actor->equipment.slots[slot];
 }
 
-bool
-rl_can_equip(struct rl_actor const* actor, struct rl_item const* item)
-{
-  if (item->ltype != RL_ITEM_LOCATION_HELD &&
-      item->ltype != RL_ITEM_LOCATION_EQUIPPED) {
-    return false;
-  }
-
-  if (!handle_equal(item->on.actor, actor->handle)) {
-    return false;
-  }
-
-  return rl_get_equipment_slot(item->itype) != RL_EQUIPMENT_SLOT_NONE;
-}
-
 void
 rl_equip(struct rl_actor* actor, struct rl_item* item)
 {
@@ -66,12 +51,6 @@ rl_is_equipped_by(struct rl_actor const* actor, struct rl_item const* item)
 
   return handle_equal(
     actor->equipment.slots[rl_get_equipment_slot(item->itype)], item->handle);
-}
-
-bool
-rl_can_unequip(struct rl_actor const* actor, struct rl_item const* item)
-{
-  return rl_is_equipped_by(actor, item);
 }
 
 void

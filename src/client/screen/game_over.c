@@ -25,22 +25,32 @@ static char const* const GAME_OVER_BANNER[] = {
   " \\___/\\_/\\_/\\_)(_/(____)   \\__/  \\__/ (____)(__\\_)",
 };
 
+static char const* const VICTORY_BANNER[] = {
+  " _  _  __   _  _    _  _  __  __ _  _",
+  "( \\/ )/  \\ / )( \\  / )( \\(  )(  ( \\/ \\",
+  " )  /(  O )) \\/ (  \\ /\\ / )( /    /\\_/",
+  "(__/  \\__/ \\____/  (_/\\_)(__)\\_)__)(_)",
+};
+
 struct screen_state
 {
   struct gfx_tileset const* font;
+  char const* const* banner;
+  size_t banner_lines;
+  char const* title;
   SDL_FPoint banner_pos;
 };
 
 static void
-measure_banner(struct gfx_tileset const* font, float* width, float* height)
+measure_banner(struct screen_state const* s, float* width, float* height)
 {
   size_t cols = 0;
-  for (size_t i = 0; i < SDL_arraysize(GAME_OVER_BANNER); i++) {
-    cols = SDL_max(cols, SDL_strlen(GAME_OVER_BANNER[i]));
+  for (size_t i = 0; i < s->banner_lines; i++) {
+    cols = SDL_max(cols, SDL_strlen(s->banner[i]));
   }
 
-  *width = (float)cols * (float)font->tile_width;
-  *height = (float)SDL_arraysize(GAME_OVER_BANNER) * (float)font->tile_height;
+  *width = (float)cols * (float)s->font->tile_width;
+  *height = (float)s->banner_lines * (float)s->font->tile_height;
 }
 
 static void
@@ -48,7 +58,7 @@ create_layout(struct screen_state* s, SDL_FRect const* bounds)
 {
   float banner_width = 0.0f;
   float banner_height = 0.0f;
-  measure_banner(s->font, &banner_width, &banner_height);
+  measure_banner(s, &banner_width, &banner_height);
 
   struct ui_position const centre = { UI_ANCHOR_CENTRE, { 0.0f, 0.0f } };
   SDL_FRect const block =
@@ -60,9 +70,22 @@ create_layout(struct screen_state* s, SDL_FRect const* bounds)
 static void
 init_screen(struct screen_state* s,
             SDL_FRect const* bounds,
-            struct gfx_tileset const* font)
+            struct gfx_tileset const* font,
+            enum rl_run_outcome outcome)
 {
+  SDL_assert(outcome == RL_RUN_DEAD || outcome == RL_RUN_VICTORY);
+
   s->font = font;
+
+  if (outcome == RL_RUN_VICTORY) {
+    s->banner = VICTORY_BANNER;
+    s->banner_lines = SDL_arraysize(VICTORY_BANNER);
+    s->title = "Victory";
+  } else {
+    s->banner = GAME_OVER_BANNER;
+    s->banner_lines = SDL_arraysize(GAME_OVER_BANNER);
+    s->title = "Game Over";
+  }
 
   create_layout(s, bounds);
 }
@@ -111,10 +134,10 @@ update_screen(void* data, struct inpt_state const* istate, float dt)
 static void
 describe_ribbon(void const* data, struct rl_ribbon_content* content)
 {
-  (void)data;
+  struct screen_state const* s = (struct screen_state const*)data;
+  SDL_assert(s != NULL);
 
-  rl_append_text(
-    &content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], "Game Over");
+  rl_append_text(&content->text[RL_RIBBON_LEFT], &RL_COLOUR_CYAN[3], s->title);
   rl_append_text(
     &content->text[RL_RIBBON_RIGHT], &RL_COLOUR_YELLOW[3], "[Q] Main Menu");
 }
@@ -126,14 +149,14 @@ render_screen(void const* data, SDL_Renderer* renderer)
   SDL_assert(s != NULL);
 
   // render the banner
-  for (size_t i = 0; i < SDL_arraysize(GAME_OVER_BANNER); i++) {
+  for (size_t i = 0; i < s->banner_lines; i++) {
     SDL_FPoint const at = {
       s->banner_pos.x,
       s->banner_pos.y + (float)i * (float)s->font->tile_height,
     };
     gfx_print_console(renderer,
                       s->font,
-                      str_view_from_cstr(GAME_OVER_BANNER[i]),
+                      str_view_from_cstr(s->banner[i]),
                       RL_COLOUR_GRAY[5],
                       RL_COLOUR_BLACK,
                       at);
@@ -143,14 +166,15 @@ render_screen(void const* data, SDL_Renderer* renderer)
 bool
 rl_alloc_game_over_screen(struct rl_screen* screen,
                           SDL_FRect const* bounds,
-                          struct gfx_tileset const* font)
+                          struct gfx_tileset const* font,
+                          enum rl_run_outcome outcome)
 {
   screen->state = SDL_calloc(1, sizeof(struct screen_state));
   if (screen->state == NULL) {
     return false;
   }
 
-  init_screen(screen->state, bounds, font);
+  init_screen(screen->state, bounds, font, outcome);
 
   screen->free = free_screen;
   screen->enter = enter_screen;

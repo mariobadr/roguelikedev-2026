@@ -118,7 +118,7 @@ rl_borrow_mut_actor(struct rl_world* world, handle(rl_actor) actor_handle)
 }
 
 handle(rl_item)
-rl_create_item(struct rl_world* world, enum rl_item_type type)
+rl_create_item(struct rl_world* world, enum rl_item_type type, int level)
 {
   if (pool_full(&world->items) &&
       !pool_reserve(&world->items, (size_t)pool_cap(&world->items) * 2)) {
@@ -128,7 +128,7 @@ rl_create_item(struct rl_world* world, enum rl_item_type type)
   handle(rl_item) item_handle;
   struct rl_item* item = pool_acquire(&world->items, &item_handle);
 
-  *item = rl_make_item(type);
+  *item = rl_make_item(type, level);
   item->handle = item_handle;
 
   return item_handle;
@@ -138,9 +138,10 @@ handle(rl_item)
 rl_add_item_to_level(struct rl_world* world,
                      struct rl_level* level,
                      enum rl_item_type type,
+                     int item_level,
                      SDL_Point pos)
 {
-  handle(rl_item) const item_handle = rl_create_item(world, type);
+  handle(rl_item) const item_handle = rl_create_item(world, type, item_level);
   struct rl_item* item = rl_borrow_mut_item(world, item_handle);
   if (item == NULL) {
     return handle_invalid(rl_item);

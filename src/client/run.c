@@ -53,6 +53,8 @@ rl_save_run(struct rl_run const* run)
     rl_borrow_actor(&run->game.world, rl_get_rogue(&run->game.world));
   if (!rl_actor_is_alive(rogue)) {
     result = rl_finish_save(run->save_id, RL_RUN_DEAD);
+  } else if (run->game.won) {
+    result = rl_finish_save(run->save_id, RL_RUN_VICTORY);
   }
 
   if (result == RL_SAVE_OK) {

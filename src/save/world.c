@@ -170,7 +170,7 @@ read_items(SDL_IOStream* src, struct rl_world* world, struct rl_reader* r)
       return result;
     }
 
-    handle(rl_item) const h = rl_create_item(world, tmp.itype);
+    handle(rl_item) const h = rl_create_item(world, tmp.itype, tmp.level);
     struct rl_item* item = rl_borrow_mut_item(world, h);
     if (item == NULL) {
       return RL_READ_ERROR;

@@ -5,7 +5,6 @@
 
 #include "game/event.h"
 #include "game/item.h"
-#include "game/item_def.h"
 #include "game/world.h"
 
 #include "render/graphics.h"
@@ -30,7 +29,13 @@ build_attack_log(struct rl_world const* world,
 
   // <attacker> <hits or misses> <defender>
   rl_append_text(&msg, &attacker_colour, attacker->name);
-  rl_append_text(&msg, NULL, event->damage < 0 ? " misses " : " hits ");
+  char const* verb = " hits ";
+  if (event->damage < 0) {
+    verb = " misses ";
+  } else if (event->critical) {
+    verb = " critically hits ";
+  }
+  rl_append_text(&msg, NULL, verb);
   rl_append_text(&msg, &defender_colour, defender->name);
 
   if (event->damage >= 0) {
@@ -85,15 +90,50 @@ build_pickup_log(struct rl_world const* world,
 {
   struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
   struct rl_item const* item = rl_borrow_item(world, event->item);
-  struct rl_item_def const* idef = rl_get_item_def(item->itype);
   SDL_FColor const actor_colour_ = actor_colour(actor);
   SDL_FColor const item_colour = rl_get_item_gfx(item).fg;
+
+  char name[RL_TEXT_CAPACITY];
+  rl_format_item_name(item, name, sizeof(name));
 
   struct rl_text msg = { 0 };
 
   rl_append_text(&msg, &actor_colour_, actor->name);
   rl_append_text(&msg, NULL, " picked up a ");
-  rl_append_text(&msg, &item_colour, idef->name);
+  rl_append_text(&msg, &item_colour, name);
+
+  return msg;
+}
+
+static struct rl_text
+build_equip_log(struct rl_world const* world,
+                struct rl_event_equipment const* event)
+{
+  struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
+  struct rl_item const* item = rl_borrow_item(world, event->item);
+  struct rl_item const* replaced = rl_borrow_item(world, event->replaced);
+  SDL_FColor const actor_colour_ = actor_colour(actor);
+  SDL_FColor const item_colour = rl_get_item_gfx(item).fg;
+
+  char name[RL_TEXT_CAPACITY];
+  rl_format_item_name(item, name, sizeof(name));
+
+  struct rl_text msg = { 0 };
+
+  rl_append_text(&msg, &actor_colour_, actor->name);
+  if (replaced == NULL) {
+    rl_append_text(&msg, NULL, " equipped a ");
+  } else {
+    SDL_FColor const replaced_colour = rl_get_item_gfx(replaced).fg;
+    char replaced_name[RL_TEXT_CAPACITY];
+    rl_format_item_name(replaced, replaced_name, sizeof(replaced_name));
+
+    rl_append_text(&msg, NULL, " swapped a ");
+    rl_append_text(&msg, &replaced_colour, replaced_name);
+    rl_append_text(&msg, NULL, " for a ");
+  }
+  rl_append_text(&msg, &item_colour, name);
+  rl_append_text(&msg, NULL, ".");
 
   return msg;
 }
@@ -103,15 +143,17 @@ build_drop_log(struct rl_world const* world, struct rl_event_drop const* event)
 {
   struct rl_actor const* actor = rl_borrow_actor(world, event->actor);
   struct rl_item const* item = rl_borrow_item(world, event->item);
-  struct rl_item_def const* idef = rl_get_item_def(item->itype);
   SDL_FColor const actor_colour_ = actor_colour(actor);
   SDL_FColor const item_colour = rl_get_item_gfx(item).fg;
+
+  char name[RL_TEXT_CAPACITY];
+  rl_format_item_name(item, name, sizeof(name));
 
   struct rl_text msg = { 0 };
 
   rl_append_text(&msg, &actor_colour_, actor->name);
   rl_append_text(&msg, NULL, " dropped a ");
-  rl_append_text(&msg, &item_colour, idef->name);
+  rl_append_text(&msg, &item_colour, name);
   rl_append_text(&msg, NULL, ".");
 
   return msg;
@@ -231,6 +273,9 @@ rl_log_event(struct rl_game_log* log,
       break;
     case RL_EVENT_PICKUP:
       msg = build_pickup_log(world, &event->as.pickup);
+      break;
+    case RL_EVENT_EQUIP:
+      msg = build_equip_log(world, &event->as.equipment);
       break;
     case RL_EVENT_DROP:
       msg = build_drop_log(world, &event->as.drop);

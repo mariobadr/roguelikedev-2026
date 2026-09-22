@@ -10,6 +10,7 @@
 #include "game/handles.h"
 
 // forward declarations
+struct gfx_tileset;
 struct rl_view;
 struct rl_world;
 
@@ -22,7 +23,7 @@ bool
 rl_alloc_inv_view(struct rl_view* view,
                   struct rl_world const* world,
                   SDL_FRect const* viewport,
-                  float line_height);
+                  struct gfx_tileset const* font);
 
 /**
  * Consume the pending item selection.

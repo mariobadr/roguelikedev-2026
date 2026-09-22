@@ -67,6 +67,12 @@ rl_append_text_format(struct rl_text* text,
                       ...) SDL_PRINTF_VARARG_FUNC(3);
 
 /**
+ * Shorten text to at most length bytes.
+ */
+void
+rl_truncate_text(struct rl_text* text, size_t length);
+
+/**
  * Draw text, using fg for any content not covered by a colour span.
  */
 void

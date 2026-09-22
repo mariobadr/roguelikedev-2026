@@ -65,6 +65,19 @@ drop_death_loot(struct rl_world* world,
 }
 
 static bool
+slays_dragon(struct rl_world const* world, struct rl_event const* event)
+{
+  if (event->type != RL_EVENT_DEATH) {
+    return false;
+  }
+
+  struct rl_actor const* victim = rl_borrow_actor(world, event->as.death.actor);
+  SDL_assert(victim != NULL);
+
+  return victim->type == RL_ACTOR_DRAGON;
+}
+
+static bool
 resolve_command(struct rl_world* world,
                 struct rl_command const* cmd,
                 alist(rl_event)* events,
@@ -158,9 +171,9 @@ static bool
 init_starting_equipment(struct rl_world* world, handle(rl_actor) rogue_handle)
 {
   handle(rl_item) const weapon_handle =
-    rl_create_item(world, RL_ITEM_WEAPON_DAGGER);
+    rl_create_item(world, RL_ITEM_WEAPON_DAGGER, 1);
   handle(rl_item) const armour_handle =
-    rl_create_item(world, RL_ITEM_ARMOUR_LEATHER);
+    rl_create_item(world, RL_ITEM_ARMOUR_LEATHER, 1);
 
   struct rl_actor* rogue = rl_borrow_mut_actor(world, rogue_handle);
   struct rl_item* weapon = rl_borrow_mut_item(world, weapon_handle);
@@ -234,14 +247,24 @@ rl_update_game(struct rl_game* game,
                struct rl_command const* cmd,
                alist(rl_event)* events)
 {
+  size_t const first_event = alist_len(events);
   bool turn_taken = resolve_command(&game->world, cmd, events, &game->rng);
+
+  for (size_t i = first_event; i < alist_len(events); i++) {
+    if (slays_dragon(&game->world, alist_at(events, i))) {
+      game->won = true;
+    }
+  }
 
   if (turn_taken) {
     game->turns++;
 
     rl_update_visibility(&game->world);
 
-    update_actors(&game->world, events, &game->rng);
+    // nothing acts after the final blow
+    if (!game->won) {
+      update_actors(&game->world, events, &game->rng);
+    }
   }
 
   return turn_taken;

@@ -21,6 +21,7 @@ rl_make_actor(enum rl_actor_type type, int level)
   actor.name = def->name;
   actor.stats.max_hp = def->base.max_hp + growth * def->per_level.max_hp;
   actor.stats.strength = def->base.strength + growth * def->per_level.strength;
+  actor.stats.agility = def->base.agility + growth * def->per_level.agility;
   actor.stats.armor = def->base.armor + growth * def->per_level.armor;
   actor.hp = actor.stats.max_hp;
 
@@ -47,10 +48,10 @@ rl_get_actor_stats(struct rl_world const* world, struct rl_actor const* actor)
       continue;
     }
 
-    struct rl_item_equippable_def const* def =
-      rl_get_item_equippable_def(item->itype);
-    stats.strength += def->strength_bonus;
-    stats.armor += def->armour_bonus;
+    struct rl_item_bonuses const bonuses = rl_get_item_bonuses(item);
+    stats.strength += bonuses.strength;
+    stats.agility += bonuses.agility;
+    stats.armor += bonuses.armour;
   }
 
   return stats;

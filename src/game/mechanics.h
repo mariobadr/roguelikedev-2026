@@ -16,7 +16,7 @@ struct rl_world;
 struct rand_state;
 
 /**
- * Add experience points to the player.
+ * Add experience points to the player, fully healing them on a level up.
  *
  * @return the number of levels gained.
  */
@@ -34,36 +34,14 @@ rl_move(struct rl_world* world, handle(rl_actor) actor_handle, SDL_Point dst);
 /**
  * Try to pick up an item found at dst.
  *
+ * An equippable item is equipped at once, leaving the item it replaces at dst.
+ *
  * @return whether an item was picked up.
  */
 bool
 rl_pick_up_item(struct rl_world* world,
                 handle(rl_actor) actor_handle,
                 SDL_Point dst,
-                alist(rl_event)* events);
-
-/**
- * Try to equip an item, replacing whatever occupies the matching slot.
- *
- * The replaced item returns to the actor's inventory.
- *
- * @return whether the item was equipped.
- */
-bool
-rl_equip_item(struct rl_world* world,
-              handle(rl_actor) actor_handle,
-              handle(rl_item) item_handle,
-              alist(rl_event)* events);
-
-/**
- * Try to unequip an item, returning it to the actor's inventory.
- *
- * @return whether the item was unequipped.
- */
-bool
-rl_unequip_item(struct rl_world* world,
-                handle(rl_actor) actor_handle,
-                handle(rl_item) item_handle,
                 alist(rl_event)* events);
 
 /**
