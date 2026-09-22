@@ -8,8 +8,8 @@
 bool
 rl_alloc_player(struct rl_player* player, int width, int height)
 {
-  if (!grid_alloc(&player->distances, width, height)) {
-    SDL_Log("grid_alloc failed: %s", SDL_GetError());
+  if (!sptl_alloc_dijkstra_map(&player->dijkstra, width, height)) {
+    SDL_Log("sptl_alloc_dijkstra_map failed: %s", SDL_GetError());
     return false;
   }
 
@@ -28,5 +28,5 @@ rl_free_player(struct rl_player* player)
   }
 
   rl_free_fov(&player->fov);
-  grid_free(&player->distances);
+  sptl_free_dijkstra_map(&player->dijkstra);
 }

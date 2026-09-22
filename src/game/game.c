@@ -12,7 +12,19 @@
 #include "experience.h"
 #include "generate.h"
 #include "mechanics.h"
-#include "pathfinding.h"
+#include "movement.h"
+
+/**
+ * @param context must be a grid(rl_tile) const*.
+ *
+ * @return whether both tiles are walkable.
+ */
+static bool
+can_step(void* context, SDL_Point from, SDL_Point to)
+{
+  grid(rl_tile) const* map = context;
+  return rl_can_walk(map, from) && rl_can_walk(map, to);
+}
 
 static void
 award_kill_xp(struct rl_world* world,
@@ -110,10 +122,11 @@ update_actors(struct rl_world* world,
 
   // build the distance map where the target is the player
   struct rl_level const* level = rl_get_current_level(world);
-  if (!rl_build_dijkstra_map(
-        &world->player.distances, &level->map, rogue->pos)) {
-    return;
-  }
+  struct sptl_movement const walking = { RL_STEP_DIRS,
+                                         SDL_arraysize(RL_STEP_DIRS),
+                                         can_step };
+  sptl_compute_dijkstra_map(
+    &world->player.dijkstra, &rogue->pos, 1, &walking, (void*)&level->map);
 
   // wake up actors in the player's field-of-view and/or
   // move actors closer to the player

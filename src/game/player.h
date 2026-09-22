@@ -4,7 +4,7 @@
 #ifndef GINC_ROGUELIKE_PLAYER_H
 #define GINC_ROGUELIKE_PLAYER_H
 
-#include "container/grid.h"
+#include "spatial/dijkstra.h"
 
 #include "game/fov.h"
 #include "game/handles.h"
@@ -18,8 +18,8 @@ struct rl_player
   handle(rl_actor) actor;
   /** XP earned toward the actor's next level. */
   int xp;
-  /** A map of distances to reach the player. */
-  grid(int) distances;
+  /** The number of steps from each tile to the rogue. */
+  struct sptl_dijkstra_map dijkstra;
   /** Player's field-of-view. */
   struct rl_fov fov;
 };

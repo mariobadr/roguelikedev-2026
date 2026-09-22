@@ -4,6 +4,7 @@
 
 #include "combat.h"
 #include "mechanics.h"
+#include "movement.h"
 #include "world.h"
 
 struct rl_command
@@ -29,7 +30,7 @@ rl_new_bump_command(struct rl_actor const* actor,
   if (handle_is_nonnull(target)) {
     cmd.type = RL_COMMAND_ATTACK;
     cmd.target_actor = target;
-  } else if (rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
+  } else if (rl_can_walk(&level->map, dst)) {
     cmd.type = RL_COMMAND_MOVE;
     cmd.dst = dst;
   }

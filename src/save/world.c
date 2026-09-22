@@ -14,6 +14,7 @@
 #include "game/actor.h"
 #include "game/equipment.h"
 #include "game/experience.h"
+#include "game/movement.h"
 #include "game/world.h"
 
 static bool
@@ -263,7 +264,7 @@ validate_level(struct rl_world const* world,
     struct rl_actor const* actor = rl_borrow_actor(world, h);
     if (actor == NULL ||
         !grid_contains(&level->map, actor->pos.x, actor->pos.y) ||
-        !rl_is_walkable(*grid_at(&level->map, actor->pos.x, actor->pos.y))) {
+        !rl_can_walk(&level->map, actor->pos)) {
       return RL_READ_CORRUPT;
     }
 

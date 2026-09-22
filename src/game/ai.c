@@ -2,7 +2,7 @@
 
 #include "actor.h"
 #include "fov.h"
-#include "pathfinding.h"
+#include "movement.h"
 #include "world.h"
 
 static bool
@@ -10,16 +10,17 @@ pick_direction(SDL_Point* direction,
                struct rl_actor const* actor,
                struct rl_world const* world)
 {
-  int best_distance = RL_INFINITE_DISTANCE;
+  int best_distance = SPTL_UNREACHABLE;
 
   handle(rl_actor) const rogue = rl_get_rogue(world);
   struct rl_level const* level = rl_get_current_level(world);
-  for (size_t i = 0; i < SDL_arraysize(RL_PATH_DIRS); i++) {
+  for (size_t i = 0; i < SDL_arraysize(RL_STEP_DIRS); i++) {
     SDL_Point next = { 0 };
-    next.x = actor->pos.x + RL_PATH_DIRS[i].x;
-    next.y = actor->pos.y + RL_PATH_DIRS[i].y;
+    next.x = actor->pos.x + RL_STEP_DIRS[i].x;
+    next.y = actor->pos.y + RL_STEP_DIRS[i].y;
 
-    int next_distance = *grid_at(&world->player.distances, next.x, next.y);
+    int next_distance =
+      *grid_at(&world->player.dijkstra.distances, next.x, next.y);
 
     if (next_distance >= best_distance) {
       continue;
@@ -32,10 +33,10 @@ pick_direction(SDL_Point* direction,
     }
 
     best_distance = next_distance;
-    *direction = RL_PATH_DIRS[i];
+    *direction = RL_STEP_DIRS[i];
   }
 
-  if (best_distance == RL_INFINITE_DISTANCE) {
+  if (best_distance == SPTL_UNREACHABLE) {
     return false;
   }
 

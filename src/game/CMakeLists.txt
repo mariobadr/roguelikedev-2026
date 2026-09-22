@@ -38,8 +38,7 @@ add_library(rl_game STATIC
     loot.h
     mechanics.c
     mechanics.h
-    pathfinding.c
-    pathfinding.h
+    movement.h
     player.c
     player.h
     spawn.c
@@ -65,5 +64,6 @@ target_link_libraries(rl_game
     PUBLIC
         ginc::core
         ginc::container
+        ginc::spatial
         SDL3::SDL3
 )

@@ -3,6 +3,7 @@
 #include "core/rand.h"
 
 #include "actor.h"
+#include "movement.h"
 #include "world.h"
 
 #define MISS_CHANCE 5
@@ -10,15 +11,6 @@
 // in tenths of a percent
 #define BASE_CRIT_CHANCE 50
 #define CRIT_MULTIPLIER 2
-
-static bool
-are_adjacent(SDL_Point a, SDL_Point b)
-{
-  int const dx = SDL_abs(a.x - b.x);
-  int const dy = SDL_abs(a.y - b.y);
-
-  return dx + dy == 1;
-}
 
 static void
 enqueue_attack_event(struct rl_actor const* attacker,
@@ -127,7 +119,7 @@ rl_attack_melee(struct rl_world* world,
     return false;
   }
 
-  if (!are_adjacent(attacker->pos, defender->pos)) {
+  if (!rl_are_adjacent(attacker->pos, defender->pos)) {
     // only allow melee attacks
     return false;
   }

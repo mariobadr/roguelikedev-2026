@@ -4,6 +4,7 @@
 
 #include "game/actor.h"
 #include "game/mechanics.h"
+#include "game/movement.h"
 #include "game/world.h"
 
 enum rl_interaction
@@ -53,13 +54,13 @@ rl_build_command(struct rl_actor const* actor,
 
   switch (action) {
     case RL_ACTION_MOVE_UP:
-      return rl_new_bump_command(actor, (SDL_Point){ 0, -1 }, world);
+      return rl_new_bump_command(actor, RL_STEP_DIRS[RL_STEP_UP], world);
     case RL_ACTION_MOVE_DOWN:
-      return rl_new_bump_command(actor, (SDL_Point){ 0, 1 }, world);
+      return rl_new_bump_command(actor, RL_STEP_DIRS[RL_STEP_DOWN], world);
     case RL_ACTION_MOVE_LEFT:
-      return rl_new_bump_command(actor, (SDL_Point){ -1, 0 }, world);
+      return rl_new_bump_command(actor, RL_STEP_DIRS[RL_STEP_LEFT], world);
     case RL_ACTION_MOVE_RIGHT:
-      return rl_new_bump_command(actor, (SDL_Point){ 1, 0 }, world);
+      return rl_new_bump_command(actor, RL_STEP_DIRS[RL_STEP_RIGHT], world);
     case RL_ACTION_SELECT:
       return build_interact(actor, world);
     case RL_ACTION_WAIT:

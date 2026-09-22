@@ -9,17 +9,9 @@
 #include "generate.h"
 #include "item_def.h"
 #include "loot.h"
+#include "movement.h"
 #include "targeting.h"
 #include "world.h"
-
-static bool
-are_adjacent(SDL_Point a, SDL_Point b)
-{
-  int const dx = SDL_abs(a.x - b.x);
-  int const dy = SDL_abs(a.y - b.y);
-
-  return dx + dy == 1;
-}
 
 int
 rl_gain_xp(struct rl_world* world, int amount, alist(rl_event)* events)
@@ -76,7 +68,7 @@ can_move(struct rl_world const* world, SDL_Point dst)
 {
   struct rl_level const* level = rl_get_current_level(world);
 
-  if (!rl_is_walkable(*grid_at(&level->map, dst.x, dst.y))) {
+  if (!rl_can_walk(&level->map, dst)) {
     return false;
   }
 
@@ -173,7 +165,7 @@ bool
 rl_move(struct rl_world* world, handle(rl_actor) actor_handle, SDL_Point dst)
 {
   struct rl_actor* actor = rl_borrow_mut_actor(world, actor_handle);
-  if (!are_adjacent(actor->pos, dst)) {
+  if (!rl_are_adjacent(actor->pos, dst)) {
     return false;
   }
 
