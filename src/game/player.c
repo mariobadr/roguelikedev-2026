@@ -13,7 +13,8 @@ rl_alloc_player(struct rl_player* player, int width, int height)
     return false;
   }
 
-  if (!rl_alloc_fov(&player->fov, width, height, FOV_RADIUS)) {
+  if (!sptl_alloc_fov(&player->fov, width, height, FOV_RADIUS)) {
+    SDL_Log("sptl_alloc_fov failed: %s", SDL_GetError());
     return false;
   }
 
@@ -27,6 +28,6 @@ rl_free_player(struct rl_player* player)
     return;
   }
 
-  rl_free_fov(&player->fov);
+  sptl_free_fov(&player->fov);
   sptl_free_dijkstra_map(&player->scent);
 }

@@ -8,8 +8,10 @@
 
 // forward declarations
 struct rl_actor;
-struct rl_fov;
 struct rl_world;
+
+// external forward declarations
+struct sptl_fov;
 
 /**
  * Potentially wake actor.
@@ -17,7 +19,7 @@ struct rl_world;
  * @return whether actor is awake.
  */
 bool
-rl_wake_actor(struct rl_actor* actor, struct rl_fov const* fov);
+rl_wake_actor(struct rl_actor* actor, struct sptl_fov const* fov);
 
 /**
  * @return a command based on the world.

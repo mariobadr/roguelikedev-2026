@@ -1,7 +1,8 @@
 #include "ai.h"
 
+#include "spatial/fov.h"
+
 #include "actor.h"
-#include "fov.h"
 #include "movement.h"
 #include "world.h"
 
@@ -44,7 +45,7 @@ pick_direction(SDL_Point* direction,
 }
 
 bool
-rl_wake_actor(struct rl_actor* actor, struct rl_fov const* fov)
+rl_wake_actor(struct rl_actor* actor, struct sptl_fov const* fov)
 {
   if (actor->awake) {
     // already awake

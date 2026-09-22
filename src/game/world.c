@@ -31,8 +31,20 @@ rl_alloc_world(struct rl_world* world)
   return true;
 }
 
+/**
+ * @param context must be a grid(rl_tile) const*.
+ *
+ * @return whether the tile at p can be seen through.
+ */
+static bool
+is_transparent(void* context, SDL_Point p)
+{
+  grid(rl_tile) const* map = context;
+  return rl_is_transparent(*grid_at(map, p.x, p.y));
+}
+
 static void
-update_explored(struct rl_level* level, struct rl_fov const* fov)
+update_explored(struct rl_level* level, struct sptl_fov const* fov)
 {
   for (size_t i = 0; i < grid_count(&fov->visible); i++) {
     if (*grid_at_index(&fov->visible, i)) {
@@ -47,7 +59,7 @@ rl_update_visibility(struct rl_world* world)
   struct rl_level* level = rl_edit_current_level(world);
   struct rl_actor const* rogue = rl_borrow_actor(world, rl_get_rogue(world));
 
-  rl_update_fov(&world->player.fov, &level->map, rogue->pos);
+  sptl_update_fov(&world->player.fov, rogue->pos, is_transparent, &level->map);
   update_explored(level, &world->player.fov);
 }
 

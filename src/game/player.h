@@ -5,8 +5,8 @@
 #define GINC_ROGUELIKE_PLAYER_H
 
 #include "spatial/dijkstra.h"
+#include "spatial/fov.h"
 
-#include "game/fov.h"
 #include "game/handles.h"
 
 /**
@@ -21,7 +21,7 @@ struct rl_player
   /** The number of steps from each tile to the rogue. */
   struct sptl_dijkstra_map scent;
   /** Player's field-of-view. */
-  struct rl_fov fov;
+  struct sptl_fov fov;
 };
 
 /**

@@ -6,7 +6,6 @@
 
 #include "container/alist.h"
 
-#include "game/fov.h"
 #include "game/world.h"
 
 #include "ui/progress.h"
@@ -14,6 +13,8 @@
 
 #include "graphics/console.h"
 #include "graphics/tileset.h"
+
+#include "spatial/fov.h"
 
 #include "render/palette.h"
 #include "render/progress.h"
@@ -111,7 +112,7 @@ collect_monsters(struct view_state* s)
     struct rl_actor const* actor =
       rl_borrow_actor(s->world, *alist_at(&level->actors, i));
     if (handle_equal(actor->handle, rogue) || !rl_actor_is_alive(actor) ||
-        !rl_is_tile_visible(&s->world->player.fov, actor->pos)) {
+        !sptl_is_tile_visible(&s->world->player.fov, actor->pos)) {
       continue;
     }
 

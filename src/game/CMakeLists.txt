@@ -19,8 +19,6 @@ add_library(rl_game STATIC
     event.h
     experience.c
     experience.h
-    fov.c
-    fov.h
     game.c
     game.h
     generate.c

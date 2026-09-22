@@ -2,7 +2,8 @@
 
 #include <SDL3/SDL_assert.h>
 
-#include "fov.h"
+#include "spatial/fov.h"
+
 #include "item_def.h"
 #include "world.h"
 
@@ -30,7 +31,7 @@ rl_find_nearest_visible_actor(struct rl_world const* world,
       continue;
     }
 
-    if (!rl_is_tile_visible(&world->player.fov, candidate->pos)) {
+    if (!sptl_is_tile_visible(&world->player.fov, candidate->pos)) {
       continue;
     }
 
@@ -61,7 +62,7 @@ rl_is_valid_item_target(struct rl_item_consumable_def const* item,
     return false;
   }
 
-  return rl_is_tile_visible(&world->player.fov, dst);
+  return sptl_is_tile_visible(&world->player.fov, dst);
 }
 
 bool

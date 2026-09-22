@@ -6,7 +6,6 @@
 #include "container/alist.h"
 
 #include "game/actor.h"
-#include "game/fov.h"
 #include "game/item.h"
 #include "game/level.h"
 #include "game/tile.h"
@@ -15,6 +14,8 @@
 #include "graphics/camera.h"
 #include "graphics/grid_view.h"
 #include "graphics/tileset.h"
+
+#include "spatial/fov.h"
 
 #include "graphics.h"
 #include "lighting.h"
@@ -43,7 +44,7 @@ populate_terrain(struct rl_world_renderer* wr, struct rl_world const* world)
         enum rl_tile const tile = *grid_at(map, p.x, p.y);
         cell = rl_get_tile_gfx(tile);
 
-        if (!rl_is_tile_visible(&world->player.fov, p)) {
+        if (!sptl_is_tile_visible(&world->player.fov, p)) {
           // dim explored but not visible tiles
           cell.fg = rl_lerp_colour(cell.fg, RL_COLOUR_BLACK, 0.4f);
         }
@@ -68,7 +69,7 @@ populate_light(struct rl_world_renderer* wr, struct rl_world const* world)
       SDL_Point const p = { x, y };
       struct gfx_console_cell cell = { 0 };
 
-      if (rl_is_tile_visible(&world->player.fov, p)) {
+      if (sptl_is_tile_visible(&world->player.fov, p)) {
         float const brightness = rl_calculate_brightness(
           world->player.fov.origin, p, (float)world->player.fov.radius);
         float const alpha = rl_lerp_float(0.6f, 0.0f, brightness);
@@ -134,7 +135,7 @@ draw_items(struct gfx_camera const* camera,
       continue;
     }
 
-    if (rl_is_tile_visible(&world->player.fov, item->on.map)) {
+    if (sptl_is_tile_visible(&world->player.fov, item->on.map)) {
       draw_item(camera, view, renderer, font, item);
     }
   }
@@ -169,7 +170,7 @@ draw_actors(struct gfx_camera const* camera,
       continue;
     }
 
-    if (rl_is_tile_visible(&world->player.fov, actor->pos)) {
+    if (sptl_is_tile_visible(&world->player.fov, actor->pos)) {
       draw_actor(camera, view, renderer, font, actor);
     }
   }

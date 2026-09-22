@@ -1,15 +1,15 @@
 #include "fov.h"
 
 #include <SDL3/SDL_assert.h>
-#include <SDL3/SDL_error.h>
-#include <SDL3/SDL_log.h>
 
 /**
  * State shared by every scan.
  */
 struct fov_context
 {
-  grid(rl_tile) const* map;
+  grid(boolean) * visible;
+  sptl_transparent_fn is_transparent;
+  void* user;
   SDL_Point origin;
   int radius;
 };
@@ -70,8 +70,7 @@ scan_octant(struct fov_context const* context,
             struct octant_transform const* octant,
             int start_depth,
             double start_slope,
-            double end_slope,
-            bool* visible)
+            double end_slope)
 {
   if (start_depth > context->radius) {
     // no rows within the distance limit
@@ -107,19 +106,14 @@ scan_octant(struct fov_context const* context,
       }
 
       SDL_Point tile_pos = transform(context, octant, dx, dy);
-      bool in_bounds = grid_contains(context->map, tile_pos.x, tile_pos.y);
+      bool in_bounds = grid_contains(context->visible, tile_pos.x, tile_pos.y);
 
-      enum rl_tile tile = RL_TILE_WALL;
-      if (in_bounds) {
-        tile = *grid_at(context->map, tile_pos.x, tile_pos.y);
-
-        if (is_within_radius(dx, dy, context->radius)) {
-          size_t index = grid_index_of(context->map, tile_pos.x, tile_pos.y);
-          visible[index] = true;
-        }
+      if (in_bounds && is_within_radius(dx, dy, context->radius)) {
+        *grid_at(context->visible, tile_pos.x, tile_pos.y) = true;
       }
 
-      bool is_blocking = !in_bounds || !rl_is_transparent(tile);
+      bool is_blocking =
+        !in_bounds || !context->is_transparent(context->user, tile_pos);
 
       if (previous_was_blocking) {
         if (is_blocking) {
@@ -134,8 +128,7 @@ scan_octant(struct fov_context const* context,
         previous_was_blocking = true;
 
         // recurse at the next depth, ending at the blocking tile's left edge
-        scan_octant(
-          context, octant, depth + 1, start_slope, left_slope, visible);
+        scan_octant(context, octant, depth + 1, start_slope, left_slope);
         // save where scanning resumes after the wall
         saved_right_slope = right_slope;
       }
@@ -151,40 +144,40 @@ scan_octant(struct fov_context const* context,
 /**
  * Update out with a field of view from origin.
  *
- * @param map       a map to inspect for calculating the field of view
  * @param origin    the centre point
  * @param radius    the radius of the circle around origin
- * @param out       The visibility of the tiles in map
+ * @param out       the visibility of the tiles around origin
  */
 static void
-compute_fov(grid(rl_tile) const* map,
+compute_fov(grid(boolean) * out,
             SDL_Point origin,
             int radius,
-            grid(boolean) * out)
+            sptl_transparent_fn is_transparent,
+            void* user)
 {
   // set everything to not visible
   SDL_memset(out->data, 0, grid_count(out) * sizeof(*out->data));
 
   // but, of course, the origin is visible
-  size_t index = grid_index_of(map, origin.x, origin.y);
-  *grid_at_index(out, index) = true;
+  *grid_at(out, origin.x, origin.y) = true;
 
   // things that don't change when calling scan_octant
   struct fov_context context = { 0 };
-  context.map = map;
+  context.visible = out;
+  context.is_transparent = is_transparent;
+  context.user = user;
   context.origin = origin;
   context.radius = radius;
 
   for (int octant = 0; octant < 8; octant++) {
-    scan_octant(&context, &octants[octant], 1, 1.0, 0.0, out->data);
+    scan_octant(&context, &octants[octant], 1, 1.0, 0.0);
   }
 }
 
 bool
-rl_alloc_fov(struct rl_fov* fov, int width, int height, int radius)
+sptl_alloc_fov(struct sptl_fov* fov, int width, int height, int radius)
 {
   if (!grid_alloc(&fov->visible, width, height)) {
-    SDL_Log("grid_alloc failed: %s", SDL_GetError());
     return false;
   }
 
@@ -196,7 +189,7 @@ rl_alloc_fov(struct rl_fov* fov, int width, int height, int radius)
 }
 
 void
-rl_free_fov(struct rl_fov* fov)
+sptl_free_fov(struct sptl_fov* fov)
 {
   if (fov == NULL) {
     return;
@@ -208,27 +201,13 @@ rl_free_fov(struct rl_fov* fov)
 }
 
 void
-rl_clear_fov(struct rl_fov* fov)
+sptl_update_fov(struct sptl_fov* fov,
+                SDL_Point origin,
+                sptl_transparent_fn is_transparent,
+                void* context)
 {
-  // invalidate the origin
-  fov->origin.x = -1;
-  fov->origin.y = -1;
-
-  // make everything not visible
-  SDL_memset(fov->visible.data,
-             0,
-             grid_count(&fov->visible) * sizeof(*fov->visible.data));
-}
-
-void
-rl_update_fov(struct rl_fov* fov, grid(rl_tile) const* map, SDL_Point origin)
-{
-  SDL_assert(grid_same_shape(&fov->visible, map));
-
-  if (fov->origin.x == origin.x && fov->origin.y == origin.y) {
-    return;
-  }
+  SDL_assert(grid_contains(&fov->visible, origin.x, origin.y));
 
   fov->origin = origin;
-  compute_fov(map, origin, fov->radius, &fov->visible);
+  compute_fov(&fov->visible, origin, fov->radius, is_transparent, context);
 }

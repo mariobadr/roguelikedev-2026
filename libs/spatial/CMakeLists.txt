@@ -4,6 +4,8 @@
 add_library(ginc_spatial STATIC
     dijkstra.c
     dijkstra.h
+    fov.c
+    fov.h
 )
 
 add_library(ginc::spatial ALIAS ginc_spatial)
