@@ -8,7 +8,7 @@
 bool
 rl_alloc_player(struct rl_player* player, int width, int height)
 {
-  if (!sptl_alloc_dijkstra_map(&player->dijkstra, width, height)) {
+  if (!sptl_alloc_dijkstra_map(&player->scent, width, height)) {
     SDL_Log("sptl_alloc_dijkstra_map failed: %s", SDL_GetError());
     return false;
   }
@@ -28,5 +28,5 @@ rl_free_player(struct rl_player* player)
   }
 
   rl_free_fov(&player->fov);
-  sptl_free_dijkstra_map(&player->dijkstra);
+  sptl_free_dijkstra_map(&player->scent);
 }

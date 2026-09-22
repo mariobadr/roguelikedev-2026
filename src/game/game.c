@@ -126,7 +126,7 @@ update_actors(struct rl_world* world,
                                          SDL_arraysize(RL_STEP_DIRS),
                                          can_step };
   sptl_compute_dijkstra_map(
-    &world->player.dijkstra, &rogue->pos, 1, &walking, (void*)&level->map);
+    &world->player.scent, &rogue->pos, 1, &walking, (void*)&level->map);
 
   // wake up actors in the player's field-of-view and/or
   // move actors closer to the player

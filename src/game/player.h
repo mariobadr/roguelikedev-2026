@@ -19,7 +19,7 @@ struct rl_player
   /** XP earned toward the actor's next level. */
   int xp;
   /** The number of steps from each tile to the rogue. */
-  struct sptl_dijkstra_map dijkstra;
+  struct sptl_dijkstra_map scent;
   /** Player's field-of-view. */
   struct rl_fov fov;
 };

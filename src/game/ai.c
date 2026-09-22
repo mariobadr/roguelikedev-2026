@@ -20,7 +20,7 @@ pick_direction(SDL_Point* direction,
     next.y = actor->pos.y + RL_STEP_DIRS[i].y;
 
     int next_distance =
-      *grid_at(&world->player.dijkstra.distances, next.x, next.y);
+      *grid_at(&world->player.scent.distances, next.x, next.y);
 
     if (next_distance >= best_distance) {
       continue;
