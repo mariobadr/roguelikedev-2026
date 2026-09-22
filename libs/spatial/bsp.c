@@ -1,48 +1,23 @@
 #include "bsp.h"
 
-#include <SDL3/SDL_error.h>
-#include <SDL3/SDL_log.h>
-
 #include "core/rand.h"
 
-bool
-rl_bsp_tree_init(struct rl_bsp_tree* tree, int max_depth, SDL_Rect rect)
-{
-  int const node_count = RL_BSP_MAX_NODES(max_depth);
-  if (!array_alloc(&tree->nodes, node_count)) {
-    SDL_Log("array_alloc failed: %s", SDL_GetError());
-    return false;
-  }
-
-  tree->nodes.len = node_count;
-  tree->max_depth = max_depth;
-
-  // set up the root node
-  array_at(&tree->nodes, 0)->rect = rect;
-  tree->leaf_count = 1; // root is initially a leaf
-
-  return true;
-}
-
-void
-rl_bsp_tree_free(struct rl_bsp_tree* tree)
-{
-  array_free(&tree->nodes);
-}
-
-void
-rl_bsp_split(struct rl_bsp_tree* tree,
-             int index,
-             struct rand_state* rng,
-             int depth,
-             struct rl_bsp_policy const* policy)
+/**
+ * Split the node at index up to depth levels.
+ */
+static void
+split_node(struct sptl_bsp_tree* tree,
+           int index,
+           struct rand_state* rng,
+           int depth,
+           struct sptl_bsp_policy const* policy)
 {
   if (depth >= tree->max_depth) {
     // cannot exceed the maximum depth
     return;
   }
 
-  struct rl_bsp_node* node = array_at(&tree->nodes, index);
+  struct sptl_bsp_node* node = array_at(&tree->nodes, index);
 
   // Check whether we can even split the node further
   bool can_split_x = node->rect.w >= 2 * policy->min_width;
@@ -58,28 +33,29 @@ rl_bsp_split(struct rl_bsp_tree* tree,
     double hw_ratio = (double)node->rect.h / node->rect.w;
 
     if (wh_ratio > policy->max_wh_ratio) {
-      node->axis = RL_BSP_SPLIT_X;
+      node->axis = SPTL_BSP_SPLIT_X;
     } else if (hw_ratio > policy->max_hw_ratio) {
-      node->axis = RL_BSP_SPLIT_Y;
+      node->axis = SPTL_BSP_SPLIT_Y;
     } else {
-      node->axis = rand_next_between(rng, RL_BSP_SPLIT_X, RL_BSP_SPLIT_Y);
+      node->axis = rand_next_between(rng, SPTL_BSP_SPLIT_X, SPTL_BSP_SPLIT_Y);
     }
 
   } else if (can_split_x) {
     // Can only split on the x-axis
-    node->axis = RL_BSP_SPLIT_X;
+    node->axis = SPTL_BSP_SPLIT_X;
   } else {
     // Can only split on the y-axis
-    node->axis = RL_BSP_SPLIT_Y;
+    node->axis = SPTL_BSP_SPLIT_Y;
   }
 
   // Do the splitting
-  struct rl_bsp_node* left = array_at(&tree->nodes, rl_bsp_left_of(index));
-  left->axis = RL_BSP_SPLIT_NONE;
-  struct rl_bsp_node* right = array_at(&tree->nodes, rl_bsp_right_of(index));
-  right->axis = RL_BSP_SPLIT_NONE;
+  struct sptl_bsp_node* left = array_at(&tree->nodes, sptl_bsp_left_of(index));
+  left->axis = SPTL_BSP_SPLIT_NONE;
+  struct sptl_bsp_node* right =
+    array_at(&tree->nodes, sptl_bsp_right_of(index));
+  right->axis = SPTL_BSP_SPLIT_NONE;
 
-  if (node->axis == RL_BSP_SPLIT_X) {
+  if (node->axis == SPTL_BSP_SPLIT_X) {
     // splitting here should not impact the height
     int const split =
       (int)rand_next_between(rng,
@@ -119,6 +95,40 @@ rl_bsp_split(struct rl_bsp_tree* tree,
 
   // Continue splitting
   tree->leaf_count += 1; // this node will no longer be a leaf
-  rl_bsp_split(tree, rl_bsp_left_of(index), rng, depth + 1, policy);
-  rl_bsp_split(tree, rl_bsp_right_of(index), rng, depth + 1, policy);
+  split_node(tree, sptl_bsp_left_of(index), rng, depth + 1, policy);
+  split_node(tree, sptl_bsp_right_of(index), rng, depth + 1, policy);
+}
+
+bool
+sptl_alloc_bsp_tree(struct sptl_bsp_tree* tree, int max_depth, SDL_Rect rect)
+{
+  int const node_count = SPTL_BSP_MAX_NODES(max_depth);
+  if (!array_alloc(&tree->nodes, node_count)) {
+    return false;
+  }
+
+  tree->nodes.len = node_count;
+  tree->max_depth = max_depth;
+
+  // set up the root node
+  struct sptl_bsp_node* root = array_at(&tree->nodes, 0);
+  root->rect = rect;
+  root->axis = SPTL_BSP_SPLIT_NONE;
+  tree->leaf_count = 1; // root is initially a leaf
+
+  return true;
+}
+
+void
+sptl_free_bsp_tree(struct sptl_bsp_tree* tree)
+{
+  array_free(&tree->nodes);
+}
+
+void
+sptl_build_bsp_tree(struct sptl_bsp_tree* tree,
+                    struct rand_state* rng,
+                    struct sptl_bsp_policy const* policy)
+{
+  split_node(tree, 0, rng, 0, policy);
 }

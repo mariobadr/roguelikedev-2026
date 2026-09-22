@@ -4,8 +4,7 @@
 #include <SDL3/SDL_log.h>
 
 #include "core/rand.h"
-
-#include "bsp.h"
+#include "spatial/bsp.h"
 
 /* Room generation */
 
@@ -394,13 +393,13 @@ find_closest_pair_in_spans(array(rl_room) const* rooms,
  */
 static struct room_span
 connect_bsp_subtree(struct rl_layout* out,
-                    struct rl_bsp_tree const* tree,
+                    struct sptl_bsp_tree const* tree,
                     int node_index,
                     struct rand_state* rng)
 {
-  struct rl_bsp_node const* node = array_at(&tree->nodes, node_index);
+  struct sptl_bsp_node const* node = array_at(&tree->nodes, node_index);
 
-  if (rl_bsp_node_is_leaf(node)) {
+  if (sptl_bsp_node_is_leaf(node)) {
     // base case
     int const room_index = (int)array_len(&out->rooms);
     *array_push(&out->rooms) = generate_room(&node->rect, rng);
@@ -415,9 +414,9 @@ connect_bsp_subtree(struct rl_layout* out,
 
   // recurse left and right subtrees
   struct room_span left =
-    connect_bsp_subtree(out, tree, rl_bsp_left_of(node_index), rng);
+    connect_bsp_subtree(out, tree, sptl_bsp_left_of(node_index), rng);
   struct room_span right =
-    connect_bsp_subtree(out, tree, rl_bsp_right_of(node_index), rng);
+    connect_bsp_subtree(out, tree, sptl_bsp_right_of(node_index), rng);
 
   int best_a, best_b;
   find_closest_pair_in_spans(&out->rooms, left, right, &best_a, &best_b);
@@ -450,34 +449,35 @@ rl_init_layout(struct rl_layout* layout,
   rect.h = height;
 
   int const max_depth = 4;
-  struct rl_bsp_tree tree;
-  if (!rl_bsp_tree_init(&tree, max_depth, rect)) {
+  struct sptl_bsp_tree tree;
+  if (!sptl_alloc_bsp_tree(&tree, max_depth, rect)) {
+    SDL_Log("sptl_alloc_bsp_tree failed: %s", SDL_GetError());
     return false;
   }
 
-  struct rl_bsp_policy policy;
+  struct sptl_bsp_policy policy;
   policy.min_width = 10;
   policy.min_height = 8;
   policy.max_wh_ratio = 2.0;
   policy.max_hw_ratio = 2.0;
-  rl_bsp_split(&tree, 0, rng, 0, &policy);
+  sptl_build_bsp_tree(&tree, rng, &policy);
 
   if (!array_alloc(&layout->rooms, tree.leaf_count)) {
     SDL_Log("array_alloc failed: %s", SDL_GetError());
-    rl_bsp_tree_free(&tree);
+    sptl_free_bsp_tree(&tree);
     return false;
   }
 
   if (!array_alloc(&layout->corridors, tree.leaf_count - 1 + 4)) {
     SDL_Log("array_alloc failed: %s", SDL_GetError());
-    rl_bsp_tree_free(&tree);
+    sptl_free_bsp_tree(&tree);
     return false;
   }
 
   connect_bsp_subtree(layout, &tree, 0, rng);
   add_extra_corridors(layout, width, height);
 
-  rl_bsp_tree_free(&tree);
+  sptl_free_bsp_tree(&tree);
   return true;
 }
 

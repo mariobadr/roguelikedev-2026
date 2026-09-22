@@ -1,8 +1,8 @@
 /**
  * @file bsp.h
  */
-#ifndef GINC_ROGUELIKE_BSP_H
-#define GINC_ROGUELIKE_BSP_H
+#ifndef GINC_SPATIAL_BSP_H
+#define GINC_SPATIAL_BSP_H
 
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_stdinc.h>
@@ -15,52 +15,52 @@ struct rand_state;
 /**
  * @return the number of nodes needed for a full BSP tree of max_depth.
  */
-#define RL_BSP_MAX_NODES(max_depth) (((size_t)1 << ((max_depth) + 1)) - 1)
+#define SPTL_BSP_MAX_NODES(max_depth) (((size_t)1 << ((max_depth) + 1)) - 1)
 
 /**
  * How a node is split.
  */
-enum rl_bsp_split_axis
+enum sptl_bsp_split_axis
 {
-  RL_BSP_UNUSED,     //< invalid node
-  RL_BSP_SPLIT_NONE, //< leaf node
-  RL_BSP_SPLIT_X,    //< node split on x-axis
-  RL_BSP_SPLIT_Y     //< node split on y-axis
+  SPTL_BSP_UNUSED,     //< invalid node
+  SPTL_BSP_SPLIT_NONE, //< leaf node
+  SPTL_BSP_SPLIT_X,    //< node split on x-axis
+  SPTL_BSP_SPLIT_Y     //< node split on y-axis
 };
 
 /**
  * A node in a BSP tree.
  */
-struct rl_bsp_node
+struct sptl_bsp_node
 {
   /** The region of space this node occupies. */
   SDL_Rect rect;
   /** How this node was split, if at all. */
-  enum rl_bsp_split_axis axis;
+  enum sptl_bsp_split_axis axis;
 };
 
 /**
  * An array of nodes.
  */
-array_define_as(struct rl_bsp_node, rl_bsp_node);
+array_define_as(struct sptl_bsp_node, sptl_bsp_node);
 
 /**
  * A BSP tree.
  */
-struct rl_bsp_tree
+struct sptl_bsp_tree
 {
   /** The maximum depth of the tree. */
   int max_depth;
   /** Total number of leaf nodes. */
   int leaf_count;
   /** All possible nodes in the tree. */
-  array(rl_bsp_node) nodes;
+  array(sptl_bsp_node) nodes;
 };
 
 /**
  * Parameters that influence how a BSP tree is created.
  */
-struct rl_bsp_policy
+struct sptl_bsp_policy
 {
   /** The minimum width of a rect in the tree. */
   int min_width;
@@ -75,7 +75,8 @@ struct rl_bsp_policy
 /**
  * Initialise a tree with the given root region.
  *
- * All nodes start as leaves (i.e., RL_BSP_SPLIT_NONE) until split.
+ * The root starts as a leaf (i.e., SPTL_BSP_SPLIT_NONE). The remaining nodes
+ * are SPTL_BSP_UNUSED until a split reaches them.
  *
  * @param tree      The tree to initialise.
  * @param max_depth The maximum depth of the tree.
@@ -84,7 +85,7 @@ struct rl_bsp_policy
  * @return whether initialisation was successful.
  */
 bool
-rl_bsp_tree_init(struct rl_bsp_tree* tree, int max_depth, SDL_Rect rect);
+sptl_alloc_bsp_tree(struct sptl_bsp_tree* tree, int max_depth, SDL_Rect rect);
 
 /**
  * Free up resources used by tree.
@@ -92,38 +93,35 @@ rl_bsp_tree_init(struct rl_bsp_tree* tree, int max_depth, SDL_Rect rect);
  * @param tree The tree to free.
  */
 void
-rl_bsp_tree_free(struct rl_bsp_tree* tree);
+sptl_free_bsp_tree(struct sptl_bsp_tree* tree);
 
 /**
- * Split the node at index up to depth levels.
+ * Split the tree, from its root, until the policy or its maximum depth stops
+ * it.
  *
  * @param tree    The tree being updated.
- * @param index   The index of the node of the tree.
  * @param rng     The random number generator.
- * @param depth   The current depth.
  * @param policy  The policy impacting generation.
  */
 void
-rl_bsp_split(struct rl_bsp_tree* tree,
-             int index,
-             struct rand_state* rng,
-             int depth,
-             struct rl_bsp_policy const* policy);
+sptl_build_bsp_tree(struct sptl_bsp_tree* tree,
+                    struct rand_state* rng,
+                    struct sptl_bsp_policy const* policy);
 
 /**
  * @return whether node is a leaf.
  */
 static inline bool
-rl_bsp_node_is_leaf(struct rl_bsp_node const* node)
+sptl_bsp_node_is_leaf(struct sptl_bsp_node const* node)
 {
-  return node->axis == RL_BSP_SPLIT_NONE;
+  return node->axis == SPTL_BSP_SPLIT_NONE;
 }
 
 /**
  * @return the index of the left child of the node at index.
  */
 static inline int
-rl_bsp_left_of(int index)
+sptl_bsp_left_of(int index)
 {
   return 2 * index + 1;
 }
@@ -132,7 +130,7 @@ rl_bsp_left_of(int index)
  * @return the index of the right child of the node at index.
  */
 static inline int
-rl_bsp_right_of(int index)
+sptl_bsp_right_of(int index)
 {
   return 2 * index + 2;
 }
@@ -141,9 +139,9 @@ rl_bsp_right_of(int index)
  * @return the index of the parent of the node at index.
  */
 static inline int
-rl_bsp_parent_of(int index)
+sptl_bsp_parent_of(int index)
 {
   return (index - 1) / 2;
 }
 
-#endif // GINC_ROGUELIKE_BSP_H
+#endif // GINC_SPATIAL_BSP_H

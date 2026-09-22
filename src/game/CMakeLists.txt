@@ -8,8 +8,6 @@ add_library(rl_game STATIC
     actor_def.h
     ai.c
     ai.h
-    bsp.c
-    bsp.h
     combat.c
     combat.h
     command.c
