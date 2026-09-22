@@ -6,11 +6,7 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-#include "game/event.h"
-#include "game/handles.h"
-
 // forward declarations
-struct rl_world;
 struct rl_actor;
 struct rand_state;
 
@@ -24,35 +20,40 @@ struct rl_roll_range
 };
 
 /**
+ * What an attack did to its defender.
+ */
+struct rl_attack
+{
+  /** The damage dealt, or -1 on a miss. */
+  int damage;
+  /** Whether the hit was critical. */
+  bool critical;
+};
+
+/**
  * @return the range a roll of power can land in.
  */
 struct rl_roll_range
 rl_get_roll_range(int power);
 
 /**
- * Resolve a magic attack, which ignores armour, against a defender.
- *
- * Appends the resulting attack (and, possibly, death) events.
- *
- * @return the damage dealt, or -1 on a miss.
+ * @return the chance of a critical hit, in tenths of a percent.
  */
 int
-rl_attack_magic(struct rl_actor const* attacker,
-                struct rl_actor* defender,
-                int power,
-                alist(rl_event)* events,
-                struct rand_state* rng);
+rl_get_crit_chance(int agility, int level);
 
 /**
- * Try a melee attack between two actors in world.
+ * Roll an attack and subtract the damage from the defender's hit points.
  *
- * @return whether an attack was performed (still true on miss).
+ * @param crit_chance is in tenths of a percent; an attack with 0 cannot crit.
+ *
+ * @return what the attack did.
  */
-bool
-rl_attack_melee(struct rl_world* world,
-                handle(rl_actor) attacker_handle,
-                handle(rl_actor) defender_handle,
-                alist(rl_event)* events,
-                struct rand_state* rng);
+struct rl_attack
+rl_resolve_attack(struct rl_actor* defender,
+                  int power,
+                  int crit_chance,
+                  int armour,
+                  struct rand_state* rng);
 
 #endif // GINC_ROGUELIKE_COMBAT_H

@@ -1,5 +1,7 @@
 #include "mechanics.h"
 
+#include <SDL3/SDL_assert.h>
+
 #include "core/rand.h"
 
 #include "actor.h"
@@ -78,6 +80,72 @@ can_move(struct rl_world const* world, SDL_Point dst)
   }
 
   return true;
+}
+
+/**
+ * Record an attack, along with the defender's death if it was the killing
+ * blow.
+ *
+ * @param defender must have been alive before the attack.
+ */
+static void
+enqueue_attack_events(struct rl_actor const* attacker,
+                      struct rl_actor const* defender,
+                      struct rl_attack attack,
+                      alist(rl_event)* events)
+{
+  struct rl_event event = { 0 };
+  event.type = RL_EVENT_ATTACK;
+  event.as.attack.attacker = attacker->handle;
+  event.as.attack.defender = defender->handle;
+  event.as.attack.damage = attack.damage;
+  event.as.attack.critical = attack.critical;
+  *alist_push(events) = event;
+
+  if (rl_actor_is_alive(defender)) {
+    return;
+  }
+
+  struct rl_event death = { 0 };
+  death.type = RL_EVENT_DEATH;
+  death.as.death.actor = defender->handle;
+  death.as.death.killer = attacker->handle;
+  *alist_push(events) = death;
+}
+
+void
+rl_attack_melee(struct rl_world const* world,
+                struct rl_actor const* attacker,
+                struct rl_actor* defender,
+                alist(rl_event)* events,
+                struct rand_state* rng)
+{
+  SDL_assert(rl_actor_is_alive(defender));
+
+  // from the good old WoW days
+  struct rl_actor_stats const stats = rl_get_actor_stats(world, attacker);
+  int const ap = 2 * stats.strength + stats.agility;
+  int const crit_chance = rl_get_crit_chance(stats.agility, attacker->level);
+  int const armour = rl_get_actor_stats(world, defender).armor;
+
+  struct rl_attack const attack =
+    rl_resolve_attack(defender, ap, crit_chance, armour, rng);
+
+  enqueue_attack_events(attacker, defender, attack, events);
+}
+
+void
+rl_attack_magic(struct rl_actor const* attacker,
+                struct rl_actor* defender,
+                int power,
+                alist(rl_event)* events,
+                struct rand_state* rng)
+{
+  SDL_assert(rl_actor_is_alive(defender));
+
+  struct rl_attack const attack = rl_resolve_attack(defender, power, 0, 0, rng);
+
+  enqueue_attack_events(attacker, defender, attack, events);
 }
 
 static bool

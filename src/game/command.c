@@ -2,7 +2,6 @@
 
 #include <SDL3/SDL_assert.h>
 
-#include "combat.h"
 #include "mechanics.h"
 #include "movement.h"
 #include "world.h"
@@ -38,6 +37,36 @@ rl_new_bump_command(struct rl_actor const* actor,
   return cmd;
 }
 
+/**
+ * Try a melee attack by attacker on the actor referred to by defender_handle.
+ *
+ * @param attacker must be alive.
+ *
+ * @return whether an attack was performed (still true on a miss).
+ */
+static bool
+attack_actor(struct rl_world* world,
+             struct rl_actor const* attacker,
+             handle(rl_actor) defender_handle,
+             alist(rl_event)* events,
+             struct rand_state* rng)
+{
+  struct rl_actor* defender = rl_borrow_mut_actor(world, defender_handle);
+  if (defender == NULL || !rl_actor_is_alive(defender)) {
+    // defender_handle is not valid
+    return false;
+  }
+
+  if (!rl_are_adjacent(attacker->pos, defender->pos)) {
+    // only allow melee attacks
+    return false;
+  }
+
+  rl_attack_melee(world, attacker, defender, events, rng);
+
+  return true;
+}
+
 bool
 rl_apply_command(struct rl_world* world,
                  struct rl_command const* cmd,
@@ -57,7 +86,7 @@ rl_apply_command(struct rl_world* world,
     case RL_COMMAND_MOVE:
       return rl_move(world, cmd->actor, cmd->dst);
     case RL_COMMAND_ATTACK:
-      return rl_attack_melee(world, cmd->actor, cmd->target_actor, events, rng);
+      return attack_actor(world, actor, cmd->target_actor, events, rng);
     case RL_COMMAND_PICK_UP:
       return rl_pick_up_item(world, cmd->actor, cmd->dst, events);
     case RL_COMMAND_TAKE_STAIRS:

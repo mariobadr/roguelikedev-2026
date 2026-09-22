@@ -32,6 +32,33 @@ bool
 rl_move(struct rl_world* world, handle(rl_actor) actor_handle, SDL_Point dst);
 
 /**
+ * Resolve a melee attack, recording the attack (and, possibly, death) in
+ * events.
+ *
+ * @param attacker must be alive.
+ * @param defender must be alive.
+ */
+void
+rl_attack_melee(struct rl_world const* world,
+                struct rl_actor const* attacker,
+                struct rl_actor* defender,
+                alist(rl_event)* events,
+                struct rand_state* rng);
+
+/**
+ * Resolve a magic attack, which ignores armour and cannot crit, recording the
+ * attack (and, possibly, death) in events.
+ *
+ * @param defender must be alive.
+ */
+void
+rl_attack_magic(struct rl_actor const* attacker,
+                struct rl_actor* defender,
+                int power,
+                alist(rl_event)* events,
+                struct rand_state* rng);
+
+/**
  * Try to pick up an item found at dst.
  *
  * An equippable item is equipped at once, leaving the item it replaces at dst.
