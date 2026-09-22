@@ -20,8 +20,8 @@
 #include "client/screen.h"
 #include "client/text.h"
 
-#define RL_NEW_GAME_WIDTH 64
-#define RL_NEW_GAME_HEIGHT 64
+#define RL_NEW_GAME_WIDTH 48
+#define RL_NEW_GAME_HEIGHT 48
 #define RL_SAVE_LIST_INITIAL_CAP 8
 
 #define KEY_REPEAT_COOLDOWN (0.115f)
